@@ -1,0 +1,21 @@
+{
+  "note": "确定性回归用例：数字解读与均值代表性检查的期望值为手工计算结果，目的是保证代码与手算一致、防改动出错（回归测试）。",
+  "delta": [
+    { "id": "x1", "a": 2, "b": 4, "expect": { "abs": 2, "rel": 100, "times": 2 } },
+    { "id": "x2", "a": 2, "b": 4.5, "expect": { "abs": 2.5, "rel": 125, "times": 2.25 } },
+    { "id": "x3", "a": 18, "b": 12, "expect": { "abs": -6, "rel": -33.3, "times": 0.67 } },
+    { "id": "x4", "a": 100, "b": 50, "expect": { "abs": -50, "rel": -50, "times": 0.5 } },
+    { "id": "x5", "a": 0, "b": 5, "expect": null }
+  ],
+  "deltaNotes": [
+    { "id": "n1", "a": 2, "b": 4, "unit": "%（百分比）", "expectContains": ["基数陷阱", "百分点", "小基数"] },
+    { "id": "n2", "a": 50, "b": 60, "unit": "%（百分比）", "expectContains": ["常规变化幅度"] },
+    { "id": "n3", "a": 10, "b": 4, "unit": "%（百分比）", "expectContains": ["大幅下降"] }
+  ],
+  "cv": [
+    { "id": "c1", "mean": 12.4, "sd": 8.1, "n": 18, "expectCv": 0.65, "expectContains": ["分布偏散", "小样本"] },
+    { "id": "c2", "mean": 10, "sd": 2, "n": 100, "expectCv": 0.2, "expectContains": ["分布相对集中", "满足常见统计检验"] },
+    { "id": "c3", "mean": 5, "sd": 7, "n": 5, "expectCv": 1.4, "expectContains": ["极端分散", "只能当线索"] },
+    { "id": "c4", "mean": 10, "sd": 2, "n": null, "expectCv": 0.2, "expectContains": ["分布相对集中"] }
+  ]
+}

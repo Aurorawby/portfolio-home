@@ -1,0 +1,28 @@
+{
+  "note": "确定性回归用例：today 固定为 2026-11-03，期望值为手工计算结果。目的是保证统计代码与手算一致、防止改动后算错（回归测试），不是效果评测。",
+  "today": "2026-11-03",
+  "records": [
+    { "id": "A", "company": "公司A", "role": "产品实习", "channel": "内推", "state": "interview", "date": "2026-10-20", "updated": "2026-10-25" },
+    { "id": "B", "company": "公司B", "role": "产品实习", "channel": "官网", "state": "interview", "date": "2026-10-15", "updated": "2026-10-20" },
+    { "id": "C", "company": "公司C", "role": "产品实习", "channel": "BOSS 直聘", "state": "applied", "date": "2026-10-10" },
+    { "id": "D", "company": "公司D", "role": "产品实习", "channel": "BOSS 直聘", "state": "applied", "date": "2026-10-28" },
+    { "id": "E", "company": "公司E", "role": "产品实习", "channel": "内推", "state": "rejected", "date": "2026-09-20", "cause": "八股/知识题" },
+    { "id": "F", "company": "公司F", "role": "产品实习", "channel": "官网", "state": "rejected", "date": "2026-09-25", "cause": "简历关（没进笔试/面试）" },
+    { "id": "G", "company": "公司G", "role": "产品实习", "channel": "内推", "state": "offer", "date": "2026-09-15" },
+    { "id": "H", "company": "公司H", "role": "产品实习", "channel": "BOSS 直聘", "state": "ghost", "date": "2026-09-01" }
+  ],
+  "expected": {
+    "reached": { "applied": 8, "test": 3, "interview": 3, "final": 1, "hr": 1, "offer": 1 },
+    "rejected": 2,
+    "ghost": 1,
+    "rates": { "appliedToTest": 38, "testToInterview": 100, "interviewToFinal": 33, "toOffer": 13 },
+    "followUpIds": ["公司C", "公司B", "公司A"],
+    "followUpDays": { "公司C": 24, "公司B": 14, "公司A": 9 },
+    "channel": {
+      "内推": { "total": 3, "advanced": 3, "rate": 100 },
+      "官网": { "total": 2, "advanced": 1, "rate": 50 },
+      "BOSS 直聘": { "total": 3, "advanced": 0, "rate": 0 }
+    },
+    "cause": { "八股/知识题": 1, "简历关（没进笔试/面试）": 1, "未记录（下次挂了记得填）": 1 }
+  }
+}

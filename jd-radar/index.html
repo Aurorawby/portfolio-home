@@ -1,0 +1,567 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JD 雷达 · 招聘要求离我有多远</title>
+<meta name="description" content="粘贴多份 AI 产品岗位 JD，自动提取能力要求、画能力雷达图、对照我的证据清单，列出 gap 和补齐动作。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff;
+    --accent:#ff7a45; --accent-soft:#ffe8dc; --line:#eadfd0;
+    --insight:#ff7a45; --data:#5b7cfa; --ai:#12a184; --delivery:#b25cff; --collab:#d98600; --biz:#e0457b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(900px 500px at 0% -10%,#ffe8dc,transparent 60%),radial-gradient(700px 400px at 110% 0%,#ffe9c9,transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    min-height:100vh;padding:32px 16px calc(40px + env(safe-area-inset-bottom))}
+  .wrap{max-width:1040px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 8px}
+  .sub{color:var(--muted);line-height:1.8;margin:0 0 22px;font-size:14.5px}
+  .card{background:var(--card);border-radius:20px;padding:22px;box-shadow:0 10px 28px rgba(60,42,20,.09);margin-bottom:18px}
+  textarea{width:100%;min-height:180px;border:1.5px solid var(--line);border-radius:14px;padding:14px;font-size:14px;line-height:1.7;
+    font-family:inherit;resize:vertical;background:#fffdfa}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .btn{border:0;border-radius:999px;padding:12px 20px;font-size:15px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;
+    box-shadow:0 8px 18px rgba(255,122,69,.25);transition:transform .12s ease}
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  .hint{color:var(--muted);font-size:12.5px;line-height:1.7}
+  .hidden{display:none}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
+  .chip{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:600}
+  .chip.gray{background:#f0ece5;color:#6f675d}
+  .grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}
+  @media (max-width:860px){.grid2{grid-template-columns:1fr}}
+  canvas{width:100%;max-width:420px;display:block;margin:0 auto}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px;font-size:12px;color:var(--muted)}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+  .comp{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #f0e9df;font-size:13.5px}
+  .comp:last-child{border-bottom:0}
+  .comp .name{flex:0 0 128px;font-weight:600}
+  .comp .bar{flex:1;height:8px;background:#f2ece3;border-radius:999px;overflow:hidden}
+  .comp .bar i{display:block;height:100%;border-radius:999px;background:var(--c,#ff7a45)}
+  .comp .num{flex:0 0 74px;text-align:right;color:var(--muted);font-size:12.5px}
+  .comp input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+  .comp label{font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer}
+  .gap{border:1px solid #f0d9be;background:#fff8ec;border-radius:14px;padding:14px 16px;margin-bottom:10px}
+  .gap h4{margin:0 0 6px;font-size:14.5px}
+  .gap p{margin:0;font-size:13px;color:#6b5a41;line-height:1.7}
+  .gap .learn{color:#8a5a1f;margin-top:6px}
+  .unknown{color:var(--muted);font-size:12.5px;line-height:1.8;margin-top:10px}
+  .unknown span{display:inline-block;background:#f2ece3;border-radius:8px;padding:2px 8px;margin:2px 4px 2px 0}
+  footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:30px;line-height:1.9}
+  h2{font-size:20px;margin:0 0 6px}
+  .sect-sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:#1f1b16;color:#fff;padding:10px 18px;border-radius:999px;
+    font-size:14px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:9}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📡 JD 雷达</h1>
+  <p class="sub">粘贴 3-10 份 AI 产品岗位的 JD（用 <code>---</code> 分隔），看看市场到底在要什么能力、我差在哪。<br>
+  纯本地运行：不调模型、不上传任何内容；能力词典 72 项，识别不到的新词会列出来提醒我补。</p>
+
+  <section class="card">
+    <h2>① 粘贴 JD</h2>
+    <p class="sect-sub">每份 JD 之间用一行 <code>---</code> 分隔；也可以直接连载一起（按「岗位/职位」分段）。</p>
+    <textarea id="raw" placeholder="粘贴 JD 原文，例如：&#10;&#10;岗位：AI 产品经理（内容平台）&#10;职责：负责 AI 写作助手的产品规划，拆解用户需求，定义指标体系……&#10;&#10;---&#10;&#10;岗位：增长产品经理（AI 方向）&#10;职责：通过 A/B 测试和漏斗分析提升转化……"></textarea>
+    <div class="row">
+      <button class="btn" id="go">开始分析 →</button>
+      <button class="btn ghost" id="sample">载入 3 份示例 JD</button>
+      <button class="btn ghost" id="clear">清空</button>
+      <span class="hint">数据只在你浏览器里，刷新不丢（localStorage）</span>
+    </div>
+    <p class="hint" id="err" style="color:#a33"></p>
+  </section>
+
+  <section class="card hidden" id="res">
+    <h2>② 市场要什么</h2>
+    <p class="sect-sub" id="summary"></p>
+    <div class="chips" id="chips"></div>
+    <div class="grid2">
+      <div>
+        <canvas id="radar" width="420" height="420"></canvas>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div>
+        <h3 style="font-size:15px;margin:0 0 8px">高频能力 Top 15</h3>
+        <div id="comps"></div>
+        <p class="hint" style="margin-top:10px">勾选「我有证据」= 我能用项目/实习/作品讲出来。勾选状态会保存，用于下一步 gap 分析。</p>
+      </div>
+    </div>
+    <div class="unknown" id="unknown"></div>
+  </section>
+
+  <section class="card hidden" id="gap-card">
+    <h2>③ 我的 gap 清单</h2>
+    <p class="sect-sub" id="gap-summary"></p>
+    <div id="gaps"></div>
+    <div class="row">
+      <button class="btn" id="export">⬇️ 导出 Markdown（可贴进复盘笔记）</button>
+      <button class="btn ghost" id="reset">重置我的证据清单</button>
+    </div>
+    <p class="hint" id="strength" style="margin-top:14px"></p>
+  </section>
+
+  <footer>
+    能力词典 72 项 · 纯前端 · 不采集任何数据 · <a href="../index.html" style="color:#8a5a1f">← 回作品集</a><br>
+    说明：JD 雷达是"需求侧扫描"，不能代替真实面试；识别不到的词会列出来，避免假装覆盖全。
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ================= 能力词典（72 项，6 组） ================= */
+var GROUPS = [
+  {id:'insight', name:'产品洞察', color:'#ff7a45'},
+  {id:'data',    name:'数据与实验', color:'#5b7cfa'},
+  {id:'ai',      name:'AI 与技术', color:'#12a184'},
+  {id:'delivery',name:'交付与工程', color:'#b25cff'},
+  {id:'collab',  name:'协作与影响', color:'#d98600'},
+  {id:'biz',     name:'商业化与行业', color:'#e0457b'}
+];
+
+var COMPETENCIES = [
+  /* ---- 产品洞察 ---- */
+  {id:'user_research', name:'用户研究', group:'insight', terms:['用户调研','用户研究','用户访谈','访谈','问卷','可用性测试','用户画像','用研'], learn:'每周做 3 次 15 分钟访谈，产出一份带原话的用户画像'},
+  {id:'requirement', name:'需求分析', group:'insight', terms:['需求分析','需求拆解','需求梳理','用户需求','需求评审'], learn:'挑一个需求写「用户-场景-痛点-方案」四段式，再让 2 个人挑刺'},
+  {id:'scenario', name:'场景拆解', group:'insight', terms:['场景拆解','用户旅程','使用场景','场景分析','用户路径'], learn:'把一个功能画成用户旅程图，标出每一步的流失风险'},
+  {id:'competitor', name:'竞品分析', group:'insight', terms:['竞品分析','竞品调研','竞品','对标分析'], learn:'选 3 个竞品做功能矩阵，写一页「它们的取舍与我不同在哪」'},
+  {id:'product_def', name:'产品定义', group:'insight', terms:['产品定义','产品方案','解决方案','功能设计','产品设计'], learn:'给一个模糊需求写一页方案：目标用户、核心场景、不做什么'},
+  {id:'priority', name:'优先级', group:'insight', terms:['优先级','需求排序','排队','取舍','RICE','ICE'], learn:'用 RICE 给 10 个需求排序，公开你的打分依据'},
+  {id:'roadmap', name:'路线图', group:'insight', terms:['路线图','roadmap','迭代计划','版本规划','整体规划'], learn:'把一个季度拆成 3 个可验收的里程碑'},
+  {id:'prd', name:'PRD 文档', group:'insight', terms:['PRD','需求文档','产品文档','需求规格'], learn:'写一份 3 页 PRD：背景、目标、流程、边界、验收'},
+  {id:'acceptance', name:'验收标准', group:'insight', terms:['验收标准','验收','上线标准','definition of done'], learn:'给每个功能补一条可测的完成标准（谁、什么时候、看到什么）'},
+  {id:'experience', name:'体验设计', group:'insight', terms:['体验设计','交互设计','用户流程','原型','信息架构'], learn:'用纸笔画 3 版关键流程，找 2 个人走一遍卡点'},
+  {id:'requirement_mgmt', name:'需求管理', group:'insight', terms:['需求池','需求管理','需求排期','需求跟踪'], learn:'建一个带状态的需求池，每周复盘一次关闭原因'},
+  {id:'positioning', name:'产品定位', group:'insight', terms:['产品定位','市场定位','用户定位','价值主张'], learn:'用一句话说清「为谁、解决什么问题、凭什么」'},
+
+  /* ---- 数据与实验 ---- */
+  {id:'metric_system', name:'指标体系', group:'data', terms:['指标体系','指标拆解','指标定义','度量体系'], learn:'给一个产品画「北极星 → 一级 → 二级」三层指标树'},
+  {id:'north_star', name:'北极星指标', group:'data', terms:['北极星指标','核心指标','北极星'], learn:'解释你项目的北极星为什么不是 DAU，并给出反例'},
+  {id:'ab_test', name:'A/B 测试', group:'data', terms:['A/B 测试','AB 测试','abtest','ab test','实验组','对照组','随机实验'], learn:'跑一次小实验：定义假设、样本量、成功指标、停止条件'},
+  {id:'funnel', name:'漏斗分析', group:'data', terms:['漏斗','转化漏斗','转化率','流失率'], learn:'画出核心流程漏斗，定位最大流失环节并给一个假设'},
+  {id:'retention', name:'留存分析', group:'data', terms:['留存','次留','7 日留存','复购'], learn:'算一次次日/7 日留存，按渠道拆开看差异'},
+  {id:'tracking', name:'埋点设计', group:'data', terms:['埋点','数据埋点','事件埋点','上报'], learn:'为一个功能设计 5 个埋点，写清事件名与属性'},
+  {id:'analytics', name:'数据分析', group:'data', terms:['数据分析','数据洞察','数据驱动','看板','BI'], learn:'用真实数据回答一个问题，输出「结论 + 证据 + 下一步」'},
+  {id:'sql', name:'SQL / 取数', group:'data', terms:['sql','数据库查询','取数'], learn:'用 SQL 独立取一张漏斗或留存表'},
+  {id:'attribution', name:'归因分析', group:'data', terms:['归因','归因分析','渠道归因'], learn:'对一个增长结果做渠道归因，区分相关与因果'},
+  {id:'experiment', name:'实验设计', group:'data', terms:['实验设计','实验方案','显著性','统计显著'], learn:'给一个改动设计实验：分组、样本量、指标、风险'},
+  {id:'cohort', name:'分群分析', group:'data', terms:['分群','用户分层','用户分群','cohort'], learn:'按行为把用户分 3 群，各给一个运营动作'},
+  {id:'report', name:'数据报告', group:'data', terms:['数据报告','周报','月报','复盘报告'], learn:'写一份一页纸数据周报：变化、原因、建议'},
+
+  /* ---- AI 与技术 ---- */
+  {id:'llm', name:'大模型理解', group:'ai', terms:['大模型','llm','语言模型','gpt','通义','文心','claude','llama','deepseek'], learn:'写一页「主流模型的能力/成本/延迟对比」，说清选型依据'},
+  {id:'prompt', name:'提示词工程', group:'ai', terms:['提示词','prompt','提示工程','system prompt'], learn:'给一个任务做 3 版提示词，用同一批输入对比效果'},
+  {id:'rag', name:'RAG / 知识库', group:'ai', terms:['RAG','检索增强','知识库','向量检索','知识问答'], learn:'搭一个最小 RAG：切块、检索、引用回填、不知道就说不知道'},
+  {id:'agent', name:'Agent / 智能体', group:'ai', terms:['agent','智能体','工作流编排','多智能体'], learn:'做一个 3 步 Agent（规划→执行→校验），记录失败案例'},
+  {id:'finetune', name:'微调', group:'ai', terms:['微调','fine-tune','finetune','sft','lora','训练模型'], learn:'了解 SFT/LoRA 的适用边界，写清什么时候不该微调'},
+  {id:'eval', name:'LLM 评测', group:'ai', terms:['评测','效果评估','模型评估','benchmark','基准测试','离线评测','评测集'], learn:'攒 30 条真实输入 + 期望输出，做一套可复跑的评测'},
+  {id:'hallucination', name:'幻觉治理', group:'ai', terms:['幻觉','事实性','引用核验','知识边界','防幻觉'], learn:'给一个生成功能加「引用回填 + 规则校验 + 不确定就往回退」'},
+  {id:'multimodal', name:'多模态', group:'ai', terms:['多模态','图像理解','语音识别','视频理解','vlm'], learn:'跑通一个图/语音输入的小 demo，记录边界'},
+  {id:'vector_db', name:'向量检索', group:'ai', terms:['向量库','向量数据库','embedding','语义检索'], learn:'比较关键词检索与向量检索在你自己数据上的召回差异'},
+  {id:'cost', name:'推理成本', group:'ai', terms:['推理成本','token 成本','算力成本','模型成本','调用成本'], learn:'按 P95 用户路径算一次单用户成本，给出降本方案'},
+  {id:'deploy', name:'模型部署', group:'ai', terms:['部署','推理服务','私有化部署','本地部署','模型服务'], learn:'把模型跑在本地/内网，写清资源、延迟、并发上限'},
+  {id:'ai_product', name:'AI 产品化', group:'ai', terms:['AI 产品','大模型应用','AI 应用','生成式 AI','AI 功能','AI 助手'], learn:'给一个 AI 功能写「能力边界 + 失败兜底 + 用户预期管理」'},
+
+  /* ---- 交付与工程 ---- */
+  {id:'project', name:'项目管理', group:'delivery', terms:['项目管理','项目推进','进度管理','里程碑'], learn:'用一张表管理「任务-负责人-截止-风险」，每周更新'},
+  {id:'schedule', name:'排期', group:'delivery', terms:['排期','时间表','迭代周期','工期'], learn:'给 3 个功能排一期，标出依赖与关键路径'},
+  {id:'cross_team', name:'跨团队协作', group:'delivery', terms:['跨团队','跨部门','协同','联动','协同推进'], learn:'牵头一次跨团队对齐会，输出会议纪要与责任人'},
+  {id:'agile', name:'敏捷流程', group:'delivery', terms:['敏捷','scrum','迭代','需求评审会','站会'], learn:'跑一轮完整迭代：计划、站会、评审、回顾'},
+  {id:'launch', name:'上线发布', group:'delivery', terms:['上线','发布','灰度','回滚','发布流程'], learn:'写一份发布 checklist：灰度策略、回滚条件、通知对象'},
+  {id:'monitoring', name:'监控告警', group:'delivery', terms:['监控','告警','线上问题','稳定性','事故复盘'], learn:'给核心流程配 3 个告警指标，演练一次线上问题定位'},
+  {id:'risk', name:'风险控制', group:'delivery', terms:['风险控制','风险预案','兜底','降级方案','风险'], learn:'给项目写「最可能翻车的 3 件事 + 预案」'},
+  {id:'vendor', name:'供应商管理', group:'delivery', terms:['供应商','外包','采购','第三方服务'], learn:'做一次供应商对比表：能力、成本、交付风险'},
+  {id:'tech_solution', name:'技术方案', group:'delivery', terms:['技术方案','技术选型','架构设计','接口设计'], learn:'和开发同学对一次技术方案，能复述关键取舍'},
+  {id:'quality', name:'质量管理', group:'delivery', terms:['质量','测试','缺陷','回归测试','QA'], learn:'为一个功能写验收用例，覆盖正常、边界、失败'},
+  {id:'compliance', name:'数据合规', group:'delivery', terms:['合规','隐私','数据安全','个人信息保护','等保'], learn:'梳理一次数据合规清单：收集什么、存多久、谁能看'},
+  {id:'documentation', name:'文档沉淀', group:'delivery', terms:['文档','复盘','沉淀','知识库','SOP'], learn:'把一次项目复盘写成可复用的 SOP'},
+
+  /* ---- 协作与影响 ---- */
+  {id:'communication', name:'沟通表达', group:'collab', terms:['沟通','表达','汇报','宣讲','讲解'], learn:'用 3 分钟讲清一个复杂项目，录音回听并改一版'},
+  {id:'stakeholder', name:'干系人管理', group:'collab', terms:['干系人','利益相关方','向上管理','老板','客户沟通'], learn:'画一张干系人地图：谁影响决策、谁会被影响'},
+  {id:'influence', name:'推动落地', group:'collab', terms:['推动','落地','推进','拉通','协调资源'], learn:'在没有直接汇报关系时推动一件事，记录你用了什么杠杆'},
+  {id:'leadership', name:'团队管理', group:'collab', terms:['团队管理','带团队','带队','管理经验','绩效'], learn:'写一份带 3 人小团队的分工与目标拆解'},
+  {id:'conflict', name:'冲突处理', group:'collab', terms:['冲突','分歧','意见不一致','说服'], learn:'复盘一次分歧：双方诉求、你的处理、结果与改进'},
+  {id:'presentation', name:'汇报演示', group:'collab', terms:['汇报','演示','宣讲','ppt','路演'], learn:'做一份 5 页汇报：结论先行、证据、下一步'},
+  {id:'hiring', name:'招聘面试', group:'collab', terms:['招聘','面试官','招人','团队搭建'], learn:'写一份岗位画像 + 5 道结构化面试题'},
+  {id:'mentoring', name:'带人培养', group:'collab', terms:['带人','培养','指导','新人'], learn:'给一个新人写 30 天上手计划'},
+  {id:'feedback', name:'反馈机制', group:'collab', terms:['反馈','复盘会','复盘文化','一对一'], learn:'主持一次复盘会：事实、原因、改进项、负责人'},
+  {id:'remote', name:'远程协作', group:'collab', terms:['远程','异步协作','文档协作','在线协作'], learn:'用异步文档推进一次决策，记录推进过程'},
+  {id:'negotiation', name:'资源协调', group:'collab', terms:['谈判','协商','争取资源','资源协调'], learn:'用「目标-约束-交换」结构争取一次资源'},
+  {id:'writing', name:'书面表达', group:'collab', terms:['写作','文案','文档能力','报告撰写'], learn:'把一份长文档压成 1 页决策简报'},
+
+  /* ---- 商业化与行业 ---- */
+  {id:'business_model', name:'商业模式', group:'biz', terms:['商业模式','变现模式','盈利模式','商业化'], learn:'给一个产品画商业模式画布，写清谁付钱、为什么付'},
+  {id:'pricing', name:'定价策略', group:'biz', terms:['定价','价格策略','付费','订阅','收费'], learn:'做一次竞品定价对比，给一个定价/付费墙方案'},
+  {id:'growth', name:'增长', group:'biz', terms:['增长','拉新','获客','裂变','增长黑客','用户增长'], learn:'设计一个增长实验：渠道、素材、指标、止损'},
+  {id:'channel', name:'渠道运营', group:'biz', terms:['渠道','投放','广告','信息流','私域','社群'], learn:'做一次渠道 ROI 复盘：花了多少、来多少人、留下多少'},
+  {id:'market', name:'行业研究', group:'biz', terms:['行业研究','市场研究','市场分析','行业分析','赛道'], learn:'写一份 3 页行业简报：格局、玩家、机会与风险'},
+  {id:'gtm', name:'GTM / 上市', group:'biz', terms:['GTM','上市策略','发布策略','商业化落地','go-to-market'], learn:'给一个功能写 GTM 一页纸：卖给谁、怎么卖、如何衡量'},
+  {id:'partnership', name:'生态合作', group:'biz', terms:['合作','生态','伙伴','BD','战略合作'], learn:'梳理一次合作评估：对方要什么、我要什么、怎么退出'},
+  {id:'customer', name:'客户成功', group:'biz', terms:['客户成功','客户运营','大客户','KA'], learn:'跟进一个客户案例：需求、使用、结果、续费原因'},
+  {id:'regulation', name:'政策法规', group:'biz', terms:['政策','法规','监管','备案','生成式 AI 管理办法'], learn:'梳理生成式 AI 相关合规要求，落到产品 checklist'},
+  {id:'competitor_intel', name:'竞争情报', group:'biz', terms:['竞争情报','市场情报','动态监测'], learn:'建一个竞品动态跟踪表，每周更新 5 条'},
+  {id:'unit_econ', name:'单位经济模型', group:'biz', terms:['单位经济','UE','LTV','CAC','成本收益'], learn:'算一次 LTV / CAC，给出盈亏平衡判断'},
+  {id:'global', name:'出海', group:'biz', terms:['出海','海外市场','国际化'], learn:'研究一个海外市场的用户与合规差异，写一页结论'}
+];
+
+var STOP = ('的了和是就都而及与或一个没有我们你们他们它在上下对为到说要会被把让从但并等之其更最很不是你他她吗呢吧啊什么怎么可以应该因为所以如果虽然然而因此比如例如通过进行以及还有岗位职责要求负责参与协助优先熟悉了解具备能力经验工作产品数据团队项目公司业务相关以上以下一年三年五年本科硕士学历专业方向').split('');
+var STOPWORDS = {};
+STOP.forEach(function(c){ STOPWORDS[c] = 1; });
+
+/* ================= 工具函数 ================= */
+function $(id){ return document.getElementById(id); }
+function norm(text){
+  return String(text || '')
+    .replace(/[\uFF01-\uFF5E]/g, function(ch){ return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0); })
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+function countTerm(haystack, term){
+  var needle = term.toLowerCase();
+  var count = 0, index = 0;
+  while (needle && (index = haystack.indexOf(needle, index)) !== -1) { count += 1; index += needle.length; }
+  return count;
+}
+function splitJDs(text){
+  var parts = String(text || '').split(/\n\s*-{3,}\s*\n/);
+  if (parts.length === 1) {
+    parts = String(text || '').split(/\n(?=(?:岗位|职位|职位名称|招聘岗位|Job Title)\s*[：:])/i);
+  }
+  return parts.map(function(part){ return part.trim(); }).filter(function(part){ return part.length >= 30; });
+}
+function analyzeJD(text){
+  var normalized = norm(text);
+  var hits = {}, termsHit = {};
+  COMPETENCIES.forEach(function(comp){
+    var count = 0;
+    comp.terms.forEach(function(term){
+      var c = countTerm(normalized, term);
+      if (c) { count += c; termsHit[comp.id] = (termsHit[comp.id] || []).concat(term); }
+    });
+    if (count) hits[comp.id] = count;
+  });
+  return {hits: hits, terms: termsHit, normalized: normalized};
+}
+function analyzeAll(text){
+  var jds = splitJDs(text);
+  var perJD = jds.map(function(jd, index){
+    var result = analyzeJD(jd);
+    return {index: index, hits: result.hits, terms: result.terms, title: (jd.split('\n')[0] || ('JD ' + (index + 1))).slice(0, 40)};
+  });
+  var totals = {};
+  perJD.forEach(function(jd){
+    Object.keys(jd.hits).forEach(function(id){
+      if (!totals[id]) totals[id] = {count: 0, jdCount: 0};
+      totals[id].count += jd.hits[id];
+      totals[id].jdCount += 1;
+    });
+  });
+  var groups = {};
+  GROUPS.forEach(function(group){
+    var jdWithGroup = 0;
+    perJD.forEach(function(jd){
+      var has = COMPETENCIES.some(function(comp){ return comp.group === group.id && jd.hits[comp.id]; });
+      if (has) jdWithGroup += 1;
+    });
+    groups[group.id] = perJD.length ? jdWithGroup / perJD.length : 0;
+  });
+  return {jds: perJD, totals: totals, groups: groups, jdCount: perJD.length};
+}
+function topCompetencies(totals, limit){
+  var list = Object.keys(totals).map(function(id){
+    var comp = COMPETENCIES.filter(function(item){ return item.id === id; })[0];
+    return comp ? {comp: comp, count: totals[id].count, jdCount: totals[id].jdCount} : null;
+  }).filter(Boolean);
+  list.sort(function(a, b){ return b.jdCount - a.jdCount || b.count - a.count; });
+  return list.slice(0, limit || 15);
+}
+
+/* ================= 渲染 ================= */
+var LAST = null;
+function render(){
+  var text = $('raw').value;
+  var result = analyzeAll(text);
+  if (!result.jdCount) { $('err').textContent = '没识别到 JD：请至少粘贴一份完整 JD（30 字以上），多份之间用 --- 分隔。'; return; }
+  $('err').textContent = '';
+  LAST = result;
+  $('res').classList.remove('hidden');
+  $('gap-card').classList.remove('hidden');
+
+  var totalHits = Object.keys(result.totals).length;
+  $('summary').textContent = '识别到 ' + result.jdCount + ' 份 JD，共命中 ' + totalHits + ' / ' + COMPETENCIES.length + ' 项能力。';
+  $('chips').innerHTML = [
+    '<span class="chip">📄 ' + result.jdCount + ' 份 JD</span>',
+    '<span class="chip">🧠 ' + totalHits + ' 项能力被提到</span>',
+    '<span class="chip gray">词典 ' + COMPETENCIES.length + ' 项</span>'
+  ].join('');
+
+  drawRadar(result.groups);
+  $('legend').innerHTML = GROUPS.map(function(group){
+    return '<span><i style="background:' + group.color + '"></i>' + group.name + '</span>';
+  }).join('');
+
+  var top = topCompetencies(result.totals, 15);
+  var maxJd = 1;
+  top.forEach(function(item){ if (item.jdCount > maxJd) maxJd = item.jdCount; });
+  var skills = loadSkills();
+  $('comps').innerHTML = top.map(function(item){
+    var pct = Math.round(item.jdCount / maxJd * 100);
+    var checked = skills.indexOf(item.comp.id) !== -1 ? ' checked' : '';
+    return '<div class="comp" style="--c:' + groupColor(item.comp.group) + '">'
+      + '<span class="name">' + item.comp.name + '</span>'
+      + '<span class="bar"><i style="width:' + pct + '%"></i></span>'
+      + '<span class="num">' + item.jdCount + ' 份 / ' + item.count + ' 次</span>'
+      + '<label><input type="checkbox" data-id="' + item.comp.id + '"' + checked + '> 我有证据</label>'
+      + '</div>';
+  }).join('');
+
+  renderUnknown(result);
+  renderGaps();
+  saveAnalysis(result);
+}
+
+/* 供「求职工作台」读取：把这次分析的关键结果落一份到 localStorage */
+function saveAnalysis(result){
+  try {
+    var top = Object.keys(result.totals).map(function(id){
+      var comp = COMPETENCIES.filter(function(item){ return item.id === id; })[0];
+      return {id: id, name: comp ? comp.name : id, group: comp ? comp.group : '',
+        jdCount: result.totals[id].jdCount, count: result.totals[id].count};
+    }).sort(function(a, b){ return b.jdCount - a.jdCount; }).slice(0, 12);
+    localStorage.setItem('jd_last', JSON.stringify({
+      updatedAt: new Date().toISOString(),
+      jdCount: result.jdCount,
+      top: top,
+      groups: result.groups
+    }));
+  } catch (e) {}
+}
+
+function groupColor(groupId){
+  var group = GROUPS.filter(function(item){ return item.id === groupId; })[0];
+  return group ? group.color : '#ff7a45';
+}
+
+function drawRadar(values){
+  var canvas = $('radar');
+  var ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  var dpr = window.devicePixelRatio || 1;
+  var size = 420;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, size, size);
+  var cx = size / 2, cy = size / 2, radius = size * 0.34;
+  var count = GROUPS.length;
+  function point(i, value){
+    var angle = -Math.PI / 2 + i * 2 * Math.PI / count;
+    return [cx + Math.cos(angle) * radius * value, cy + Math.sin(angle) * radius * value];
+  }
+  // 网格
+  for (var ring = 1; ring <= 4; ring += 1) {
+    ctx.beginPath();
+    for (var i = 0; i <= count; i += 1) {
+      var p = point(i % count, ring / 4);
+      if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+    }
+    ctx.strokeStyle = 'rgba(120,100,80,.16)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  // 轴线 + 标签
+  ctx.font = '12px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.textAlign = 'center';
+  GROUPS.forEach(function(group, i){
+    var edge = point(i, 1);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(edge[0], edge[1]);
+    ctx.strokeStyle = 'rgba(120,100,80,.16)'; ctx.stroke();
+    var label = point(i, 1.18);
+    ctx.fillStyle = '#6f675d';
+    ctx.fillText(group.name, label[0], label[1] + 4);
+  });
+  // 数据多边形
+  ctx.beginPath();
+  GROUPS.forEach(function(group, i){
+    var value = Math.max(0.04, values[group.id] || 0);
+    var p = point(i, value);
+    if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,122,69,.22)';
+  ctx.strokeStyle = '#ff7a45';
+  ctx.lineWidth = 2;
+  ctx.fill(); ctx.stroke();
+  // 数据点
+  GROUPS.forEach(function(group, i){
+    var p = point(i, Math.max(0.04, values[group.id] || 0));
+    ctx.beginPath(); ctx.arc(p[0], p[1], 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = group.color; ctx.fill();
+  });
+}
+
+function renderUnknown(result){
+  var covered = {};
+  COMPETENCIES.forEach(function(comp){
+    comp.terms.forEach(function(term){ covered[term.toLowerCase()] = 1; });
+  });
+  var text = norm($('raw').value);
+  var freq = {};
+  var runs = text.match(/[\u4e00-\u9fa5]{4,}/g) || [];
+  runs.forEach(function(run){
+    for (var i = 0; i < run.length - 1; i += 1) {
+      var gram = run.slice(i, i + 2);
+      if (STOPWORDS[gram[0]] && STOPWORDS[gram[1]]) continue;
+      if (covered[gram]) continue;
+      freq[gram] = (freq[gram] || 0) + 1;
+    }
+  });
+  var words = Object.keys(freq).filter(function(word){ return freq[word] >= 2 && !STOPWORDS[word[0]]; })
+    .sort(function(a, b){ return freq[b] - freq[a]; }).slice(0, 12);
+  if (!words.length) { $('unknown').textContent = ''; return; }
+  $('unknown').innerHTML = '🔎 还有 ' + words.length + ' 个高频词没进词典（可能是新能力词，欢迎反馈）:' 
+    + words.map(function(word){ return '<span>' + word + '×' + freq[word] + '</span>'; }).join('');
+}
+
+function loadSkills(){
+  try {
+    var raw = localStorage.getItem('jd_skills');
+    if (!raw) return [];
+    var data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  } catch (e) { return []; }
+}
+function saveSkills(list){
+  try { localStorage.setItem('jd_skills', JSON.stringify(list)); } catch (e) {}
+}
+function renderGaps(){
+  if (!LAST) return;
+  var skills = loadSkills();
+  var list = Object.keys(LAST.totals).map(function(id){
+    var comp = COMPETENCIES.filter(function(item){ return item.id === id; })[0];
+    return comp ? {comp: comp, jdCount: LAST.totals[id].jdCount, count: LAST.totals[id].count} : null;
+  }).filter(Boolean);
+  var rated = list.filter(function(item){ return skills.indexOf(item.comp.id) !== -1; });
+  var gaps = list.filter(function(item){ return skills.indexOf(item.comp.id) === -1; })
+    .sort(function(a, b){ return b.jdCount - a.jdCount || b.count - a.count; })
+    .slice(0, 8);
+  $('gap-summary').textContent = '被提到 ' + list.length + ' 项能力；你勾选了 ' + rated.length + ' 项「有证据」，还有 ' + (list.length - rated.length) + ' 项没证据。下面按"被提及的 JD 数"排序，优先补前几个。';
+  $('gaps').innerHTML = gaps.length ? gaps.map(function(item){
+    return '<div class="gap">'
+      + '<h4>' + item.comp.name + '　<span style="color:#a89b8a;font-weight:400;font-size:12.5px">' + item.jdCount + ' 份 JD 提到</span></h4>'
+      + '<p>怎么补：<span class="learn">' + item.comp.learn + '</span></p>'
+      + '</div>';
+  }).join('') : '<p class="hint">所有被提到的能力你都勾了「有证据」——要么真的强，要么勾得太随意，建议找个人按项目追问一遍。</p>';
+  var strengths = rated.sort(function(a, b){ return b.jdCount - a.jdCount; }).slice(0, 5);
+  $('strength').textContent = strengths.length
+    ? '💪 可以重点讲的优势：' + strengths.map(function(item){ return item.comp.name; }).join('、')
+    : '';
+}
+
+function exportMarkdown(){
+  if (!LAST) return;
+  var skills = loadSkills();
+  var list = Object.keys(LAST.totals).map(function(id){
+    var comp = COMPETENCIES.filter(function(item){ return item.id === id; })[0];
+    return comp ? {comp: comp, jdCount: LAST.totals[id].jdCount, count: LAST.totals[id].count} : null;
+  }).filter(Boolean);
+  var gaps = list.filter(function(item){ return skills.indexOf(item.comp.id) === -1; })
+    .sort(function(a, b){ return b.jdCount - a.jdCount || b.count - a.count; });
+  var strengths = list.filter(function(item){ return skills.indexOf(item.comp.id) !== -1; })
+    .sort(function(a, b){ return b.jdCount - a.jdCount; });
+  var lines = [];
+  lines.push('# JD 雷达 · ' + new Date().toISOString().slice(0, 10));
+  lines.push('');
+  lines.push('扫描了 ' + LAST.jdCount + ' 份 JD，命中 ' + list.length + ' 项能力。');
+  lines.push('');
+  lines.push('## 市场高频能力');
+  list.sort(function(a, b){ return b.jdCount - a.jdCount; }).slice(0, 10).forEach(function(item){
+    lines.push('- ' + item.comp.name + '：' + item.jdCount + ' 份 JD 提到');
+  });
+  lines.push('');
+  lines.push('## 我的 gap（按优先级）');
+  gaps.slice(0, 10).forEach(function(item){
+    lines.push('- [ ] **' + item.comp.name + '**（' + item.jdCount + ' 份 JD）：' + item.comp.learn);
+  });
+  lines.push('');
+  lines.push('## 我已具备的证据');
+  if (!strengths.length) lines.push('- （还没有勾选）');
+  strengths.forEach(function(item){ lines.push('- ✅ ' + item.comp.name + '（' + item.jdCount + ' 份 JD 提到）'); });
+  lines.push('');
+  lines.push('> 由 JD 雷达生成 · 纯前端 · 能力词典 72 项');
+  var blob = new Blob([lines.join('\n')], {type:'text/markdown;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'JD雷达-' + new Date().toISOString().slice(0, 10) + '.md';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
+  toast('已导出 Markdown');
+}
+
+function toast(message){
+  var el = $('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(window.__t);
+  window.__t = setTimeout(function(){ el.classList.remove('show'); }, 1800);
+}
+
+/* ================= 示例 JD（3 份，覆盖不同侧重点） ================= */
+var SAMPLE = [
+  '岗位名称：AI 产品经理（内容平台）\n工作职责：\n1. 负责 AI 写作助手的产品定义与路线图，拆解用户需求并输出 PRD；\n2. 与算法团队协作，设计提示词策略和 RAG 知识库方案，控制幻觉；\n3. 建立指标体系（北极星指标、留存、生成成功率），通过数据分析和埋点验证效果；\n4. 跨部门协调设计、工程、运营，推动版本上线与灰度发布。\n任职要求：\n- 3 年以上产品经验，有 LLM 应用落地经验优先；\n- 熟悉 A/B 测试与漏斗分析，能独立取数；\n- 有较强的沟通表达与项目管理能力。',
+  '招聘岗位：AI 产品经理（B 端 SaaS）\n岗位职责：\n- 负责企业知识库问答产品的需求分析与产品设计，输出解决方案和验收标准；\n- 把控项目排期与风险管理，协调研发、交付、客户成功团队；\n- 跟踪客户使用数据，输出客户成功分析报告，优化续费与增购；\n- 关注生成式 AI 相关合规要求，确保数据安全与隐私合规。\n任职要求：\n- 熟悉 B 端产品方法论，有私有化部署或大客户交付经验加分；\n- 具备较强的客户沟通与谈判能力；\n- 了解大模型能力边界与推理成本。',
+  '职位：增长产品经理（AI 方向）\n职责描述：\n1. 负责 AI 工具产品的增长策略，通过渠道投放、裂变活动和私域社群拉新获客；\n2. 设计并执行 A/B 实验，分析转化漏斗与留存，找到增长杠杆；\n3. 与商业化团队一起制定定价策略和付费转化方案；\n4. 输出行业研究与竞品分析，支持 GTM 决策。\n岗位要求：\n- 数据驱动，熟悉 SQL 和常见 BI 工具；\n- 有从 0 到 1 的增长项目经验；\n- 对 AI 产品有热情，能快速学习新模型能力。'
+].join('\n\n---\n\n');
+
+/* ================= 事件绑定 ================= */
+$('go').addEventListener('click', render);
+$('sample').addEventListener('click', function(){ $('raw').value = SAMPLE; render(); });
+$('clear').addEventListener('click', function(){
+  $('raw').value = ''; LAST = null;
+  $('res').classList.add('hidden'); $('gap-card').classList.add('hidden');
+  $('err').textContent = '';
+  try { localStorage.removeItem('jd_raw'); } catch (e) {}
+});
+$('raw').addEventListener('input', function(){
+  try { localStorage.setItem('jd_raw', $('raw').value); } catch (e) {}
+});
+$('comps').addEventListener('change', function(event){
+  var target = event.target;
+  if (!target || target.type !== 'checkbox') return;
+  var id = target.getAttribute('data-id');
+  var skills = loadSkills();
+  var index = skills.indexOf(id);
+  if (target.checked && index === -1) skills.push(id);
+  if (!target.checked && index !== -1) skills.splice(index, 1);
+  saveSkills(skills);
+  renderGaps();
+});
+$('export').addEventListener('click', exportMarkdown);
+$('reset').addEventListener('click', function(){
+  saveSkills([]);
+  toast('已重置勾选');
+  if (LAST) render();
+});
+
+/* 恢复上次输入 */
+try {
+  var saved = localStorage.getItem('jd_raw');
+  if (!saved) {
+    try {
+      var shared = JSON.parse(localStorage.getItem('jwb_state') || 'null');
+      if (shared && shared.jd) saved = shared.jd;
+    } catch (e) {}
+  }
+  if (saved) $('raw').value = saved;
+} catch (e) {}
+</script>
+</body>
+</html>

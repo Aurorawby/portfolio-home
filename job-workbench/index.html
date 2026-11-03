@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>求职工作台 · 从 JD 到面试复盘的一条线</title>
+<meta name="description" content="把 JD 雷达、模拟面试官、面试复盘器串成一条流程：扫描 JD → 生成面试题 → 面完复盘 → 输出一份求职档案。数据全在本地。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --accent:#ff7a45; --accent-soft:#ffe8dc; --ok:#0e6b58; --ok-soft:#e4f7ef;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(900px 500px at 0% -10%,#ffe8dc,transparent 60%),radial-gradient(700px 400px at 110% 0%,#ffe9c9,transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    min-height:100vh;padding:32px 16px calc(40px + env(safe-area-inset-bottom))}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 8px}
+  .sub{color:var(--muted);line-height:1.8;margin:0 0 22px;font-size:14.5px}
+  .card{background:var(--card);border-radius:20px;padding:22px;box-shadow:0 10px 28px rgba(60,42,20,.09);margin-bottom:18px}
+  h2{font-size:19px;margin:0 0 6px}
+  .sect-sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media (max-width:820px){.steps{grid-template-columns:1fr}}
+  .step{position:relative;border:1.5px solid var(--line);border-radius:18px;padding:18px;background:#fffdfa;display:flex;flex-direction:column;gap:8px}
+  .step.done{border-color:#bfe6d8;background:#fbfffd}
+  .step .no{font-size:12px;font-weight:800;color:#a89b8a;letter-spacing:1px}
+  .step h3{margin:0;font-size:16px}
+  .step p{margin:0;color:var(--muted);font-size:12.8px;line-height:1.7;flex:1}
+  .badge{align-self:flex-start;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700;background:#f0ece5;color:#6f675d}
+  .step.done .badge{background:var(--ok-soft);color:var(--ok)}
+  .btn{display:inline-block;text-align:center;border:0;border-radius:999px;padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer;
+    background:var(--accent);color:#fff;text-decoration:none;box-shadow:0 8px 18px rgba(255,122,69,.22)}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  .btn.small{padding:8px 14px;font-size:13px}
+  .btn:active{transform:scale(.98)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:820px){.two{grid-template-columns:1fr}}
+  label.fl{display:block;font-size:13px;font-weight:700;margin:0 0 6px;color:#5d554b}
+  textarea{width:100%;min-height:120px;border:1.5px solid var(--line);border-radius:14px;padding:13px;font-size:13.5px;line-height:1.7;
+    font-family:inherit;resize:vertical;background:#fffdfa}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+  .hint{color:var(--muted);font-size:12.5px;line-height:1.7}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media (max-width:820px){.grid3{grid-template-columns:1fr}}
+  .stat{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fffdfa}
+  .stat .k{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .stat .v{font-size:24px;font-weight:800;letter-spacing:.5px}
+  .stat .d{font-size:12.5px;color:var(--muted);line-height:1.7;margin-top:6px}
+  .next{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 14px 14px 0;padding:12px 16px;font-size:13.5px;line-height:1.8;margin-top:14px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:#1f1b16;color:#fff;padding:10px 18px;border-radius:999px;
+    font-size:14px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:9}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:30px;line-height:1.9}
+  footer a{color:#8a5a1f}
+  ul{padding-left:18px;margin:6px 0}
+  li{font-size:13px;line-height:1.8;color:#5d554b}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧭 求职工作台</h1>
+  <p class="sub">一条线走完求职准备：<b>扫描 JD 看市场要什么 → 用 JD+简历生成面试题 → 面完复盘 → 输出一份求职档案</b>。<br>
+  三个工具已经做好，这里负责把它们串起来、共享数据、并把结果汇总成你能带走的东西。<b>数据全部存在本机浏览器</b>，不上传。</p>
+
+  <section class="card">
+    <h2>三步进度</h2>
+    <p class="sect-sub">点每张卡进入对应工具；工具里的输入会自动带回这里。</p>
+    <div class="steps">
+      <div class="step" id="step-1">
+        <span class="no">STEP 1</span>
+        <h3>扫描 JD</h3>
+        <p>粘贴 3-10 份目标岗位 JD，得到能力雷达、高频能力榜和你的 gap 清单。</p>
+        <span class="badge" id="badge-1">未开始</span>
+        <a class="btn" href="../jd-radar/index.html">去扫描 JD →</a>
+        <a class="btn ghost small" href="../jd-radar/index.html" data-carry="jd" id="go-jd">带上当前 JD</a>
+      </div>
+      <div class="step" id="step-2">
+        <span class="no">STEP 2</span>
+        <h3>生成面试题</h3>
+        <p>用同一份 JD + 你的简历，生成岗位能力题、简历深挖题和追问。</p>
+        <span class="badge" id="badge-2">未开始</span>
+        <a class="btn" href="../mock-interview/index.html" id="go-mock">去生成面试题 →</a>
+      </div>
+      <div class="step" id="step-3">
+        <span class="no">STEP 3</span>
+        <h3>面完复盘</h3>
+        <p>把真实被问的问题记下来、逐题自评，找出下次要重练的题。</p>
+        <span class="badge" id="badge-3">未开始</span>
+        <a class="btn" href="../interview-review/index.html" id="go-review">去复盘 →</a>
+        <button class="btn ghost small" id="carry-questions">把预测题带入复盘</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>① 当前目标（JD + 简历）</h2>
+    <p class="sect-sub">填一次，三个工具共用；点「保存并带给工具」后进入工具会自动带出。</p>
+    <div class="two">
+      <div>
+        <label class="fl" for="jd">目标岗位 JD</label>
+        <textarea id="jd" placeholder="粘贴目标岗位 JD（可多份，用 --- 分隔）"></textarea>
+      </div>
+      <div>
+        <label class="fl" for="resume">我的简历 / 项目经历</label>
+        <textarea id="resume" placeholder="粘贴简历里的项目经历部分，模拟面试官会用它生成简历深挖题"></textarea>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="save">保存并带给工具</button>
+      <button class="btn ghost" id="sample">载入示例</button>
+      <button class="btn ghost" id="refresh">🔄 刷新汇总</button>
+      <span class="hint" id="saved-at"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>② 求职档案（自动汇总）</h2>
+    <p class="sect-sub">三个工具里产生的数据会自动出现在这里；导出后可以贴进复盘笔记或面试前速览。</p>
+    <div class="grid3">
+      <div class="stat"><div class="k">JD 能力扫描</div><div class="v" id="stat-jd">—</div><div class="d" id="desc-jd">尚未扫描</div></div>
+      <div class="stat"><div class="k">预测面试题</div><div class="v" id="stat-mock">—</div><div class="d" id="desc-mock">尚未生成</div></div>
+      <div class="stat"><div class="k">真实面试复盘</div><div class="v" id="stat-review">—</div><div class="d" id="desc-review">尚未复盘</div></div>
+    </div>
+    <div class="next" id="next">下一步：先在 STEP 1 扫描 JD。</div>
+    <div class="row">
+      <button class="btn" id="export">⬇️ 导出求职档案（Markdown）</button>
+      <button class="btn ghost" id="copy">📋 复制到剪贴板</button>
+      <button class="btn ghost" id="clear">清空本地数据</button>
+    </div>
+    <p class="hint" style="margin-top:10px">导出的档案包括：JD 摘要与高频能力、预测题清单、真实面试复盘与薄弱题、下一步行动清单。</p>
+  </section>
+
+  <footer>
+    求职工作台 · 把三个求职工具串成一条线 · 纯前端 · 不采集数据 ·
+    <a href="../index.html">← 回作品集</a><br>
+    说明：三个工具各自也能单独用；工作台的价值是共享输入和汇总输出。
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ================= 数据键（和三个工具共用） ================= */
+var K_JWB = 'jwb_state';                 // 工作台：{jd, resume, updatedAt}
+var K_JD = 'jd_last';                    // JD 雷达：最近一次分析结果
+var K_MOCK = 'mock_interview_state_v1';  // 模拟面试官：{jd,resume,ratings,notes,result}
+var K_REVIEW = 'ir_state';               // 面试复盘器：{items:[...]}
+
+function $(id){ return document.getElementById(id); }
+function loadJSON(key){
+  try { var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+function saveJSON(key, value){
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; }
+}
+function clip(text, length){
+  var clean = String(text || '').replace(/\s+/g, ' ').trim();
+  return clean.length > length ? clean.slice(0, length) + '…' : clean;
+}
+function toast(message){
+  var el = $('toast'); el.textContent = message; el.classList.add('show');
+  clearTimeout(window.__t); window.__t = setTimeout(function(){ el.classList.remove('show'); }, 1800);
+}
+
+/* ================= 读取三个工具的数据 ================= */
+function loadAll(){
+  var jwb = loadJSON(K_JWB) || {jd: '', resume: ''};
+  var jdLast = loadJSON(K_JD);
+  var mock = loadJSON(K_MOCK);
+  var review = loadJSON(K_REVIEW);
+  return {jwb: jwb, jdLast: jdLast, mock: mock, review: review};
+}
+
+/* ================= 界面渲染 ================= */
+function refresh(){
+  var data = loadAll();
+  $('jd').value = data.jwb.jd || '';
+  $('resume').value = data.jwb.resume || '';
+  $('saved-at').textContent = data.jwb.updatedAt ? ('上次保存：' + data.jwb.updatedAt.slice(0, 16).replace('T', ' ')) : '还没有保存过';
+
+  var jdCount = data.jdLast && data.jdLast.jdCount ? data.jdLast.jdCount : 0;
+  var jdTop = data.jdLast && data.jdLast.top ? data.jdLast.top : [];
+  var mockQuestions = data.mock && data.mock.result && data.mock.result.questions ? data.mock.result.questions : [];
+  var reviewItems = data.review && data.review.items ? data.review.items : [];
+  var weak = reviewItems.filter(function(item){ return item.rating > 0 && item.rating <= 2; });
+
+  $('stat-jd').textContent = jdCount ? (jdCount + ' 份 JD') : '—';
+  $('desc-jd').textContent = jdCount ? ('识别 ' + jdTop.length + ' 项高频能力：' + jdTop.slice(0, 3).map(function(item){ return item.name; }).join('、')) : '尚未扫描';
+  $('stat-mock').textContent = mockQuestions.length ? (mockQuestions.length + ' 道') : '—';
+  $('desc-mock').textContent = mockQuestions.length ? ('简历深挖 ' + countKind(mockQuestions, 'resume') + ' 道 · 能力题 ' + countKind(mockQuestions, 'job') + ' 道') : '尚未生成';
+  $('stat-review').textContent = reviewItems.length ? (reviewItems.length + ' 道') : '—';
+  $('desc-review').textContent = reviewItems.length ? ('薄弱 ' + weak.length + ' 道' + (weak.length ? '：' + weak.slice(0, 2).map(function(item){ return item.q.slice(0, 12) + '…'; }).join('、') : '')) : '尚未复盘';
+
+  $('step-1').classList.toggle('done', jdCount > 0);
+  $('step-2').classList.toggle('done', mockQuestions.length > 0);
+  $('step-3').classList.toggle('done', reviewItems.length > 0);
+  $('badge-1').textContent = jdCount ? ('已完成' + (data.jdLast.updatedAt ? ' · ' + data.jdLast.updatedAt.slice(5, 10) : '')) : '未开始';
+  $('badge-2').textContent = mockQuestions.length ? ('已完成 · ' + mockQuestions.length + ' 道') : '未开始';
+  $('badge-3').textContent = reviewItems.length ? ('已完成 · ' + reviewItems.length + ' 道') : '未开始';
+
+  $('next').textContent = nextAdvice(jdCount, mockQuestions.length, reviewItems.length, weak.length);
+}
+
+function countKind(questions, kind){
+  return questions.filter(function(item){ return item.kind === kind; }).length;
+}
+function nextAdvice(jdCount, mockCount, reviewCount, weakCount){
+  if (!jdCount) return '下一步：在 STEP 1 粘贴 3-10 份 JD，先看清楚市场要什么。';
+  if (!mockCount) return '下一步：STEP 2 用同一份 JD + 简历生成面试题，重点看简历深挖题。';
+  if (!reviewCount) return '下一步：面试后把真实问题记进 STEP 3 复盘器，然后回来导出档案。';
+  if (weakCount) return '下一步：有 ' + weakCount + ' 道题自评 ≤2 分，面试前优先重练；再对照 JD 雷达补 1-2 项 gap。';
+  return '这条线已经跑通：把档案导出，面试前 10 分钟过一遍。';
+}
+
+/* ================= 保存 / 带入 ================= */
+function saveInputs(){
+  var jd = $('jd').value.trim();
+  var resume = $('resume').value.trim();
+  if (!jd) { toast('先粘贴 JD'); return; }
+  var now = new Date().toISOString();
+  saveJSON(K_JWB, {jd: jd, resume: resume, updatedAt: now});
+  // 带给 JD 雷达（它的输入键）
+  try { localStorage.setItem('jd_raw', jd); } catch (e) {}
+  // 带给模拟面试官（保留它已有的题目和自评，只更新输入）
+  var mock = loadJSON(K_MOCK) || {};
+  mock.jd = jd;
+  mock.resume = resume;
+  if (!mock.ratings) mock.ratings = {};
+  if (!mock.notes) mock.notes = {};
+  saveJSON(K_MOCK, mock);
+  refresh();
+  toast('已保存，三个工具会自动带出');
+}
+
+function carryQuestionsToReview(){
+  var data = loadAll();
+  var questions = data.mock && data.mock.result && data.mock.result.questions ? data.mock.result.questions : [];
+  if (!questions.length) { toast('先去 STEP 2 生成面试题'); return; }
+  var review = data.review || {items: []};
+  if (!Array.isArray(review.items)) review.items = [];
+  var existing = {};
+  review.items.forEach(function(item){ existing[item.q] = 1; });
+  var added = 0;
+  questions.forEach(function(item){
+    if (existing[item.text]) return;
+    existing[item.text] = 1;
+    added += 1;
+    review.items.push({
+      q: item.text,
+      type: '待分类',
+      intent: item.focus || '',
+      framework: [],
+      followup: item.follow || '',
+      notes: '',
+      rating: 0
+    });
+  });
+  saveJSON(K_REVIEW, review);
+  refresh();
+  toast(added ? ('已把 ' + added + ' 道预测题带入复盘器') : '复盘器里已经有这些题了');
+}
+
+/* ================= 汇总导出 ================= */
+function buildDossier(data){
+  var today = new Date().toISOString().slice(0, 10);
+  var jd = (data.jwb && data.jwb.jd) || '';
+  var resume = (data.jwb && data.jwb.resume) || '';
+  var jdLast = data.jdLast || null;
+  var mock = data.mock || null;
+  var review = data.review || null;
+  var mockQuestions = mock && mock.result && mock.result.questions ? mock.result.questions : [];
+  var reviewItems = review && review.items ? review.items : [];
+  var weak = reviewItems.filter(function(item){ return item.rating > 0 && item.rating <= 2; });
+
+  var lines = [];
+  lines.push('# 求职档案 · ' + today);
+  lines.push('');
+  lines.push('> 由「求职工作台」自动汇总：JD 扫描 → 预测面试题 → 真实复盘。');
+  lines.push('');
+  lines.push('## 基本信息');
+  lines.push('');
+  lines.push('- 目标 JD：' + (jd ? clip(jd, 160) : '（未填写）'));
+  lines.push('- 简历摘要：' + (resume ? clip(resume, 120) : '（未填写）'));
+  lines.push('');
+  lines.push('## ① JD 能力扫描');
+  lines.push('');
+  if (jdLast && jdLast.jdCount) {
+    lines.push('- 扫描：' + jdLast.jdCount + ' 份 JD，识别 ' + (jdLast.top || []).length + ' 项高频能力');
+    lines.push('- 高频能力：');
+    (jdLast.top || []).slice(0, 8).forEach(function(item, index){
+      lines.push('  ' + (index + 1) + '. ' + item.name + '（' + item.jdCount + ' 份 JD / ' + item.count + ' 次）');
+    });
+  } else {
+    lines.push('- 尚未扫描：去 `jd-radar/index.html` 粘贴 JD 后回来刷新。');
+  }
+  lines.push('');
+  lines.push('## ② 预测面试题');
+  lines.push('');
+  if (mockQuestions.length) {
+    mockQuestions.forEach(function(item, index){
+      lines.push('### Q' + (index + 1) + '　' + (item.tag || ''));
+      lines.push('- 问题：' + item.text);
+      if (item.focus) lines.push('- 考察点：' + item.focus);
+      if (item.follow) lines.push('- 可能追问：' + item.follow);
+      lines.push('');
+    });
+  } else {
+    lines.push('- 尚未生成：去 `mock-interview/index.html` 用 JD + 简历生成。');
+  }
+  lines.push('## ③ 真实面试复盘');
+  lines.push('');
+  if (reviewItems.length) {
+    lines.push('- 共记录 ' + reviewItems.length + ' 道真实问题，薄弱 ' + weak.length + ' 道');
+    if (weak.length) {
+      lines.push('- 薄弱题（自评 ≤2）：');
+      weak.forEach(function(item){ lines.push('  - [' + item.type + '] ' + item.q + '（' + item.rating + '/5）'); });
+    }
+  } else {
+    lines.push('- 尚未复盘：去 `interview-review/index.html` 记录真实问题。');
+  }
+  lines.push('');
+  lines.push('## 下一步行动');
+  lines.push('');
+  if (jdLast && jdLast.top && jdLast.top.length) {
+    lines.push('- [ ] 对照 JD 雷达的 gap 清单，挑 1-2 项补一个最小项目/作品');
+  }
+  if (mockQuestions.length) lines.push('- [ ] 面试前把「可能追问」逐个自问一遍');
+  if (weak.length) lines.push('- [ ] 重练 ' + weak.length + ' 道自评 ≤2 的题，每题写 3 个关键词');
+  lines.push('- [ ] 面完当天把新问题补进复盘器');
+  lines.push('');
+  lines.push('> 由「求职工作台」生成 · 数据只在本机 · 三个工具均可单独使用');
+  return lines.join('\n');
+}
+
+function copyDossier(){
+  var text = buildDossier(loadAll());
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){ toast('已复制到剪贴板'); }).catch(function(){ downloadDossier(text); });
+  } else {
+    downloadDossier(text);
+  }
+}
+function downloadDossier(forcedText){
+  var text = forcedText || buildDossier(loadAll());
+  var blob = new Blob([text], {type: 'text/markdown;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '求职档案-' + new Date().toISOString().slice(0, 10) + '.md';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
+  toast('已导出 Markdown');
+}
+
+/* ================= 示例 ================= */
+var SAMPLE_JD = '岗位：AI 产品经理（内容平台）\n职责：负责 AI 写作助手的产品定义与路线图，拆解用户需求并输出 PRD；设计提示词策略和 RAG 知识库，控制幻觉；建立指标体系与埋点，分析留存；跨部门推动版本上线。\n要求：熟悉大模型能力边界；能独立做数据分析；较强的沟通表达与项目管理能力。';
+var SAMPLE_RESUME = '2025.06–2026.04 校园二手平台｜产品负责人\n- 主导用户调研：访谈 30 名学生、回收 120 份问卷，发现「发货慢」是第一流失原因，改版后首页转化率从 12% 提升到 19%\n- 设计商品发布流程，把发布步骤从 5 步压缩到 3 步，发布成功率提升 23%\n2024.07–2024.09 增长实习\n- 负责小红书投放，累计 2.7 万展现、进线 86 条，平均进线成本控制在 80 元以内';
+
+/* ================= 事件 ================= */
+$('save').addEventListener('click', saveInputs);
+$('sample').addEventListener('click', function(){
+  $('jd').value = SAMPLE_JD; $('resume').value = SAMPLE_RESUME; saveInputs();
+});
+$('refresh').addEventListener('click', function(){ refresh(); toast('已刷新'); });
+$('export').addEventListener('click', function(){ downloadDossier(); });
+$('copy').addEventListener('click', copyDossier);
+$('carry-questions').addEventListener('click', carryQuestionsToReview);
+$('clear').addEventListener('click', function(){
+  if (!confirm('确认清空工作台和三个工具的本地数据？（不影响文件）')) return;
+  [K_JWB, K_JD, K_MOCK, K_REVIEW, 'jd_raw'].forEach(function(key){
+    try { localStorage.removeItem(key); } catch (e) {}
+  });
+  refresh();
+  toast('已清空');
+});
+$('go-jd').addEventListener('click', function(){
+  var jd = $('jd').value.trim();
+  if (jd) { try { localStorage.setItem('jd_raw', jd); } catch (e) {} }
+});
+$('go-mock').addEventListener('click', function(){
+  var jd = $('jd').value.trim(); var resume = $('resume').value.trim();
+  if (!jd) return;
+  var mock = loadJSON(K_MOCK) || {};
+  mock.jd = jd; mock.resume = resume;
+  if (!mock.ratings) mock.ratings = {};
+  if (!mock.notes) mock.notes = {};
+  saveJSON(K_MOCK, mock);
+});
+$('go-review').addEventListener('click', function(){ /* 复盘器自己会读 ir_state */ });
+
+refresh();
+</script>
+</body>
+</html>

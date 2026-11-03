@@ -1,0 +1,10 @@
+participant,task,start,end,seconds,completed,blocker
+P1,T1-jd-radar,10:00,10:07,420,yes,
+P1,T2-interview,10:08,10:16,480,yes,"不确定要不要粘贴带答案的面经"
+P1,T3-quiz,10:17,10:21,240,yes,
+P2,T1-jd-radar,14:00,14:11,660,no,"不知道 JD 之间要加 ---"
+P2,T2-interview,14:12,14:23,660,yes,
+P2,T3-quiz,14:24,14:27,180,yes,
+P3,T1-jd-radar,20:00,20:06,360,yes,
+P3,T2-interview,20:07,20:14,420,no,"导出按钮没找到"
+P3,T3-quiz,20:15,20:19,240,yes,

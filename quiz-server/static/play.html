@@ -1,0 +1,289 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>答题 · Quiz Factory 数据版</title>
+<style>
+  :root{--accent:#ff7a45;--accent-soft:#ffe8dc;--ink:#1f1b16;--muted:#7a7268;--card:#fff;--bg:#f7f2ea;
+    --radius:20px;--shadow:0 12px 32px rgba(60,42,20,.12)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{background:radial-gradient(1200px 600px at 10% -10%,var(--accent-soft),transparent 60%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;display:flex;justify-content:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom))}
+  .app{width:100%;max-width:560px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px}
+  .screen{display:none;animation:in .35s ease both}
+  .screen.active{display:block}
+  @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .cover{text-align:center;padding:30px 22px 26px}
+  .big-emoji{font-size:72px;line-height:1;margin-bottom:12px}
+  h1{font-size:28px;line-height:1.25;margin:0 0 10px}
+  .subtitle{color:var(--muted);font-size:14.5px;line-height:1.7;margin:0 auto 20px;max-width:26em}
+  .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}
+  .chip{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+  .btn{display:block;width:100%;border:0;border-radius:999px;padding:15px 20px;font-size:16.5px;font-weight:700;
+    background:var(--accent);color:#fff;cursor:pointer;transition:transform .15s ease}
+  .btn:active{transform:scale(.98)}
+  .btn:disabled{opacity:.5}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid #eadfd0;box-shadow:none}
+  .hint{color:var(--muted);font-size:12px;margin-top:12px;line-height:1.7}
+  .progress{height:6px;background:#eee5d8;border-radius:999px;overflow:hidden;margin-bottom:8px}
+  .progress > i{display:block;height:100%;width:0;background:var(--accent);border-radius:999px;transition:width .3s ease}
+  .meta-row{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:20px}
+  .back{border:0;background:transparent;color:var(--muted);font-size:14px;cursor:pointer;padding:0}
+  .qtext{font-size:22px;line-height:1.5;font-weight:700;margin:4px 0 22px}
+  .options{display:flex;flex-direction:column;gap:12px}
+  .option{display:flex;align-items:center;gap:14px;text-align:left;width:100%;cursor:pointer;background:#fff;
+    border:1.5px solid #eee2d2;border-radius:16px;padding:15px 17px;font-size:16px;color:var(--ink);line-height:1.5;transition:all .16s ease}
+  .option:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .option .letter{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent-soft);color:#8a5a1f;
+    font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .result{text-align:center}
+  .result .big-emoji{font-size:76px;margin:0 0 4px}
+  .kicker{color:var(--muted);font-size:14px;letter-spacing:2px}
+  .result h2{font-size:26px;margin:8px 0 10px}
+  .tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+  .tag{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
+  .rarity{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+  .desc{color:#4b443b;font-size:15px;line-height:1.85;text-align:left;background:#fbf7f1;border-radius:16px;padding:16px;margin-bottom:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;text-align:left}
+  .mini{background:#fbf7f1;border-radius:16px;padding:14px}
+  .mini h3{margin:0 0 6px;font-size:12.5px;color:var(--muted);font-weight:700}
+  .mini p{margin:0;font-size:13.5px;line-height:1.65;color:#3f3a32}
+  .share{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .share .btn{padding:13px 12px;font-size:14.5px}
+  .toast{position:fixed;left:50%;bottom:34px;transform:translate(-50%,20px);background:#1f1b16;color:#fff;
+    padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:9}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:16px;line-height:1.8}
+  .footer a{color:#8a5a1f;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="screen active" id="loading">
+    <div class="card"><p class="subtitle" style="text-align:center;margin:10px 0">加载中…</p></div>
+  </div>
+
+  <div class="screen" id="cover">
+    <div class="card cover">
+      <div class="big-emoji" id="c-emoji">🎲</div>
+      <h1 id="c-title"></h1>
+      <p class="subtitle" id="c-subtitle"></p>
+      <div class="chips">
+        <span class="chip" id="c-qn"></span>
+        <span class="chip" id="c-rn"></span>
+      </div>
+      <button class="btn" id="start">开始测试 →</button>
+      <p class="hint">📌 数据版说明：点「开始」会匿名记录一条作答会话（无 IP、无账号、不用 Cookie），
+      用来看完成率和题目数据。介意的话请玩单文件版（另一个仓库），那边 0 记录。</p>
+    </div>
+    <div class="footer"><a href="/">← 返回测试库</a> · Quiz Factory 数据版</div>
+  </div>
+
+  <div class="screen" id="quiz">
+    <div class="card">
+      <div class="progress"><i id="bar"></i></div>
+      <div class="meta-row">
+        <button class="back" id="prev">← 上一题</button>
+        <span id="counter"></span>
+      </div>
+      <div class="qtext" id="qtext"></div>
+      <div class="options" id="options"></div>
+    </div>
+  </div>
+
+  <div class="screen" id="result">
+    <div class="card result">
+      <div class="kicker">你 是</div>
+      <div class="big-emoji" id="r-emoji"></div>
+      <h2 id="r-name"></h2>
+      <div class="tags" id="r-tags"></div>
+      <div class="rarity" id="r-rarity"></div>
+      <div class="desc" id="r-desc"></div>
+      <div class="grid2">
+        <div class="mini"><h3>🌟 高光</h3><p id="r-strength"></p></div>
+        <div class="mini"><h3>🌧 小毛病</h3><p id="r-weak"></p></div>
+      </div>
+      <div class="share">
+        <button class="btn" id="share">📤 分享结果</button>
+        <button class="btn ghost" id="restart">🔄 再测一次</button>
+      </div>
+      <p class="hint" id="r-hint"></p>
+    </div>
+    <div class="footer"><a href="/">← 测试库</a> · <a id="stats-link" href="#">📊 看这份数据</a></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+/* 数据版答题页：与单文件版同一套计分算法（阈值 + 平局规则），
+   区别是开始/完成时向 /api 匿名上报，换来看板数据。 */
+
+var slug = new URLSearchParams(location.search).get('s');
+var QUIZ = null, session = null, index = 0, scores = {}, lastDelta = {}, answers = [], t0 = 0;
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+function toast(msg){
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(window.__t); window.__t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+function load(){
+  fetch('/api/quizzes/' + slug).then(r => {
+    if (!r.ok) throw new Error('not found');
+    return r.json();
+  }).then(q => {
+    QUIZ = q;
+    document.getElementById('c-emoji').textContent = q.emoji;
+    document.getElementById('c-title').textContent = q.title;
+    document.getElementById('c-subtitle').textContent = q.subtitle;
+    document.getElementById('c-qn').textContent = '📝 ' + q.questions.length + ' 道题';
+    document.getElementById('c-rn').textContent = '🎭 ' + Object.keys(q.results).length + ' 种结果';
+    show('cover');
+    if (window.__pendingDeepLink) renderResult();   // 带 #r= 打开：直接看朋友的结果
+  }).catch(() => {
+    document.querySelector('#loading .subtitle').textContent = '⚠️ 没找到这个测试（?s= 参数不对？）';
+  });
+}
+
+document.getElementById('start').addEventListener('click', function(){
+  this.disabled = true;
+  fetch('/api/quizzes/' + slug + '/start', {method: 'POST'})
+    .then(r => r.json())
+    .then(res => { session = res.session_id; })
+    .catch(() => { session = null; })   // 上报失败不阻塞答题
+    .finally(() => {
+      this.disabled = false;
+      scores = {}; lastDelta = {}; answers = []; index = 0; t0 = Date.now();
+      QUIZ.axes.forEach(a => { scores[a.key] = 0; lastDelta[a.key] = 0; });
+      renderQuestion(); show('quiz');
+    });
+});
+
+function renderQuestion(){
+  var q = QUIZ.questions[index];
+  document.getElementById('bar').style.width = (index / QUIZ.questions.length * 100) + '%';
+  document.getElementById('counter').textContent = (index + 1) + ' / ' + QUIZ.questions.length;
+  document.getElementById('qtext').textContent = q.q;
+  var box = document.getElementById('options');
+  box.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    var btn = document.createElement('button');
+    btn.className = 'option';
+    btn.innerHTML = '<span class="letter">' + 'ABC'[i] + '</span><span></span>';
+    btn.lastChild.textContent = opt.text;
+    btn.onclick = () => choose(i);
+    box.appendChild(btn);
+  });
+}
+
+function addScores(option){
+  var s = option.scores || {};
+  for (var k in s){
+    scores[k] = (scores[k] || 0) + s[k];
+    if (s[k]) lastDelta[k] = s[k];
+  }
+}
+function resetFrom(upto){
+  scores = {}; lastDelta = {};
+  QUIZ.axes.forEach(a => { scores[a.key] = 0; lastDelta[a.key] = 0; });
+  for (var i = 0; i < upto; i++) addScores(QUIZ.questions[i].options[answers[i]]);
+}
+function choose(i){
+  resetFrom(index);
+  answers[index] = i;
+  addScores(QUIZ.questions[index].options[i]);
+  index++;
+  if (index < QUIZ.questions.length) renderQuestion();
+  else { document.getElementById('bar').style.width = '100%'; renderResult(); }
+}
+document.getElementById('prev').addEventListener('click', function(){
+  if (index === 0) return;
+  index--; resetFrom(index); renderQuestion();
+});
+
+function resultKey(){
+  var T = QUIZ.thresholds || {};
+  return QUIZ.axes.map(a => {
+    var v = scores[a.key], t = (typeof T[a.key] === 'number') ? T[a.key] : -0.5;
+    if (v > t) return '1';
+    if (v === t && (lastDelta[a.key] || 0) > 0) return '1';
+    return '0';
+  }).join('');
+}
+
+function renderResult(){
+  var key = resultKey();
+  var r = QUIZ.results[key] || QUIZ.results[Object.keys(QUIZ.results)[0]];
+  document.getElementById('r-emoji').textContent = r.emoji;
+  document.getElementById('r-name').textContent = r.name;
+  document.getElementById('r-desc').textContent = r.desc;
+  document.getElementById('r-strength').textContent = r.strength;
+  document.getElementById('r-weak').textContent = r.weak;
+  document.getElementById('r-hint').textContent = QUIZ.share_hint;
+  var tags = document.getElementById('r-tags');
+  tags.innerHTML = '';
+  (r.tags || []).forEach(t => {
+    var s = document.createElement('span'); s.className = 'tag'; s.textContent = t; tags.appendChild(s);
+  });
+  var rare = (QUIZ.rarity && QUIZ.rarity[key]) || 0;
+  document.getElementById('r-rarity').textContent = rare
+    ? '稀有度 ' + (rare < 6 ? '隐藏款' : rare < 10 ? '稀有' : rare < 15 ? '少见' : '常见') + ' · 只有 ' + rare + '% 的人会测到'
+    : '';
+  document.getElementById('stats-link').href = '/stats?s=' + slug;
+  // 上报完成（失败不打扰用户）
+  if (session !== null){
+    fetch('/api/quizzes/' + slug + '/finish', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        session_id: session,
+        answers: answers,
+        result_key: key,
+        duration_s: Math.round((Date.now() - t0) / 100) / 10
+      })
+    }).catch(() => {});
+  }
+  try { history.replaceState(null, '', '#r=' + key); } catch (e) {}
+  show('result');
+}
+
+document.getElementById('restart').addEventListener('click', function(){
+  try { history.replaceState(null, '', location.pathname + '?s=' + slug); } catch (e) {}
+  show('cover');
+});
+document.getElementById('share').addEventListener('click', function(){
+  var key = resultKey();
+  var url = location.origin + '/play?s=' + slug + '#r=' + key;
+  var text = '我测出来是「' + document.getElementById('r-name').textContent + '」，你也来测测？';
+  if (navigator.share){ navigator.share({title: QUIZ.title, text: text, url: url}).catch(() => {}); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(() => toast('链接已复制，去粘贴给朋友吧'));
+  } else { toast(url); }
+});
+
+(function deepLink(){
+  var m = (location.hash || '').match(/^#r=([01]{3})$/);
+  if (m && true){ /* 结果数据要等 QUIZ 加载后再渲染，先记下来 */
+    window.__pendingDeepLink = m[1];
+  }
+})();
+var _origRender = renderResult;
+renderResult = function(){
+  if (window.__pendingDeepLink) document.getElementById('kicker').textContent = 'TA 是';
+  _origRender(window.__pendingDeepLink);
+  window.__pendingDeepLink = null;
+};
+
+load();
+</script>
+</body>
+</html>

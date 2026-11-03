@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "title": "JD 雷达 · 能力抽取评测",
+    "n_cases": 10,
+    "labeler": "人工标注（1 人，按「JD 明确要求」标核心能力）",
+    "note": "只标注核心能力（不含泛泛提及），因此 recall 有意义、precision 不作为主指标"
+  },
+  "cases": [
+    {
+      "id": "J1-ai-content",
+      "note": "AI 产品经理 · 内容平台（偏应用与体验）",
+      "text": "岗位：AI 产品经理（内容平台）\n职责：负责 AI 写作助手的产品定义与路线图，拆解用户需求并输出 PRD；与算法团队设计提示词策略和 RAG 知识库，控制幻觉；建立指标体系与埋点，分析留存和生成成功率；跨部门推动版本上线。\n要求：熟悉大模型能力边界，有 LLM 应用落地经验；能独立做数据分析；较强沟通表达与项目管理能力。",
+      "expected": ["product_def", "roadmap", "requirement", "prd", "prompt", "rag", "hallucination", "metric_system", "tracking", "retention", "cross_team", "launch", "llm", "ai_product", "analytics", "communication", "project"]
+    },
+    {
+      "id": "J2-b2b-saas",
+      "note": "AI 产品经理 · B 端（偏交付与客户）",
+      "text": "招聘岗位：AI 产品经理（B 端 SaaS）\n职责：负责企业知识库问答产品的需求分析与产品设计，输出解决方案和验收标准；把控项目排期与风险，协调研发、交付与客户成功团队；跟踪客户使用数据，输出客户成功分析报告，优化续费与增购；关注生成式 AI 合规与数据安全。\n要求：熟悉 B 端产品方法论，有私有化部署或大客户交付经验加分；较强的客户沟通与资源协调能力；了解大模型推理成本。",
+      "expected": ["requirement", "product_def", "acceptance", "schedule", "risk", "cross_team", "customer", "compliance", "deploy", "stakeholder", "negotiation", "cost", "llm"]
+    },
+    {
+      "id": "J3-growth",
+      "note": "增长产品经理 · AI 工具（偏数据与商业化）",
+      "text": "职位：增长产品经理（AI 方向）\n职责：负责 AI 工具产品的增长策略，通过渠道投放、裂变活动和私域社群拉新获客；设计并执行 A/B 实验，分析转化漏斗与留存，找到增长杠杆；与商业化团队制定定价策略和付费转化方案；输出行业研究与竞品分析，支持 GTM 决策。\n要求：数据驱动，熟悉 SQL 和 BI 工具；有从 0 到 1 的增长经验；对 AI 产品有热情。",
+      "expected": ["growth", "channel", "ab_test", "funnel", "retention", "pricing", "market", "competitor", "gtm", "sql", "analytics", "ai_product"]
+    },
+    {
+      "id": "J4-agent-infra",
+      "note": "AI 平台产品经理（偏 Agent 与技术）",
+      "text": "岗位：AI 平台产品经理\n职责：负责 Agent 编排平台的产品设计，支持多智能体工作流；对接大模型与向量数据库，设计检索增强方案；定义效果评测体系与评测集，治理幻觉；推动模型服务部署与私有化交付；控制推理成本。\n要求：理解 LLM 原理与提示词工程；有微调或 RAG 落地经验；能与算法工程师对技术方案；具备项目管理能力。",
+      "expected": ["agent", "vector_db", "rag", "eval", "hallucination", "deploy", "cost", "llm", "prompt", "finetune", "tech_solution", "project"]
+    },
+    {
+      "id": "J5-data-pm",
+      "note": "数据产品经理（偏指标与实验）",
+      "text": "岗位：数据产品经理（AI 应用方向）\n职责：搭建业务指标体系与数据看板，定义北极星指标；设计 A/B 实验与显著性分析；完善埋点与数据上报规范；输出数据报告支持决策；与增长团队协作优化漏斗与留存。\n要求：统计学或相关专业；精通 SQL；有实验设计与归因分析经验；沟通表达清晰。",
+      "expected": ["metric_system", "north_star", "ab_test", "experiment", "tracking", "report", "funnel", "retention", "sql", "attribution", "communication", "analytics"]
+    },
+    {
+      "id": "J6-ecommerce",
+      "note": "电商推荐产品经理（偏体验与商业化）",
+      "text": "职位：推荐产品经理（电商）\n职责：负责推荐策略的产品定义与体验设计，优化用户旅程；分析转化漏斗与用户分群，提升复购与留存；与商业化团队制定定价与促销策略；跟踪竞品动态与行业趋势。\n要求：熟悉推荐系统常见做法；有 A/B 测试经验；较强的数据分析与跨团队协作能力；了解多模态内容理解加分。",
+      "expected": ["product_def", "experience", "funnel", "cohort", "retention", "pricing", "competitor", "market", "ab_test", "analytics", "cross_team", "multimodal"]
+    },
+    {
+      "id": "J7-ai-hardware",
+      "note": "AI 硬件产品经理（偏项目与供应链）",
+      "text": "岗位：AI 硬件产品经理\n职责：负责智能硬件产品的需求分析与产品定义；管理项目排期与里程碑，协调供应商与外包团队；制定测试与质量管理标准；负责上线发布与线上问题监控；梳理数据合规与隐私要求。\n要求：有硬件或智能设备项目经验；较强的项目管理与风险控制能力；能与供应链和第三方服务商谈判。",
+      "expected": ["requirement", "product_def", "schedule", "project", "vendor", "quality", "launch", "monitoring", "compliance", "risk", "negotiation"]
+    },
+    {
+      "id": "J8-ai-education",
+      "note": "AI 教育产品经理（偏用户与内容）",
+      "text": "岗位：AI 教育产品经理\n职责：通过用户访谈与问卷做用户研究，输出用户画像；设计 AI 辅导功能的产品方案与交互流程；定义验收标准并跟进上线；与教研团队协作设计内容；通过数据分析优化学习留存。\n要求：有教育或内容产品经验；较强的用户同理心与沟通表达能力；熟悉大模型在教育场景的能力边界。",
+      "expected": ["user_research", "product_def", "experience", "acceptance", "launch", "cross_team", "analytics", "retention", "communication", "llm"]
+    },
+    {
+      "id": "J9-ai-healthcare",
+      "note": "AI 医疗产品经理（偏合规与交付）",
+      "text": "岗位：AI 医疗产品经理\n职责：负责医疗 AI 辅助诊断产品的需求分析与方案设计；制定验收标准与质量管理流程；推动与医院客户的交付与客户成功；梳理政策法规与数据合规要求；控制模型推理成本。\n要求：了解医疗行业与监管要求；有 B 端交付经验；较强的沟通与资源协调能力；能与算法团队对技术方案。",
+      "expected": ["requirement", "product_def", "acceptance", "quality", "customer", "regulation", "compliance", "cost", "stakeholder", "negotiation", "tech_solution", "market"]
+    },
+    {
+      "id": "J10-overseas",
+      "note": "出海 AI 产品经理（偏增长与本地化）",
+      "text": "岗位：出海 AI 产品经理\n职责：负责海外市场 AI 工具的增长与商业化；做行业研究与竞品分析，制定 GTM 与定价策略；通过渠道投放获客，分析转化漏斗；关注海外政策法规与隐私合规；搭建本地化运营与生态合作。\n要求：英语可作为工作语言；有出海或国际化经验；数据驱动，熟悉 A/B 测试。",
+      "expected": ["global", "growth", "market", "competitor", "gtm", "pricing", "channel", "funnel", "regulation", "compliance", "partnership", "ab_test"]
+    }
+  ]
+}

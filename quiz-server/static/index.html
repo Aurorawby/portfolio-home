@@ -1,0 +1,65 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz Factory 数据版 · 有仪表盘的测试工厂</title>
+<style>
+  :root{--ink:#1f1b16;--muted:#7a7268;--bg:#f7f2ea;--accent:#ff7a45;--accent-soft:#ffe8dc;
+    --blue:#5b7cfa;--blue-soft:#e4e9ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(900px 500px at 0% -10%,var(--accent-soft),transparent 60%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:40px 18px}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:32px;margin:0 0 8px}
+  .sub{color:var(--muted);line-height:1.8;margin:0 0 26px}
+  .sub b{color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+  .card{background:#fff;border-radius:20px;padding:20px;box-shadow:0 10px 26px rgba(60,42,20,.10);
+    display:flex;flex-direction:column}
+  .emoji{font-size:40px;line-height:1;margin-bottom:10px}
+  .card h2{font-size:18px;margin:0 0 6px;line-height:1.4}
+  .card p{margin:0;color:var(--muted);font-size:13px;line-height:1.6;flex:1}
+  .meta{margin-top:12px;font-size:12px;color:#a89b8a}
+  .btnrow{display:flex;gap:8px;margin-top:12px}
+  .btn{flex:1;text-align:center;text-decoration:none;border-radius:999px;padding:9px 0;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--accent);color:#fff}
+  .btn.b{background:#fff;color:#3b5bdb;border:1.5px solid var(--blue-soft)}
+  footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:32px;line-height:1.9}
+  footer a{color:#8a5a1f}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📊 Quiz Factory 数据版</h1>
+  <p class="sub">和单文件版同一套测试、同一套算法，区别只有一个：<b>作答会匿名入库</b>——
+  于是有了真实的完成漏斗、逐题选项分布和结果分布。<br>
+  隐私边界：不存 IP、不存账号、不用 Cookie，只记录「开始了 / 答完了 / 每题选了哪个」。</p>
+  <div class="grid" id="grid"></div>
+  <footer>
+    后端 FastAPI + SQLite · 接口文档见 <a href="/docs">/docs</a>（自动生成）· 单文件版见
+    Quiz Factory v1（另一个仓库）
+  </footer>
+</div>
+<script>
+'use strict';
+fetch('/api/quizzes').then(r => r.json()).then(data => {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = data.quizzes.map(q =>
+    '<div class="card">'
+    + '<div class="emoji">' + q.emoji + '</div>'
+    + '<h2>' + q.title + '</h2>'
+    + '<p>同一套题目，多了数据回报：完没完成、哪题被跳过、哪种结果最多，一眼看清。</p>'
+    + '<div class="meta">📝 ' + q.questions + ' 道题 · 🎭 ' + q.results + ' 种结果 · 👥 已开始 ' + q.starts + ' / 完成 ' + q.finishes + '</div>'
+    + '<div class="btnrow">'
+    + '<a class="btn a" href="/play?s=' + q.slug + '">去答题</a>'
+    + '<a class="btn b" href="/stats?s=' + q.slug + '">看数据</a>'
+    + '</div></div>'
+  ).join('');
+}).catch(() => {
+  document.getElementById('grid').innerHTML = '<p class="sub">⚠️ 接口请求失败——服务还在吗？刷新试试。</p>';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>笔记工坊 · 小红书笔记 AI 起草 + 违禁词体检</title>
+<meta name="description" content="按爆款结构 AI 起草小红书笔记（标题×3 + 正文 + 标签），写完自动过极限词 / 功效宣称 / 诱导话术合规检查。AI 初稿 + 机器审查，数据不出本机。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --orange:#ff7a45; --orange-soft:#ffe8dc;
+    --purple:#7c3aed; --purple-soft:#f0e4ff;
+    --blue:#5b7cfa; --blue-soft:#e4e9ff;
+    --green:#12a184; --green-soft:#dcf5ee;
+    --red:#d64545; --red-soft:#fde5e5;
+    --radius:18px; --shadow:0 10px 26px rgba(60,42,20,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--purple-soft),transparent 60%),
+    radial-gradient(800px 420px at 100% 0%,var(--orange-soft),transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 16px 40px}
+  .wrap{max-width:880px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:48em}
+  .sub b{color:var(--ink)}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#8a5a1f}
+  .topbtn{margin-left:auto;display:flex;gap:8px}
+  button{font-family:inherit;cursor:pointer}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--orange);color:#fff;box-shadow:0 6px 16px rgba(255,122,69,.28)}
+  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
+  section{margin-bottom:26px}
+  h2{font-size:18.5px;margin:0 0 10px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+  input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13.5px;font-family:inherit;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--orange)}
+  textarea{min-height:150px;resize:vertical;line-height:1.8}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+  .statusline{font-size:13px;color:var(--muted);margin:10px 0;min-height:20px}
+  .statusline.err{color:var(--red);font-weight:600}
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:10px}
+  /* 标题备选 */
+  .titles{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+  .title-opt{display:flex;align-items:center;gap:10px;background:#faf6ef;border:1.5px solid var(--line);border-radius:12px;padding:10px 13px;font-size:14px;font-weight:700;cursor:pointer}
+  .title-opt:hover{border-color:var(--orange)}
+  .title-opt.picked{border-color:var(--orange);background:var(--orange-soft)}
+  .title-opt .len{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:600}
+  .title-opt .bad{color:#b03030;font-size:11.5px}
+  /* 体检报告 */
+  .check-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .verdict{border-radius:10px;padding:8px 14px;font-size:13.5px;font-weight:800}
+  .verdict.ok{background:var(--green-soft);color:#0b6b52}
+  .verdict.bad{background:var(--red-soft);color:#b03030}
+  .v-item{border-radius:10px;padding:9px 12px;font-size:12.8px;margin-bottom:7px;line-height:1.75}
+  .v-item.limit{background:var(--red-soft)}
+  .v-item.efficacy{background:#fff3e0}
+  .v-item.spam{background:var(--blue-soft)}
+  .v-item.shadow{background:#f1e8dc}
+  .v-item b{font-weight:800}
+  .v-item .fix{color:var(--muted)}
+  .stats-row{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:8px}
+  .stats-row b{color:var(--ink)}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .tag{background:var(--purple-soft);color:#6d28d9;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:700}
+  /* 模板库 */
+  .tpl{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+  .tpl h3{margin:0 0 8px;font-size:14.5px}
+  .tpl ol{margin:6px 0 0;padding-left:20px;font-size:12.8px;color:var(--muted);line-height:1.9}
+  .tpl .tips{font-size:12.3px;color:#8a5a1f;margin-top:8px}
+  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
+  footer a{color:#8a5a1f}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>✍️ 笔记工坊 <span style="font-size:15px;color:var(--muted);font-weight:600">NoteCraft</span></h1>
+  <p class="sub">给小红书博主的写作工坊：<b>AI 按爆款结构起草笔记（3 个标题 + 正文 + 标签），写完自动过一遍「违禁词体检」</b>——
+  极限词（广告法）、功效宣称、诱导话术、限流词四类风险，逐个高亮并给替换建议。AI 初稿 + 机器审查，发布的最后一步永远是你自己。</p>
+
+  <div class="topbar">
+    <span class="pill">🔒 数据只存本机浏览器</span>
+    <span class="pill">🧪 无 AI 可用演示笔记</span>
+    <span class="pill">🩺 合规检查离线可用</span>
+    <span class="topbtn">
+      <button class="btn b" id="btn-copy-all">📋 一键复制</button>
+      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+    </span>
+  </div>
+
+  <section>
+    <div class="card">
+      <h2>① 笔记设定</h2>
+      <div class="grid">
+        <div><label>主题 / 要写什么 *</label><input id="nc-topic" placeholder="如：学生党平价好物 / 一款新出的胶原蛋白饮"></div>
+        <div><label>笔记类型</label>
+          <select id="nc-type">
+            <option>种草测评</option><option>避坑经验</option><option>教程干货</option>
+            <option>清单合集</option><option>情绪共鸣</option>
+          </select></div>
+        <div><label>目标人群</label><input id="nc-audience" placeholder="如：大学生 / 新手宝妈"></div>
+        <div><label>语气</label>
+          <select id="nc-tone">
+            <option>活泼（适度 emoji）</option><option>真诚（像跟朋友聊天）</option>
+            <option>专业（有理有据）</option>
+          </select></div>
+      </div>
+      <div class="topbar" style="margin:14px 0 0">
+        <button class="btn a" id="btn-gen">🤖 AI 起草一篇</button>
+        <button class="btn b" id="btn-demo">🧪 装载演示笔记</button>
+      </div>
+      <div class="statusline" id="gen-status"></div>
+      <div class="note">AI 起草需要自备 API Key（⚙️ 里配，智谱 GLM-4-Flash 免费档可用）。没有 Key 点「装载演示笔记」——
+      演示稿是含违禁词的真实风格笔记，正好体检给你看。无论 AI 还是手写，改完都可以丢进下面的体检器。</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>② 草稿台（可直接改）</h2>
+      <div id="titles-box"></div>
+      <label style="margin-top:10px">正文</label>
+      <textarea id="nc-body" placeholder="AI 起草或自己粘贴正文到这里……"></textarea>
+      <label style="margin-top:10px">话题标签（空格分隔）</label>
+      <input id="nc-tags" placeholder="#学生党好物 #平价护肤">
+      <div class="stats-row" id="count-stats"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>③ 违禁词体检（离线规则引擎）</h2>
+      <div class="topbar" style="margin:0 0 10px">
+        <button class="btn a" id="btn-check">🩺 给草稿台体检</button>
+        <span style="font-size:12.3px;color:var(--muted)">也可以只测一句话：在下方粘贴</span>
+      </div>
+      <input id="nc-quick" placeholder="粘贴任意标题 / 句子，例如：全网最好的面霜，私信我领优惠">
+      <div id="check-result" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 五种爆款结构（AI 起草用的就是它们）</h2>
+    <div id="tpl-list"></div>
+  </section>
+
+  <footer>
+    📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
+    体检是词典规则，覆盖常见风险词但<b>不替代平台审核</b> · 标题 ≤20 字、正文 ≤1000 字为平台限制 ·
+    单文件 HTML 可离线使用 · AI 结对编程产出
+  </footer>
+</div>
+
+<!-- AI 设置 -->
+<div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto">
+    <h3 style="margin:0 0 12px;font-size:16px">⚙️ AI 设置（Key 只存本机，请求直接发给你选的服务商）</h3>
+    <label>服务商</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="ollama">本地 Ollama（需已启动）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>API Key（Ollama 可留空）</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div class="note">AI 只负责起草；违禁词体检、字数统计、结构模板全部离线可用。</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn b" id="api-cancel">取消</button>
+      <button class="btn a" id="api-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   笔记工坊 NoteCraft
+   结构：合规检查引擎（纯函数，可被 eval 提取）→ 结构模板库 →
+        演示数据 → AI 层（起草）→ 渲染与事件
+   合规检查 / 字数统计全部由代码计算，AI 只负责起草文案。
+   ============================================================ */
+
+/* ---------- ① 合规检查引擎（纯函数，勿加入 DOM 依赖；eval/note-craft 直接调用） ---------- */
+
+var RISK_CATS = [
+  { cat: 'limit', catName: '极限词（广告法风险）',
+    advice: '改成主观、可证伪的表达：「我用下来最顺手」→「我用下来很顺手」「我个人心里的 Top1」；或注明「个人体验，仅供参考」。',
+    words: ['最好用', '最佳', '最优', '最强', '最有效', '最便宜', '最划算', '全网最', '排名第一', '销量第一', '行业第一', '全网第一', '第一名', '顶级', '顶尖', '极致', '绝无仅有', '史上', '国家级', '世界级', '冠军', '首个', '首款', '首选', '万能', '100%', '百分百', '绝对'] },
+  { cat: 'efficacy', catName: '功效 / 医疗宣称（需资质，易被限流）',
+    advice: '普通账号没有功效宣称资质：删掉功效词只讲使用感受（「用完不紧绷了」），或注明「官方宣称，未做个人验证」。',
+    words: ['治疗', '治好', '根治', '治愈', '消炎', '杀菌', '抗衰', '抗老', '抗皱', '祛疤', '祛痘', '祛斑', '生发', '防脱', '瘦身', '减肥', '美白', '药用', '医用', '医美级', '特证'] },
+  { cat: 'spam', catName: '诱导互动 / 站外引流（平台明令禁止）',
+    advice: '换成平台允许的说法：「私信我领取」→「评论区聊聊」「主页有更多同类内容」；不放微信 / 二维码 / 外链。',
+    words: ['私信我', '私信领取', '加微信', '加V', '加v', '+V', '+v', '扫码', '点击链接', '点链接', '关注领取', '关注后领', '点赞过千', '评论区留邮箱', '评论区留vx', '代购', '刷单', '假一赔十'] },
+  { cat: 'shadow', catName: '限流风险词（影响推荐，不是违规）',
+    advice: '这类词不算违规但常被限流：换成具体事实和数字（「副业月入 2000」比「躺赚」更安全也更可信）。',
+    words: ['躺赚', '暴富', '稳赚', '零风险', '包赚', '轻松月入过万', '躺着挣钱'] }
+];
+
+function checkCompliance(text) {
+  var t = String(text || '');
+  var violations = [];
+  RISK_CATS.forEach(function(group) {
+    group.words.forEach(function(word) {
+      var idx = t.indexOf(word);
+      if (idx !== -1) {
+        violations.push({ word: word, cat: group.cat, catName: group.catName, advice: group.advice, index: idx });
+      }
+    });
+  });
+  return { violations: violations, clean: violations.length === 0 };
+}
+
+function countStats(title, body) {
+  var t = String(title || '').trim();
+  var b = String(body || '').trim();
+  return {
+    titleLen: t.length,
+    titleOk: t.length > 0 && t.length <= 20,
+    bodyLen: b.length,
+    bodyOk: b.length > 0 && b.length <= 1000
+  };
+}
+
+/* ---------- ② 五种爆款结构模板 ---------- */
+
+var STRUCTURES = [
+  { name: '种草测评', hook: '适合：好物、店铺、工具推荐',
+    steps: ['痛点 / 需求开场（「油皮夏天真的受够了」）', '产品外观 / 价格交代', '3 个真实使用点，每点一个 emoji 小标题', '缺点也要写（真诚感 = 信任感）', '总结适合谁买、不适合谁买'],
+    tips: '缺点段是测评类笔记的信任核心——全是优点反而像硬广。' },
+  { name: '避坑经验', hook: '适合：求职、租房、装修、踩坑复盘',
+    steps: ['踩坑结果开场（损失多少钱 / 多少时间）', '坑点 1：怎么踩的 + 怎么避', '坑点 2、3：同样结构', '总结避坑清单（可截图保存）', '结尾留一句「希望你别踩」'],
+    tips: '损失越具体越可信：「亏了 3000」比「亏了很多」有效十倍。' },
+  { name: '教程干货', hook: '适合：技能、菜谱、软件操作',
+    steps: ['成品 / 效果图开场（先给结果）', '所需材料 / 工具清单', '分步教程（步骤编号，每步一句）', '常见失败点 + 补救办法', '鼓励互动：「你做到第几步了？」'],
+    tips: '第一步一定要 5 分钟内能完成——门槛决定收藏后的完成率。' },
+  { name: '清单合集', hook: '适合：合集、盘点、Top N',
+    steps: ['使用场景设定（「期末周自救」）', '清单主体 N 个，每个一句话理由', '人群适配建议（预算 / 场景怎么选）', '自然引导收藏：「怕忘可以先存」'],
+    tips: '数量写进标题（5 个 / 8 个）；每个条目理由 ≤2 行，长了大段跳过。' },
+  { name: '情绪共鸣', hook: '适合：成长、职场、感悟',
+    steps: ['具体场景故事开场（时间 / 地点 / 一句话细节）', '情绪转折点（「直到……」）', '我的思考（1-2 句，别讲大道理）', '开放式提问结尾（把表达权交给评论区）'],
+    tips: '细节决定共鸣：「在工位哭完补了粉底」比「很难」画面感强一百倍。' }
+];
+
+/* ---------- ③ 演示笔记（故意含违禁词，展示体检器价值） ---------- */
+
+var DEMO = {
+  titles: ['全网最好用的学生党平价好物合集', '学生党 50 元以内好物合集，亲测不踩坑', '第 1 名的平价好物都在这了（学生党版）'],
+  body: '最近好多学妹问我学生党有什么平价好物，今天这篇直接把压箱底的都掏出来！\n\n💄 唇膜：用完第二天嘴唇真的超级嫩，绝对是同价位里的第一名\n📒 活页本：上课记笔记灵活到不行，考前整理知识点效率翻倍\n🧴 身体乳：便宜大碗，坚持涂两周皮肤状态肉眼可见变好\n\n⚠️ 缺点也说下：唇膜有点黏腻，介意的人慎入；活页本 Rings 夹纸量一般。\n\n需要完整清单的可以私信我，我看到都会回！\n\n#学生党好物 #平价好物 #开学季',
+  tags: '#学生党好物 #平价好物 #开学季 #好物合集'
+};
+
+/* ---------- ④ AI 层（BYOK，与作品集其他产品同构） ---------- */
+
+var PROVIDERS = {
+  zhipu:    { base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash' },
+  deepseek: { base: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
+  moonshot: { base: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k' },
+  ollama:   { base: 'http://localhost:11434/v1/chat/completions', model: 'qwen2.5:7b' },
+  custom:   { base: '', model: '' }
+};
+
+function loadApiConfig() { try { return JSON.parse(localStorage.getItem('nc_api') || '{}'); } catch (e) { return {}; } }
+
+async function callChat(messages, maxTokens) {
+  var cfg = loadApiConfig();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.model || provider.model;
+  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({ model: model, messages: messages, temperature: 0.85, max_tokens: maxTokens || 2000 })
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+    throw new Error('接口返回 ' + res.status + '：' + detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+
+function buildPrompt(topic, type, audience, tone) {
+  var tpl = STRUCTURES.filter(function(s) { return s.name === type; })[0] || STRUCTURES[0];
+  return '你是小红书爆款笔记作者。请按「' + type + '」结构写一篇笔记，主题：' + topic
+    + '；目标人群：' + (audience || '18-30 岁女性为主') + '；语气：' + tone + '。'
+    + '结构要求：' + tpl.steps.join('；') + '。'
+    + '硬性要求：3 个备选标题，每个不超过 20 字（含 emoji 可加分但别超过 2 个）；正文 300-600 字，分段清晰；4-6 个话题标签（#开头）。'
+    + '合规要求：不要出现「最好 / 第一 / 绝对」等极限词，不要任何功效医疗宣称，不要「私信我 / 加微信」等引流话术。'
+    + '严格输出 JSON，不要输出任何其他文字：{"titles":["","",""],"body":"正文（用\\n分段）","tags":["#标签1","#标签2"]}';
+}
+
+function extractJson(text) {
+  var m = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  var raw = m ? m[1] : text;
+  var start = raw.indexOf('{'), end = raw.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('模型没有返回 JSON');
+  return JSON.parse(raw.slice(start, end + 1));
+}
+
+/* ---------- ⑤ 渲染与事件 ---------- */
+
+var pickedTitle = -1;
+
+function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function status(msg, isErr) {
+  var el = document.getElementById('gen-status');
+  el.textContent = msg || '';
+  el.className = 'statusline' + (isErr ? ' err' : '');
+}
+
+function renderTitles(titles) {
+  var box = document.getElementById('titles-box');
+  if (!titles || !titles.length) { box.innerHTML = ''; return; }
+  box.innerHTML = '<label>标题备选（点选一个，≤20 字为佳）</label><div class="titles">'
+    + titles.map(function(t, i) {
+        var s = checkCompliance(t);
+        var cs = countStats(t, 'x');
+        var flag = s.clean ? '' : ' <span class="bad">⚠ 含「' + esc(s.violations[0].word) + '」</span>';
+        return '<div class="title-opt' + (pickedTitle === i ? ' picked' : '') + '" data-t="' + i + '"><span>' + esc(t) + flag + '</span><span class="len">' + cs.titleLen + ' 字' + (cs.titleOk ? '' : ' · 超长') + '</span></div>';
+      }).join('') + '</div>';
+  box.querySelectorAll('.title-opt').forEach(function(el) {
+    el.addEventListener('click', function() {
+      pickedTitle = Number(el.getAttribute('data-t'));
+      box.querySelectorAll('.title-opt').forEach(function(x) { x.classList.remove('picked'); });
+      el.classList.add('picked');
+      refreshCounts();
+    });
+  });
+}
+
+function refreshCounts() {
+  var titles = [];
+  document.querySelectorAll('#titles-box .title-opt').forEach(function(el) { titles.push(el.querySelector('span').textContent); });
+  var t = pickedTitle >= 0 ? titles[pickedTitle] : (titles[0] || '');
+  var cs = countStats(t, document.getElementById('nc-body').value);
+  document.getElementById('count-stats').innerHTML =
+    '<span>标题：<b>' + cs.titleLen + '</b> / 20 字' + (cs.titleOk ? ' ✅' : ' ⚠️ 超长或为空') + '</span>'
+    + '<span>正文：<b>' + cs.bodyLen + '</b> / 1000 字' + (cs.bodyOk ? ' ✅' : ' ⚠️ 超限或为空') + '</span>'
+    + '<span>AI 初稿 ≠ 终稿，发布前请人工核对事实</span>';
+}
+
+function renderCheck(text, mountId) {
+  var mount = document.getElementById(mountId);
+  var r = checkCompliance(text);
+  var cs = countStats(text.split('\n')[0], text);
+  if (r.clean) {
+    mount.innerHTML = '<div class="check-head"><span class="verdict ok">✅ 未命中已知风险词</span>'
+      + '<span style="font-size:12.3px;color:var(--muted)">共扫 ' + RISK_CATS.reduce(function(s, g) { return s + g.words.length; }, 0) + ' 个风险词 · 字数 ' + text.length + '</span></div>'
+      + '<div class="note">词典是常见风险词集合，覆盖不到的措辞依然存在——发布前自己的判断永远是最后一道关。</div>';
+    return;
+  }
+  var byCat = {};
+  r.violations.forEach(function(v) { (byCat[v.cat] = byCat[v.cat] || []).push(v); });
+  mount.innerHTML = '<div class="check-head"><span class="verdict bad">⚠️ 命中 ' + r.violations.length + ' 处风险词</span>'
+    + '<span style="font-size:12.3px;color:var(--muted)">按风险等级列出（极限词 > 功效宣称 > 引流 > 限流）</span></div>'
+    + ['limit', 'efficacy', 'spam', 'shadow'].map(function(cat) {
+        var list = byCat[cat];
+        if (!list) return '';
+        var group = RISK_CATS.filter(function(g) { return g.cat === cat; })[0];
+        return '<div class="v-item ' + cat + '"><b>【' + group.catName + '】</b>命中：'
+          + list.map(function(v) { return '<b>' + esc(v.word) + '</b>'; }).join('、')
+          + '<br><span class="fix">💡 ' + esc(group.advice) + '</span></div>';
+      }).join('');
+}
+
+function fillDraft(titles, body, tags) {
+  pickedTitle = titles && titles.length ? 0 : -1;
+  renderTitles(titles);
+  document.getElementById('nc-body').value = body || '';
+  document.getElementById('nc-tags').value = tags || '';
+  refreshCounts();
+}
+
+function loadDemo() {
+  fillDraft(DEMO.titles, DEMO.body, DEMO.tags);
+  renderCheck(DEMO.body, 'check-result');
+  status('🧪 已装载演示笔记——它的标题和正文里故意埋了极限词和引流话术，体检报告在 ③ 区。');
+}
+
+async function generate() {
+  var topic = document.getElementById('nc-topic').value.trim();
+  if (!topic) { status('先填「主题 / 要写什么」。', true); return; }
+  status('🤖 正在起草，请稍等（免费模型约 10-40 秒）…');
+  try {
+    var text = await callChat([
+      { role: 'system', content: '你是小红书爆款笔记作者。只输出 JSON，不输出任何其他文字。' },
+      { role: 'user', content: buildPrompt(topic, document.getElementById('nc-type').value,
+          document.getElementById('nc-audience').value.trim(), document.getElementById('nc-tone').value) }
+    ]);
+    var obj = extractJson(text);
+    if (!obj.titles || !obj.body) throw new Error('返回缺少 titles 或 body 字段');
+    fillDraft(obj.titles, obj.body, (obj.tags || []).join(' '));
+    renderCheck(obj.body, 'check-result');
+    status('✅ 已起草并完成体检——AI 被要求规避风险词，但体检是代码做的，两头都别全信。');
+  } catch (e) {
+    status('❌ ' + e.message + ' —— 没有 Key 可点「装载演示笔记」。', true);
+  }
+}
+
+function init() {
+  refreshCounts();
+  document.getElementById('tpl-list').innerHTML = STRUCTURES.map(function(s) {
+    return '<div class="tpl"><h3>' + s.name + ' <span style="font-size:12px;color:var(--muted);font-weight:600">' + s.hook + '</span></h3>'
+      + '<ol>' + s.steps.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ol>'
+      + '<div class="tips">💡 ' + s.tips + '</div></div>';
+  }).join('');
+
+  document.getElementById('btn-gen').addEventListener('click', generate);
+  document.getElementById('btn-demo').addEventListener('click', loadDemo);
+  document.getElementById('nc-body').addEventListener('input', refreshCounts);
+  document.getElementById('btn-check').addEventListener('click', function() {
+    var quick = document.getElementById('nc-quick').value.trim();
+    if (quick) { renderCheck(quick, 'check-result'); return; }
+    var body = document.getElementById('nc-body').value.trim();
+    if (!body) { document.getElementById('check-result').innerHTML = '<div class="note">草稿台是空的——先写点什么，或点「装载演示笔记」。</div>'; return; }
+    renderCheck(body, 'check-result');
+  });
+  document.getElementById('nc-quick').addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter') document.getElementById('btn-check').click();
+  });
+  document.getElementById('btn-copy-all').addEventListener('click', function() {
+    var titles = [];
+    document.querySelectorAll('#titles-box .title-opt > span:first-child').forEach(function(el) { titles.push(el.textContent); });
+    var t = pickedTitle >= 0 ? titles[pickedTitle] : '';
+    var parts = [];
+    if (t) parts.push('【标题】\n' + t);
+    parts.push('【正文】\n' + document.getElementById('nc-body').value);
+    var tags = document.getElementById('nc-tags').value.trim();
+    if (tags) parts.push('【标签】\n' + tags);
+    navigator.clipboard.writeText(parts.join('\n\n'));
+    status('📋 已复制（标题 + 正文 + 标签）。');
+  });
+
+  var drawer = document.getElementById('drawer-api');
+  document.getElementById('btn-settings').addEventListener('click', function() {
+    var cfg = loadApiConfig();
+    document.getElementById('api-provider').value = cfg.provider || 'zhipu';
+    document.getElementById('api-key').value = cfg.key || '';
+    document.getElementById('api-model').value = cfg.model || '';
+    document.getElementById('api-base').value = cfg.base || '';
+    drawer.style.display = 'flex';
+  });
+  document.getElementById('api-cancel').addEventListener('click', function() { drawer.style.display = 'none'; });
+  drawer.addEventListener('click', function(ev) { if (ev.target === drawer) drawer.style.display = 'none'; });
+  document.getElementById('api-save').addEventListener('click', function() {
+    localStorage.setItem('nc_api', JSON.stringify({
+      provider: document.getElementById('api-provider').value,
+      key: document.getElementById('api-key').value.trim(),
+      model: document.getElementById('api-model').value.trim(),
+      base: document.getElementById('api-base').value.trim()
+    }));
+    drawer.style.display = 'none';
+    status('✅ AI 设置已保存（只存在本机）。');
+  });
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}
+</script>
+</body>
+</html>

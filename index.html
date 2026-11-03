@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aurorawby · AI 产品作品集</title>
+<meta name="description" content="13 个可交互产品 + 1 条求职工作流：求职工作台、JD 雷达、模拟面试官、面试复盘器、Quiz Factory、长文档阅读卡、本地文献 Agent。每个都能点开，关键指标都有可复现评测。">
+<meta name="theme-color" content="#faf9f7">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:title" content="Aurorawby · AI 产品作品集">
+<meta property="og:description" content="13 个可交互产品 + 1 条求职工作流，每个都能点开，关键指标都有可复现评测。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aurorawby.github.io/portfolio-home/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f4fd8'/%3E%3Ctext x='32' y='43' font-size='34' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --ink:#171614;
+    --muted:#6c675f;
+    --faint:#989187;
+    --bg:#faf9f7;
+    --card:#ffffff;
+    --line:#e7e2d9;
+    --line-strong:#d8d1c4;
+    --accent:#1f4fd8;
+    --accent-soft:#eef2ff;
+    --radius:18px;
+    --shadow:0 10px 30px rgba(35,30,20,.06);
+    --max:1120px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:16px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+  /* ---------- 导航 ---------- */
+  .nav{position:sticky;top:0;z-index:50;background:rgba(250,249,247,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  .nav-inner{max-width:var(--max);margin:0 auto;padding:13px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+  .brand{font-weight:800;font-size:16px;letter-spacing:.01em;text-decoration:none;white-space:nowrap}
+  .brand span{color:var(--accent)}
+  .nav-links{display:flex;gap:20px;align-items:center;font-size:14px;color:var(--muted)}
+  .nav-links a{text-decoration:none;padding:4px 0;border-bottom:1px solid transparent}
+  .nav-links a:hover{color:var(--ink);border-bottom-color:var(--ink)}
+  .nav-cta{display:inline-flex;align-items:center;gap:7px;text-decoration:none;background:var(--ink);color:#fff;font-size:13.5px;font-weight:700;padding:8px 14px;border-radius:999px;white-space:nowrap}
+  .nav-cta:hover{background:var(--accent)}
+
+  /* ---------- 首屏 ---------- */
+  .hero{display:grid;grid-template-columns:1.3fr .85fr;gap:44px;padding:64px 0 40px;align-items:start}
+  .eyebrow{margin:0 0 14px;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--accent);text-transform:uppercase}
+  h1{font-size:clamp(34px,4.6vw,54px);line-height:1.1;letter-spacing:-.02em;margin:0 0 18px;font-weight:800}
+  .lede{margin:0;color:var(--muted);font-size:17px;line-height:1.85;max-width:36em}
+  .lede b{color:var(--ink)}
+  .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+  .btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;border-radius:999px;padding:12px 20px;font-size:14.5px;font-weight:700;border:1px solid transparent;transition:transform .15s ease,background .15s ease}
+  .btn:hover{transform:translateY(-1px)}
+  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 10px 24px rgba(31,79,216,.22)}
+  .btn.ghost{background:var(--card);border-color:var(--line-strong);color:var(--ink)}
+  .btn.ghost:hover{border-color:var(--ink)}
+  .guide{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+  .guide h2{margin:0 0 4px;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--faint)}
+  .guide .guide-sub{margin:0 0 10px;font-size:13px;color:var(--muted)}
+  .guide a{display:flex;align-items:baseline;justify-content:space-between;gap:12px;text-decoration:none;padding:11px 0;border-top:1px solid var(--line)}
+  .guide a:hover .g-title{color:var(--accent)}
+  .g-title{font-size:14px;font-weight:700}
+  .g-note{font-size:12px;color:var(--faint);white-space:nowrap}
+  .guide .tiny{margin:12px 0 0;font-size:11.5px;color:var(--faint)}
+
+  /* ---------- 数字条 ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:8px 0 54px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 18px}
+  .stat b{display:block;font-size:26px;line-height:1.1;letter-spacing:-.02em;margin-bottom:4px}
+  .stat span{font-size:12.5px;color:var(--muted)}
+
+  /* ---------- 分区 ---------- */
+  .block{padding:44px 0;border-top:1px solid var(--line);scroll-margin-top:78px}
+  .block-head{display:flex;align-items:flex-end;justify-content:space-between;gap:26px;margin-bottom:22px}
+  .kicker{margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  h2{margin:0;font-size:clamp(24px,3vw,32px);line-height:1.2;letter-spacing:-.01em;font-weight:800}
+  .block-desc{margin:0;color:var(--muted);font-size:14.5px;line-height:1.7;max-width:46em}
+
+  /* ---------- 卡片 ---------- */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;text-decoration:none;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+  .card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(35,30,20,.1);border-color:var(--line-strong)}
+  .card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .icon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:19px;background:var(--accent-soft);flex:0 0 auto}
+  .badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;background:#f2efe9;color:#6c675f;white-space:nowrap}
+  .badge.online{background:#e7f6ee;color:#126b49}
+  .badge.key{background:#fff3df;color:#965a00}
+  .badge.local{background:#e9efff;color:#2647b8}
+  .card h3{margin:0 0 8px;font-size:17.5px;line-height:1.35;letter-spacing:-.01em}
+  .card p{margin:0;color:var(--muted);font-size:13.8px;line-height:1.72}
+  .card.featured{grid-column:span 2}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:11px 0 0}
+  .flow span{font-size:11.5px;font-weight:700;color:#4b463f;background:#f4f1eb;border:1px solid var(--line);border-radius:999px;padding:3px 8px;white-space:nowrap}
+  .flow i{font-style:normal;color:var(--faint);font-size:11px}
+  .metric{margin-top:auto;padding-top:13px;border-top:1px dashed var(--line);font-size:12.2px;color:var(--faint);line-height:1.5}
+  .open{margin-top:10px;font-size:12.5px;font-weight:800;color:var(--accent)}
+
+  /* ---------- 证据 ---------- */
+  .principles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+  .principle{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .principle h3{margin:0 0 7px;font-size:15px}
+  .principle p{margin:0;color:var(--muted);font-size:13.2px;line-height:1.72}
+  .table-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:14px}
+  table.eval{width:100%;border-collapse:collapse;font-size:13px;min-width:680px}
+  table.eval th,table.eval td{text-align:left;padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.eval tr:last-child td{border-bottom:0}
+  table.eval th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:700;background:#fcfbf9}
+  table.eval td:first-child{font-weight:700;white-space:nowrap}
+  table.eval td:nth-child(2){color:var(--muted)}
+  table.eval a{color:var(--accent);text-decoration:none;font-weight:700;white-space:nowrap}
+  table.eval a:hover{text-decoration:underline}
+  .audit-line{margin:14px 0 0;font-size:13px;color:var(--muted)}
+  .audit-line a{color:var(--accent);font-weight:700;text-decoration:none}
+
+  /* ---------- 关于 ---------- */
+  .about{display:grid;grid-template-columns:1.35fr .85fr;gap:36px;align-items:start}
+  .about p{margin:0 0 13px;color:var(--muted);font-size:14.5px;line-height:1.85}
+  .about p b{color:var(--ink)}
+  .profile{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+  .profile h3{margin:0 0 12px;font-size:13px;letter-spacing:.03em;text-transform:uppercase;color:var(--faint)}
+  .row{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-top:1px solid var(--line);font-size:13.2px}
+  .row:first-of-type{border-top:0}
+  .row span{color:var(--muted);white-space:nowrap}
+  .row b{font-weight:700;text-align:right}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}
+  .chip{font-size:11.8px;padding:5px 10px;border-radius:999px;background:#f4f1eb;border:1px solid var(--line);color:#5f5a52;white-space:nowrap}
+
+  /* ---------- 页脚 ---------- */
+  footer{border-top:1px solid var(--line);margin-top:10px;padding:26px 0 40px;color:var(--faint);font-size:12.5px}
+  .foot-inner{max-width:var(--max);margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center}
+  .foot-inner a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line-strong)}
+  .foot-inner a:hover{border-bottom-color:var(--ink)}
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width:960px){
+    .hero{grid-template-columns:1fr;gap:28px;padding-top:44px}
+    .guide{max-width:520px}
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .card.featured{grid-column:span 2}
+    .principles{grid-template-columns:1fr}
+    .about{grid-template-columns:1fr;gap:24px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:720px){
+    .nav-links{display:none}
+    .wrap{padding:0 18px}
+    .hero{padding-top:38px}
+    .lede{font-size:16px}
+    .grid{grid-template-columns:1fr}
+    .card.featured{grid-column:span 1}
+    .block{padding:34px 0}
+    .block-head{display:block}
+    .block-desc{margin-top:8px}
+    /* 评测表在手机上转成卡片，避免横向滚动 */
+    .table-wrap{overflow:visible;border:0;background:transparent}
+    table.eval{display:block;min-width:0;font-size:13px}
+    table.eval thead{display:none}
+    table.eval tbody{display:block}
+    table.eval tr{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+    table.eval td{display:block;padding:3px 0;border:0;text-align:left;line-height:1.55}
+    table.eval td:nth-child(1){font-size:15px;font-weight:700;padding-bottom:5px}
+    table.eval td:nth-child(2){color:var(--muted)}
+    table.eval td:nth-child(3){text-align:right;padding-top:7px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .card,.btn{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top">Aurorawby<span>.</span></a>
+    <nav class="nav-links" aria-label="页面导航">
+      <a href="#job">求职工具箱</a>
+      <a href="#content">内容工具</a>
+      <a href="#research">研究工具</a>
+      <a href="#proof">评测与证据</a>
+      <a href="#about">关于我</a>
+    </nav>
+    <a class="nav-cta" id="nav-github" href="https://github.com/Aurorawby" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- 首屏 -->
+  <section class="wrap hero">
+    <div>
+      <p class="eyebrow">AI 产品经理 / 产品经理 · 实习</p>
+      <h1>把 AI 想法做成<br>能点开、能验证的产品</h1>
+      <p class="lede">
+        13 个可交互产品 + 1 条求职工作流。不是效果图：<b>每个都能点开</b>，
+        关键指标都有<b>可复现评测</b>；边界和不足也写在项目里。
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="#job">从求职工作流开始 →</a>
+        <a class="btn ghost" id="hero-github" href="https://github.com/Aurorawby" target="_blank" rel="noopener">GitHub 源码</a>
+        <a class="btn ghost" href="AUDIT.md">项目审计</a>
+      </div>
+    </div>
+    <aside class="guide" aria-label="面试官导览">
+      <h2>面试官 30 秒</h2>
+      <p class="guide-sub">按这个顺序看，约 3 分钟。</p>
+      <a href="job-workbench/index.html">
+        <span><span class="g-title">求职工作台</span><br><span class="g-note">JD → 面试 → 复盘一条线</span></span>
+        <span class="g-note">01</span>
+      </a>
+      <a id="guide-lit" href="https://github.com/Aurorawby/local-literature-agent" target="_blank" rel="noopener">
+        <span><span class="g-title">本地文献 Agent</span><br><span class="g-note">检索 / 精读 / 综述 / 引用核验</span></span>
+        <span class="g-note">02</span>
+      </a>
+      <a href="AUDIT.md">
+        <span><span class="g-title">评测与审计</span><br><span class="g-note">11 份报告 + 已知不足</span></span>
+        <span class="g-note">03</span>
+      </a>
+      <p class="tiny">全部可直接打开，无需注册。</p>
+    </aside>
+  </section>
+
+  <!-- 数字条 -->
+  <section class="wrap">
+    <div class="stats">
+      <div class="stat"><b>13</b><span>个可交互产品</span></div>
+      <div class="stat"><b>1</b><span>条求职工作流</span></div>
+      <div class="stat"><b>11</b><span>份可复现评测</span></div>
+      <div class="stat"><b>10</b><span>份 PRD / 产品说明</span></div>
+    </div>
+  </section>
+
+  <!-- 求职工具箱 -->
+  <section class="wrap block" id="job">
+    <div class="block-head">
+      <div>
+        <p class="kicker">01 / 求职</p>
+        <h2>一条从 JD 到复盘的求职工作流</h2>
+      </div>
+      <p class="block-desc">投递看板记录进度 → 输入一次 JD + 简历 → 能力雷达 → 模拟面试 → 面后复盘。</p>
+    </div>
+    <div class="grid" id="cards-job"></div>
+  </section>
+
+  <!-- 内容工具 -->
+  <section class="wrap block" id="content">
+    <div class="block-head">
+      <div>
+        <p class="kicker">02 / 内容</p>
+        <h2>把内容生产做成可复用的小工具</h2>
+      </div>
+      <p class="block-desc">AI 负责初稿，代码负责结构、计分和质量门禁；没有 Key 也能看到离线部分。</p>
+    </div>
+    <div class="grid" id="cards-content"></div>
+  </section>
+
+  <!-- 研究工具 -->
+  <section class="wrap block" id="research">
+    <div class="block-head">
+      <div>
+        <p class="kicker">03 / 研究</p>
+        <h2>把长文档、图表和文献读薄</h2>
+      </div>
+      <p class="block-desc">先把信息处理成可判断的结构，再谈观点；摘录与引用都要能回到原文。</p>
+    </div>
+    <div class="grid" id="cards-research"></div>
+  </section>
+
+  <!-- 证据 -->
+  <section class="wrap block" id="proof">
+    <div class="block-head">
+      <div>
+        <p class="kicker">04 / 证据</p>
+        <h2>可复现的证据，而不是效果图</h2>
+      </div>
+      <p class="block-desc">真实输入 → 真实输出；可复现评测；边界透明。做不到的会标注，不假装全能。</p>
+    </div>
+
+    <div class="principles">
+      <div class="principle">
+        <h3>真实输入 → 真实输出</h3>
+        <p>粘贴 JD、简历、面经、长文或图表，就能得到结果；不是截图演示，也不依赖我准备好的样例。</p>
+      </div>
+      <div class="principle">
+        <h3>可复现评测</h3>
+        <p>开发集和留出集分开报告。开发集 100% 可能过拟合，留出集才是真实效果；每条报告都能跑。</p>
+      </div>
+      <div class="principle">
+        <h3>边界透明</h3>
+        <p>哪些需要本地运行、哪些需要自带 Key、哪些指标不宣称准确率，都写在项目说明和审计里。</p>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="eval">
+        <thead>
+          <tr><th>项目</th><th>关键指标</th><th>报告</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>JD 雷达</td><td>核心能力召回 92.7% · Top-5 召回 94.0%（10 份 JD）</td><td><a href="eval/jd-radar/REPORT.md">查看 →</a></td></tr>
+          <tr><td>模拟面试官</td><td>能力覆盖 74.1% · 简历引用 100%（8 组 JD + 简历）</td><td><a href="eval/mock-interview/REPORT.md">查看 →</a></td></tr>
+          <tr><td>面试复盘器</td><td>留出集 P 88.9% / R 94.1%（17 题，未参与调规则）</td><td><a href="eval/interview-extract/REPORT.md">查看 →</a></td></tr>
+          <tr><td>求职工作台</td><td>集成测试 6 条断言通过（跨工具状态流转）</td><td><a href="eval/job-workbench/REPORT.md">查看 →</a></td></tr>
+          <tr><td>投递看板</td><td>统计与手工计算逐字段一致（回归 9/9）</td><td><a href="eval/application-board/REPORT.md">查看 →</a></td></tr>
+          <tr><td>笔记工坊</td><td>违禁词召回 100% · 干净样本误报 0%</td><td><a href="eval/note-craft/REPORT.md">查看 →</a></td></tr>
+          <tr><td>汇报一页纸</td><td>大纲解析与结构诊断 8/8 一致</td><td><a href="eval/one-pager/REPORT.md">查看 →</a></td></tr>
+          <tr><td>选题雷达</td><td>好坏标题双命中 100% · 区分度 40.5 分</td><td><a href="eval/topic-radar/REPORT.md">查看 →</a></td></tr>
+          <tr><td>图表解读器</td><td>数字解读引擎 13/13 一致</td><td><a href="eval/chart-lens/REPORT.md">查看 →</a></td></tr>
+          <tr><td>长文档阅读卡</td><td>摘录逐字核验 4/4 · 关键词覆盖 9/10</td><td><a href="eval/doc-cards/REPORT.md">查看 →</a></td></tr>
+          <tr><td>本地文献 Agent</td><td>10 主题 A/B：Precision@10 6.0% → 57.5%（噪声 ±11–14pp）</td><td><a id="lit-eval" href="https://github.com/Aurorawby/local-literature-agent" target="_blank" rel="noopener">查看 →</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="audit-line">本地 10 份报告 + 文献 Agent 独立评测；全部口径、训练/留出划分和已知不足见 <a href="AUDIT.md">项目审计</a>；评测脚本在各项目的 <code>eval/</code> 目录。</p>
+  </section>
+
+  <!-- 关于 -->
+  <section class="wrap block" id="about">
+    <div class="block-head">
+      <div>
+        <p class="kicker">05 / 关于</p>
+        <h2>关于我</h2>
+      </div>
+    </div>
+    <div class="about">
+      <div>
+        <p>211 高校国际商务硕士（保研），本科国际经济与贸易。做过内容运营和用户增长，现在把方向转到 <b>AI 产品</b>。</p>
+        <p>我的做法是：<b>先用可运行的原型验证，再用评测证明</b>。写 PRD，也自己写代码——这 13 个产品基本是我一个人用 AI 结对编程做出来的；研究生班长，习惯把事推进到落地。</p>
+        <p>求职方向：<b>AI 产品经理 / 产品经理（实习）</b>。可实习 6 个月，每周 4 天，可立即到岗。</p>
+      </div>
+      <aside class="profile">
+        <h3>求职信息</h3>
+        <div class="row"><span>方向</span><b>AI 产品经理 / 产品经理（实习）</b></div>
+        <div class="row"><span>实习</span><b>6 个月 · 每周 4 天 · 立即到岗</b></div>
+        <div class="row"><span>学历</span><b>211 高校硕士（保研）· 本科</b></div>
+        <div class="row"><span>联系</span><b><a href="https://github.com/Aurorawby" target="_blank" rel="noopener">github.com/Aurorawby</a></b></div>
+        <div class="chips">
+          <span class="chip">PRD</span><span class="chip">指标设计</span><span class="chip">用户研究</span>
+          <span class="chip">A/B 测试</span><span class="chip">LLM 评测</span><span class="chip">Prompt</span>
+          <span class="chip">RAG</span><span class="chip">Python</span><span class="chip">SQL</span>
+          <span class="chip">HTML/JS</span><span class="chip">Figma（在学）</span>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <span>© 2026 Aurorawby · 作品集与项目均在 <a href="https://github.com/Aurorawby" target="_blank" rel="noopener">GitHub</a> 开源</span>
+    <span>单文件 HTML · 无框架 · 无后端 · 更新于 2026-11</span>
+  </div>
+</footer>
+
+<script>
+'use strict';
+
+var YOUR_USER = 'Aurorawby';
+var GH = 'https://github.com/' + YOUR_USER;
+var PAGES = 'https://' + YOUR_USER + '.github.io';
+
+/* 卡片数据：group 决定放在哪一栏，status 决定右上角标签 */
+var CARDS = [
+  /* ---------- 求职 ---------- */
+  {group:'job', icon:'🧭', type:'工作流', title:'求职工作台',
+   desc:'把 JD 雷达 → 模拟面试官 → 面试复盘器串成一条线：输入一次 JD + 简历，三步进度自动点亮，最后导出一份求职档案。',
+   metric:'三工具共享数据 · 档案可导出', href:'job-workbench/index.html', status:'online', featured:true, flow:['投递看板','JD 雷达','模拟面试官','面试复盘器']},
+  {group:'job', icon:'📡', type:'求职工具', title:'JD 雷达',
+   desc:'粘贴多份 AI 产品 JD，得到能力雷达、高频能力榜和 gap 清单；纯规则，不调模型，可导出复盘笔记。',
+   metric:'核心能力召回 92.7% · 10 份 JD', href:'jd-radar/index.html', status:'online'},
+  {group:'job', icon:'🎤', type:'求职工具', title:'模拟面试官',
+   desc:'粘贴 JD + 简历，生成一套针对性面试题：岗位能力题 + 简历深挖题 + 追问，每题带考察点和答题框架。',
+   metric:'能力覆盖 74.1% · 8 组 JD + 简历', href:'mock-interview/index.html', status:'online'},
+  {group:'job', icon:'🎙', type:'求职工具', title:'面试复盘器',
+   desc:'粘贴面经，自动提取题目并分类，逐题自评打分，导出结构化复盘笔记；可选 AI 补考察点和答题框架。',
+   metric:'留出集 P 88.9% / R 94.1%', href:'interview-review/index.html', status:'online'},
+  {group:'job', icon:'🗂', type:'求职工具', title:'投递看板',
+   desc:'实习 / 秋招投递状态、漏斗转化率、渠道进面率、14 天无回音提醒、挂掉原因分布，全部代码现算。',
+   metric:'统计回归 9/9 · 数据不出本机', href:'application-board/index.html', status:'online'},
+
+  /* ---------- 内容 ---------- */
+  {group:'content', icon:'✍️', type:'AI 产品', title:'笔记工坊',
+   desc:'按爆款结构起草小红书笔记，写完自动过违禁词体检：极限词 / 功效宣称 / 引流话术逐个高亮并给合规改法。',
+   metric:'违禁召回 100% · 干净样本误报 0%', href:'note-craft/index.html', status:'key'},
+  {group:'content', icon:'📄', type:'AI 产品', title:'汇报一页纸',
+   desc:'粘贴大纲 → 解析结构、诊断缺口（没数字？没下一步？Ask 不具体？）→ 渲染成排版好的一页，打印即 PDF。',
+   metric:'解析 / 诊断 8/8 一致 · 3 种版式', href:'one-pager/index.html', status:'key'},
+  {group:'content', icon:'📡', type:'AI 产品', title:'选题雷达',
+   desc:'输入账号定位，生成候选选题（带「为什么能爆」和风险提醒）；标题丢进 6 维规则打分器，看它缺什么。',
+   metric:'双命中 100% · 区分度 40.5 分', href:'topic-radar/index.html', status:'key'},
+  {group:'content', icon:'🎲', type:'测试', title:'Quiz Factory · 测试库',
+   desc:'8 道题出一个人格结果，带稀有度和分享深链；已有 5 个现成测试，微信里点开就能测。',
+   metric:'5 个现成测试 · 结果由代码计算', href:PAGES + '/quiz-factory/', status:'online'},
+  {group:'content', icon:'✨', type:'AI 产品', title:'做我的测试（AI 生成器）',
+   desc:'输入一句话主题，浏览器里跑完「骨架 → 题目 → 文案」三段生成：自动过质量门禁、校准分布，下载即得新测试。',
+   metric:'三段生成 + 质量门禁 · Key 只存本机', href:PAGES + '/quiz-factory/create.html', status:'key'},
+  {group:'content', icon:'📊', type:'前后端', title:'测试工厂 · 数据版',
+   desc:'给测试装上真后端：Python + SQLite + 数据看板。答题匿名入库，实时看完成漏斗、逐题选项和结果分布。',
+   metric:'零依赖后端 · 本地运行', href:GH + '/portfolio-home', status:'local'},
+
+  /* ---------- 研究 ---------- */
+  {group:'research', icon:'🔍', type:'阅读工具', title:'图表解读器',
+   desc:'上传图表截图，按「结论 → 怎么读 → 结论 → 该警惕」四段解读；离线数字引擎算清翻倍话术和基数陷阱。',
+   metric:'数字引擎 13/13 一致 · 视觉解读需 Key', href:'chart-lens/index.html', status:'key'},
+  {group:'research', icon:'🗂', type:'阅读工具', title:'长文档阅读卡',
+   desc:'长文压成几张卡：观点 + 逐字原文摘录 + 「所以呢」；AI 摘录自动回原文核验，没命中会标灰提醒。',
+   metric:'摘录核验 4/4 · 关键词覆盖 9/10', href:'doc-cards/index.html', status:'online'},
+  {group:'research', icon:'📚', type:'能做深', title:'本地文献 Agent',
+   desc:'跑在自己笔记本上的文献综述流水线：检索、精读、综述、引用核验；10 主题 A/B 把 Precision@10 从 6% 提升到 57.5%+。',
+   metric:'本地运行 · RAG + 引用核验', href:GH + '/local-literature-agent', status:'local'}
+];
+
+var BADGE = {
+  online: {text:'在线可玩', cls:'online'},
+  key: {text:'在线 · AI 需 Key', cls:'key'},
+  local: {text:'需本地运行', cls:'local'}
+};
+
+function cardHTML(card){
+  var b = BADGE[card.status] || BADGE.online;
+  return '<a class="card' + (card.featured ? ' featured' : '') + '" href="' + card.href + '">'
+    + '<div class="card-top"><span class="icon">' + card.icon + '</span><span class="badge ' + b.cls + '">' + b.text + '</span></div>'
+    + '<h3>' + card.title + ' <span style="font-weight:600;color:var(--faint);font-size:12px">· ' + card.type + '</span></h3>'
+    + '<p>' + card.desc + '</p>'
+    + (card.flow ? '<div class="flow">' + card.flow.map(function(f, i){ return (i ? '<i>→</i>' : '') + '<span>' + f + '</span>'; }).join('') + '</div>' : '')
+    + '<div class="metric">' + card.metric + '</div>'
+    + '<div class="open">打开 →</div>'
+    + '</a>';
+}
+
+function render(group, el){
+  var list = CARDS.filter(function(c){ return c.group === group; });
+  document.getElementById(el).innerHTML = list.map(cardHTML).join('');
+}
+
+render('job', 'cards-job');
+render('content', 'cards-content');
+render('research', 'cards-research');
+
+/* 链接统一写一处，方便换账号 */
+document.getElementById('nav-github').href = GH;
+document.getElementById('hero-github').href = GH;
+document.getElementById('guide-lit').href = GH + '/local-literature-agent';
+document.getElementById('lit-eval').href = GH + '/local-literature-agent/blob/main/eval/RESULTS.md';
+</script>
+</body>
+</html>

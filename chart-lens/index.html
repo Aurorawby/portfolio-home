@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图表解读器 · 读图、算数、防被统计忽悠</title>
+<meta name="description" content="上传图表截图，视觉模型给结构化解读（结论 + 怎么看 + 该警惕什么）；纯离线的数字解读器算清「翻倍 vs +2pp」的基数陷阱。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --orange:#ff7a45; --orange-soft:#ffe8dc;
+    --purple:#7c3aed; --purple-soft:#f0e4ff;
+    --blue:#5b7cfa; --blue-soft:#e4e9ff;
+    --green:#12a184; --green-soft:#dcf5ee;
+    --red:#d64545; --red-soft:#fde5e5;
+    --radius:18px; --shadow:0 10px 26px rgba(60,42,20,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--green-soft),transparent 60%),
+    radial-gradient(800px 420px at 100% 0%,var(--purple-soft),transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 16px 40px}
+  .wrap{max-width:880px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:48em}
+  .sub b{color:var(--ink)}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#8a5a1f}
+  .topbtn{margin-left:auto;display:flex;gap:8px}
+  button{font-family:inherit;cursor:pointer}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--orange);color:#fff;box-shadow:0 6px 16px rgba(255,122,69,.28)}
+  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
+  section{margin-bottom:26px}
+  h2{font-size:18.5px;margin:0 0 10px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+  input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13.5px;font-family:inherit;background:#fff}
+  .statusline{font-size:13px;color:var(--muted);margin:10px 0;min-height:20px}
+  .statusline.err{color:var(--red);font-weight:600}
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:10px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  /* 解读结果 */
+  .cl-block{border-radius:12px;padding:12px 15px;margin-bottom:10px;font-size:13px;line-height:1.85}
+  .cl-summary{background:var(--orange-soft);font-size:14.5px;font-weight:700}
+  .cl-reading{background:#f1e8dc}
+  .cl-insight{background:var(--blue-soft)}
+  .cl-caution{background:var(--red-soft)}
+  .cl-block h3{margin:0 0 6px;font-size:13.5px}
+  .cl-block ul{margin:0;padding-left:20px}
+  .cl-block li{margin-bottom:4px}
+  .imgprev{max-width:100%;border-radius:10px;border:1.5px solid var(--line);display:none;margin-top:10px}
+  /* 数字解读 */
+  .delta-result{margin-top:12px}
+  .delta-row{display:flex;gap:10px;flex-wrap:wrap}
+  .delta-chip{background:#f7f4ef;border-radius:10px;padding:10px 16px;text-align:center;flex:1;min-width:130px}
+  .delta-chip .v{font-size:22px;font-weight:800;color:var(--orange)}
+  .delta-chip .k{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .warn-card{background:#fff3e0;border-radius:10px;padding:10px 14px;font-size:12.8px;line-height:1.8;margin-top:10px;color:#92600a}
+  /* 清单 */
+  .chk{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+  .chk h3{margin:0 0 8px;font-size:14.5px}
+  .chk ul{margin:0;padding-left:20px;font-size:12.8px;color:var(--muted);line-height:1.95}
+  .chk li b{color:var(--ink)}
+  .ai-out{background:#faf6ef;border-radius:10px;padding:12px 14px;font-size:12.8px;line-height:1.9;margin-top:10px;white-space:pre-wrap}
+  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
+  footer a{color:#8a5a1f}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🔍 图表解读器 <span style="font-size:15px;color:var(--muted);font-weight:600">ChartLens</span></h1>
+  <p class="sub">读论文 / 看报告的两件套：<b>① 图片解读</b>——视觉模型按「结论 → 怎么看 → 该警惕」三段结构化读图；
+  <b>② 数字解读</b>——离线计算器把「从 2% 涨到 4%」的翻倍话术算清楚（绝对差 / 相对变化 / 倍数 + 基数陷阱提醒）。
+  读图靠模型，<b>算数和统计素养清单由代码完成</b>。</p>
+
+  <div class="topbar">
+    <span class="pill">🔒 图片只在你的浏览器里</span>
+    <span class="pill">🧮 数字解读离线可用</span>
+    <span class="pill">🧪 演示解读无需 Key</span>
+    <span class="topbtn">
+      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+    </span>
+  </div>
+
+  <section>
+    <div class="card">
+      <h2>① 图片解读（AI 视觉模型，推荐智谱 GLM-4V-Flash 免费档）</h2>
+      <div class="topbar" style="margin:0 0 10px">
+        <input type="file" id="img-file" accept="image/*" style="border:none;padding:0;font-size:12.5px">
+        <button class="btn a" id="btn-readimg">🔍 解读这张图</button>
+        <button class="btn b" id="btn-demo-read">🧪 看演示解读</button>
+      </div>
+      <img class="imgprev" id="img-prev" alt="待解读的图表">
+      <div class="statusline" id="img-status"></div>
+      <div id="img-result"></div>
+      <div class="note">图片直接从你的浏览器发给你选的服务商（视觉模型），本页面不经过任何中间服务器；截图时把坐标轴和图例截全，解读会更准。
+      模型可能看错数字——<b>关键结论请对照原图核对</b>。</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>② 数字解读器（离线，专治基数陷阱）</h2>
+      <div class="grid" style="margin-bottom:10px">
+        <div><label>数值 A（之前）</label><input id="num-a" type="number" step="any" placeholder="2"></div>
+        <div><label>数值 B（之后）</label><input id="num-b" type="number" step="any" placeholder="4"></div>
+        <div><label>单位</label>
+          <select id="num-unit"><option>%（百分比）</option><option>万 / 元</option><option>人 / 次 / 个</option><option>天 / 周</option></select></div>
+        <div><label>一句话语境（可选）</label><input id="num-ctx" placeholder="如：次周留存"></div>
+      </div>
+      <button class="btn a" id="btn-delta">🧮 解读这组数字</button>
+      <div class="delta-result" id="delta-result"></div>
+      <div style="margin-top:18px;border-top:1px dashed var(--line);padding-top:14px">
+        <div class="grid" style="margin-bottom:10px">
+          <div><label>平均数</label><input id="st-mean" type="number" step="any" placeholder="12.4"></div>
+          <div><label>标准差</label><input id="st-sd" type="number" step="any" placeholder="8.1"></div>
+          <div><label>样本量 n</label><input id="st-n" type="number" placeholder="18"></div>
+        </div>
+        <button class="btn b" id="btn-cv">📊 检查均值代表性</button>
+        <div id="cv-result" class="delta-result"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>③ 看图清单（统计素养，离线常备）</h2>
+    <div id="chk-list"></div>
+  </section>
+
+  <footer>
+    📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
+    数字解读是确定计算，看图清单是通用统计素养 · AI 读图可能看错，关键数字请对照原图 ·
+    单文件 HTML 可离线使用 · AI 结对编程产出
+  </footer>
+</div>
+
+<!-- AI 设置 -->
+<div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto">
+    <h3 style="margin:0 0 12px;font-size:16px">⚙️ AI 设置（Key 只存本机，请求直接发给你选的服务商）</h3>
+    <label>服务商（图片解读需视觉模型）</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（文本 glm-4-flash / 视觉 glm-4v-flash，均免费）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>文本模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>视觉模型名（可改）</label>
+    <input id="api-vmodel" placeholder="留空用默认（glm-4v-flash）">
+    <label>API Key</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn b" id="api-cancel">取消</button>
+      <button class="btn a" id="api-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   图表解读器 ChartLens
+   结构：数字解读引擎（纯函数，可被 eval 提取）→ 看图清单 →
+        AI 视觉解读（BYOK）→ 渲染与事件
+   数字计算 / 素养清单由代码完成；图片语义解读交给视觉模型。
+   ============================================================ */
+
+/* ---------- ① 数字解读引擎（纯函数，勿加入 DOM 依赖；eval/chart-lens 直接调用） ---------- */
+
+function calcDelta(a, b) {
+  a = Number(a); b = Number(b);
+  if (!isFinite(a) || !isFinite(b) || a === 0) return null;
+  var abs = b - a;
+  var rel = Math.round((abs / Math.abs(a)) * 1000) / 10;   // 相对变化 %
+  var times = Math.round((b / a) * 100) / 100;             // 倍数
+  return { abs: Math.round(abs * 1000) / 1000, rel: rel, times: times };
+}
+
+function deltaNotes(a, b, unit) {
+  a = Number(a); b = Number(b);
+  var d = calcDelta(a, b);
+  if (!d) return { notes: [], chips: null };
+  var notes = [];
+  var smallBase = Math.abs(a) < 5 && Math.abs(b) < 5;      // 小基数（百分比语境）
+  if (d.rel >= 100 && Math.abs(d.abs) <= 10) {
+    notes.push('⚠️ 基数陷阱：说「翻倍 / 涨 ' + d.rel + '%」没错，但绝对值只变了 ' + d.abs + '。写汇报时两个数都给——只写相对变化会有「数字游戏」的嫌疑。');
+  }
+  if (smallBase && unit.indexOf('%') === 0) {
+    notes.push('⚠️ 小基数波动大：两个数都在 5% 以内，日常波动就能造成看起来很大的相对变化——先确认样本量与统计口径，再下结论。');
+  }
+  if (d.rel <= -50) {
+    notes.push('⚠️ 大幅下降：下降超过一半通常有明确原因（政策 / 渠道 / 口径变更），先归因再汇报，别只呈现数字。');
+  }
+  if (unit.indexOf('%') === 0 && Math.abs(d.abs) > 1 && Math.abs(d.abs) <= 2) {
+    notes.push('💡 相差 ' + d.abs + ' 个百分点（pp）：百分点和 % 不是一回事——从 ' + a + '% 到 ' + b + '% 是「+ ' + d.abs + 'pp」，不是「+ ' + d.abs + '%」。');
+  }
+  if (!notes.length) notes.push('✅ 常规变化幅度：正文写「从 ' + a + ' 到 ' + b + '（' + (d.rel >= 0 ? '+' : '') + d.rel + '%）」即可，注意口径一致。');
+  return { notes: notes, chips: d };
+}
+
+function cvCheck(mean, sd, n) {
+  mean = Number(mean); sd = Number(sd); n = Number(n);
+  if (!isFinite(mean) || !isFinite(sd) || mean === 0) return null;
+  var cv = Math.round(sd / Math.abs(mean) * 100) / 100;
+  var notes = [];
+  if (cv > 1) notes.push('⚠️ 变异系数 ' + cv + '（>1）：数据极端分散，均值几乎没有代表性——改看中位数 + 分位数，或先查异常值。');
+  else if (cv > 0.5) notes.push('⚠️ 变异系数 ' + cv + '（>0.5）：分布偏散，均值代表性弱——汇报时补一句中位数或区间更稳。');
+  else notes.push('✅ 变异系数 ' + cv + '（≤0.5）：分布相对集中，均值可作代表值。');
+  if (isFinite(n)) {
+    if (n < 10) notes.push('⛔ 样本量 n=' + n + '（<10）：单个样本就能改变结论，这组数字只能当线索，不能当证据。');
+    else if (n < 30) notes.push('⚠️ 样本量 n=' + n + '（<30）：小样本差异可能不稳健，A/B 结论要谨慎表述。');
+    else notes.push('✅ 样本量 n=' + n + '（≥30）：满足常见统计检验的最低要求。');
+  }
+  return { cv: cv, notes: notes };
+}
+
+/* ---------- ② 看图清单 ---------- */
+
+var CHART_CHECKLIST = [
+  { type: '柱状图', items: [
+    'Y 轴从 0 开始吗？——截断的 Y 轴能把 5% 的差距画成 5 倍的视觉差距',
+    '柱子的顺序有意义吗？——按数值排序还是按时间，讲的是不同故事',
+    '同图多组柱子的基数一致吗？——「 subgroup 样本量差 10 倍」的比较是无效比较',
+    '有没有误差线？——没有误差线的组间差异先打个问号' ] },
+  { type: '折线图', items: [
+    '时间粒度均匀吗？——把跌的那段藏进更粗的粒度是经典手法',
+    'Y 轴范围合理吗？——「暴涨暴跌」可能只是轴范围被放大 / 缩小',
+    '起止点是谁选的？——换个起始月份，趋势可能完全反转',
+    '多条线的量纲一致吗？——双 Y 轴图先确认两条线各自是谁的刻度' ] },
+  { type: '饼图', items: [
+    '所有扇区加起来是 100% 吗？——漏了「其他 / 未回答」会把结构画歪',
+    '扇区数量 ≤5 吗？——超过 5 块的饼图该改条形图',
+    '比较的是占比还是绝对量？——占比涨了不代表数量涨了（分母变了）',
+    '3D 饼图直接警惕——透视会放大前面的扇区' ] },
+  { type: '散点图', items: [
+    '相关 ≠ 因果——两变量同涨可能都是第三个因素的结果',
+    '有没有离群点在带节奏？——一个极端点就能造出「强相关」',
+    '样本点数量够吗？——十几个点的「趋势」先默认是噪声',
+    '两轴的单位与范围合理吗？——截断轴会夸大聚集效果' ] },
+  { type: '表格 / 数据', items: [
+    '百分比的分母是谁？——「转化率 40%」先问分母是哪一批人',
+    '平均数还是中位数？——收入 / 时长类偏态数据，均值会被拉高',
+    '缺失值怎么处理的？——「未回答」被删掉还是单独一类，结果差很多',
+    '两个口径能直接比吗？——统计口径（时间窗 / 人群定义）不同，比了白比' ] }
+];
+
+/* ---------- ③ 演示解读（canned，展示结构化读图格式） ---------- */
+
+var DEMO_READ = {
+  summary: '新用户次周留存从 12% 提升到 18%，但第 4 周开始回落，提升可能不持久。',
+  reading: ['横轴是注册后的周数（0-6 周），纵轴是留存率（%）；', '两条线：改版前（灰）vs 改版后（橙），起点都是 100%；', '第 1 周是差距最大的点（+6pp），之后逐周收窄。'],
+  insights: ['改版对次周留存有效：12% → 18%（+6pp，相对 +50%）；', '提升主要来自第 1-2 周，第 4 周起两线几乎重合；', '按此趋势，4 周后留存与旧版无显著差异。'],
+  cautions: ['纵轴疑似未从 0 开始（起点 10%），视觉差距被放大；', '每条线的样本量未标注——小样本的周度波动可能被误读为趋势；', '未说明「留存」口径（打开 / 关键行为），两种口径结论可能不同。']
+};
+
+/* ---------- ④ AI 视觉解读（BYOK） ---------- */
+
+var PROVIDERS = {
+  zhipu:  { base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash', vmodel: 'glm-4v-flash' },
+  custom: { base: '', model: '', vmodel: '' }
+};
+
+function loadApiConfig() { try { return JSON.parse(localStorage.getItem('cl_api') || '{}'); } catch (e) { return {}; } }
+
+async function callVision(dataUrl, question) {
+  var cfg = loadApiConfig();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.vmodel || provider.vmodel;
+  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({
+      model: model, temperature: 0.4, max_tokens: 1500,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image_url', image_url: { url: dataUrl } },
+          { type: 'text', text: question }
+        ]
+      }]
+    })
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+    throw new Error('接口返回 ' + res.status + '：' + detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+
+function extractJson(text) {
+  var m = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  var raw = m ? m[1] : text;
+  var start = raw.indexOf('{'), end = raw.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('模型没有返回 JSON');
+  return JSON.parse(raw.slice(start, end + 1));
+}
+
+var READ_QUESTION = '这是一张图表（论文 / 报告截图）。请按四段结构解读，严格输出 JSON（不要任何其他文字）：'
+  + '{"summary":"一句话概括这张图说了什么（含关键数字）",'
+  + '"reading":["这图怎么读：坐标轴、图例、单位的说明，2-3 条"],'
+  + '"insights":["图表能支持的结论，2-3 条"],'
+  + '"cautions":["该警惕什么：轴截断 / 样本量未知 / 相关当因果 / 口径不明等，2-3 条"]}';
+
+function renderRead(obj, mountId) {
+  document.getElementById(mountId).innerHTML =
+    '<div class="cl-block cl-summary">💡 ' + esc(obj.summary || '') + '</div>'
+    + '<div class="cl-block cl-reading"><h3>📖 这图怎么读</h3><ul>' + (obj.reading || []).map(function(x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>'
+    + '<div class="cl-block cl-insight"><h3>📌 能支持的结论</h3><ul>' + (obj.insights || []).map(function(x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>'
+    + '<div class="cl-block cl-caution"><h3>⚠️ 该警惕什么</h3><ul>' + (obj.cautions || []).map(function(x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+}
+
+/* ---------- ⑤ 事件 ---------- */
+
+function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+var imgDataUrl = '';
+
+function init() {
+  document.getElementById('chk-list').innerHTML = CHART_CHECKLIST.map(function(c) {
+    return '<div class="chk"><h3>' + c.type + '——看之前问自己</h3><ul>' + c.items.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
+  }).join('');
+
+  document.getElementById('img-file').addEventListener('change', function(ev) {
+    var f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      imgDataUrl = reader.result;
+      var prev = document.getElementById('img-prev');
+      prev.src = imgDataUrl; prev.style.display = 'block';
+      document.getElementById('img-status').textContent = '图片已就绪（' + Math.round(imgDataUrl.length / 1365) + 'KB，仅本地预览，解读时直接发给你选的服务商）。';
+    };
+    reader.readAsDataURL(f);
+  });
+
+  document.getElementById('btn-readimg').addEventListener('click', async function() {
+    if (!imgDataUrl) { 
+      document.getElementById('img-status').textContent = '先选一张图表截图。';
+      document.getElementById('img-status').className = 'statusline err';
+      return; 
+    }
+    var st = document.getElementById('img-status');
+    st.className = 'statusline';
+    st.textContent = '🔍 视觉模型正在读图（免费模型约 10-30 秒）…';
+    try {
+      var text = await callVision(imgDataUrl, READ_QUESTION);
+      var obj = extractJson(text);
+      renderRead(obj, 'img-result');
+      st.textContent = '✅ 解读完成——关键数字请对照原图核对，模型可能看错。';
+    } catch (e) {
+      st.textContent = '❌ ' + e.message + ' —— 视觉解读需要支持图片的模型（智谱 glm-4v-flash 免费）；没有 Key 可点「看演示解读」。';
+      st.className = 'statusline err';
+    }
+  });
+
+  document.getElementById('btn-demo-read').addEventListener('click', function() {
+    renderRead(DEMO_READ, 'img-result');
+    var st = document.getElementById('img-status');
+    st.className = 'statusline';
+    st.textContent = '🧪 这是 canned 演示解读（留存曲线案例）——真实解读需要配视觉模型的 Key。';
+  });
+
+  document.getElementById('btn-delta').addEventListener('click', function() {
+    var a = document.getElementById('num-a').value;
+    var b = document.getElementById('num-b').value;
+    var unit = document.getElementById('num-unit').value;
+    var ctx = document.getElementById('num-ctx').value.trim();
+    var mount = document.getElementById('delta-result');
+    if (a === '' || b === '' || Number(a) === 0) { mount.innerHTML = '<div class="note">填好 A（非 0）和 B 两个数。</div>'; return; }
+    var r = deltaNotes(a, b, unit);
+    var label = ctx ? esc(ctx) + '：' : '';
+    mount.innerHTML = '<div class="delta-row">'
+      + '<div class="delta-chip"><div class="v">' + (r.chips.abs >= 0 ? '+' : '') + r.chips.abs + '</div><div class="k">绝对变化</div></div>'
+      + '<div class="delta-chip"><div class="v">' + (r.chips.rel >= 0 ? '+' : '') + r.chips.rel + '%</div><div class="k">相对变化</div></div>'
+      + '<div class="delta-chip"><div class="v">' + r.chips.times + '×</div><div class="k">倍数（B / A）</div></div></div>'
+      + r.notes.map(function(n) { return '<div class="warn-card">' + label + n + '</div>'; }).join('');
+  });
+
+  document.getElementById('btn-cv').addEventListener('click', function() {
+    var mean = document.getElementById('st-mean').value;
+    var sd = document.getElementById('st-sd').value;
+    var n = document.getElementById('st-n').value;
+    var mount = document.getElementById('cv-result');
+    var r = cvCheck(mean, sd, n === '' ? NaN : n);
+    if (!r) { mount.innerHTML = '<div class="note">填平均数（非 0）和标准差；样本量可选。</div>'; return; }
+    mount.innerHTML = '<div class="delta-chip" style="display:inline-block"><div class="v">' + r.cv + '</div><div class="k">变异系数 CV = 标准差 / 均值</div></div>'
+      + r.notes.map(function(x) { return '<div class="warn-card">' + x + '</div>'; }).join('');
+  });
+
+  var drawer = document.getElementById('drawer-api');
+  document.getElementById('btn-settings').addEventListener('click', function() {
+    var cfg = loadApiConfig();
+    document.getElementById('api-provider').value = cfg.provider || 'zhipu';
+    document.getElementById('api-key').value = cfg.key || '';
+    document.getElementById('api-model').value = cfg.model || '';
+    document.getElementById('api-vmodel').value = cfg.vmodel || '';
+    document.getElementById('api-base').value = cfg.base || '';
+    drawer.style.display = 'flex';
+  });
+  document.getElementById('api-cancel').addEventListener('click', function() { drawer.style.display = 'none'; });
+  drawer.addEventListener('click', function(ev) { if (ev.target === drawer) drawer.style.display = 'none'; });
+  document.getElementById('api-save').addEventListener('click', function() {
+    localStorage.setItem('cl_api', JSON.stringify({
+      provider: document.getElementById('api-provider').value,
+      key: document.getElementById('api-key').value.trim(),
+      model: document.getElementById('api-model').value.trim(),
+      vmodel: document.getElementById('api-vmodel').value.trim(),
+      base: document.getElementById('api-base').value.trim()
+    }));
+    drawer.style.display = 'none';
+  });
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}
+</script>
+</body>
+</html>

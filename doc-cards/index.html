@@ -1,0 +1,448 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>长文档阅读卡 · 一篇长文，几张卡片</title>
+<meta name="description" content="把长文章/研报/论文丢进来：离线模式自动划重点句，AI 模式生成观点卡（观点+原文摘录+对你的意义），还能针对全文追问。">
+<style>
+  :root{
+    --accent:#12a184; --accent-soft:#dcf5ee;
+    --ink:#1f1b16; --muted:#7a7268; --card:#fff; --bg:#f4f7f5;
+    --ok:#0e9f6e; --warn:#b45309;
+    --radius:18px; --shadow:0 10px 28px rgba(20,60,50,.10);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:radial-gradient(1100px 500px at 100% -10%, var(--accent-soft), transparent 60%), var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    min-height:100vh;display:flex;justify-content:center;
+    padding:24px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .app{width:100%;max-width:760px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 20px;margin-bottom:16px}
+  h1{font-size:25px;line-height:1.3;margin:0 0 8px}
+  .sub{color:var(--muted);font-size:14px;line-height:1.7;margin:0 0 18px}
+  label{display:block;font-size:13px;font-weight:700;color:#47554f;margin:0 0 6px}
+  textarea{width:100%;border:1.5px solid #d9e6e0;border-radius:12px;padding:12px 14px;font-size:14.5px;
+    color:var(--ink);background:#fff;font-family:inherit;line-height:1.8;resize:vertical}
+  textarea:focus,input:focus,select:focus{outline:none;border-color:var(--accent)}
+  input[type=password],select{width:100%;border:1.5px solid #d9e6e0;border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;background:#fff}
+  .row{display:grid;grid-template-columns:2fr 1fr;gap:10px}
+  .btn{display:inline-block;border:0;border-radius:999px;padding:11px 18px;font-size:14px;font-weight:700;
+    background:var(--accent);color:#fff;cursor:pointer;transition:transform .15s ease}
+  .btn:active{transform:scale(.97)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid #d9e6e0;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .hint{color:var(--muted);font-size:12.5px;margin-top:8px;line-height:1.6}
+  .hidden{display:none!important}
+  .banner{border-radius:12px;padding:10px 14px;font-size:13.5px;line-height:1.7;margin:10px 0 0}
+  .banner.ok{background:#e3f7ef;color:#0b6b4a}
+  .banner.err{background:#fdeaea;color:#a33}
+  .strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+  .chip{background:#f2f8f5;border:1px solid #d9e6e0;border-radius:999px;padding:5px 12px;font-size:12.5px;color:#47554f}
+  .summary{background:#f0faf6;border-left:3px solid var(--accent);border-radius:0 12px 12px 0;
+    padding:12px 14px;font-size:14px;line-height:1.8;margin-top:14px}
+  .cards{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px}
+  .dcard{border:1.5px solid #e2ece7;border-radius:14px;padding:16px;background:#fff}
+  .dcard .ttl{font-size:15.5px;font-weight:800;display:flex;gap:8px;align-items:baseline}
+  .dcard .ttl .no{flex:0 0 auto;background:var(--accent-soft);color:#0b6b52;border-radius:8px;
+    padding:2px 9px;font-size:12px;font-weight:800}
+  .dcard .point{font-size:14px;line-height:1.8;margin:10px 0 0}
+  .dcard .quote{background:#f7faf8;border-radius:10px;padding:10px 12px;font-size:13px;color:#5c6b64;
+    line-height:1.7;margin:10px 0 0;font-style:normal;border-left:3px solid #cfe6dc}
+  .dcard .why{font-size:13.5px;color:#0b6b52;margin:10px 0 0;line-height:1.7}
+  .dcard .tagline{margin-top:10px}
+  .fu{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .fu button{border:1.2px solid #d9e6e0;background:#fff;border-radius:999px;padding:7px 13px;
+    font-size:13px;color:#3d5a50;cursor:pointer}
+  .fu button:hover{border-color:var(--accent);color:var(--accent)}
+  .answer{background:#f0faf6;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.8;margin-top:12px;white-space:pre-wrap}
+  .spin{display:inline-block;animation:rot 1s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+  .footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:12px;line-height:1.8}
+  .footer a{color:#0b6b52;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="card">
+    <h1>🗂 长文档阅读卡</h1>
+    <p class="sub">把长文章 / 研报 / 论文粘贴进来：<br>
+    <b>① 离线划重点</b>——不联网也能把关键句捞出来；<b>② AI 观点卡</b>——把「它说了什么」变成「我该记住什么」；<b>③ 针对全文追问</b>。</p>
+    <label>粘贴长文（建议 500-20000 字）</label>
+    <textarea id="raw" rows="6" placeholder="把整篇文章粘到这里…"></textarea>
+    <div class="btnrow">
+      <button class="btn ghost" id="scan">🔦 离线划重点（不用 Key）</button>
+      <button class="btn" id="aicards">✨ AI 观点卡</button>
+      <button class="btn ghost" id="sample">载入示例文章</button>
+      <button class="btn ghost" id="clear">清空</button>
+    </div>
+    <div id="scan-msg" class="hint"></div>
+    <div class="strip" id="meta-strip"></div>
+  </div>
+
+  <div class="card hidden" id="ai-box">
+    <label>AI 设置（BYOK，Key 只存本机）</label>
+    <div class="row">
+      <div>
+        <select id="provider"></select>
+        <input type="password" id="apikey" placeholder="API Key，只存本机浏览器" style="margin-top:8px">
+      </div>
+      <div style="align-self:end">
+        <button class="btn" id="goai">✨ 生成观点卡</button>
+      </div>
+    </div>
+    <div id="ai-err" class="banner err hidden"></div>
+    <p class="hint">请求从你的浏览器直连服务商，不经过任何中间服务器。智谱 GLM-4-Flash 免费。</p>
+  </div>
+
+  <div class="card hidden" id="result-card">
+    <div id="summary-box"></div>
+    <label style="margin-top:16px">观点卡</label>
+    <div class="cards" id="cards"></div>
+    <label style="margin-top:18px">追问（点一个，或自己写）</label>
+    <div class="fu" id="fuchips"></div>
+    <textarea id="ask" rows="2" placeholder="针对这篇文章问点什么…" style="margin-top:10px"></textarea>
+    <div class="btnrow">
+      <button class="btn" id="askbtn">💬 提问</button>
+    </div>
+    <div id="answer-box"></div>
+  </div>
+
+  <div class="footer">
+    长文档阅读卡 · 单文件离线可用 · 不上传、不采集 · <a href="../index.html">看看我做的其他小东西 →</a>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ================================================================
+ * 长文档阅读卡：
+ *   1) 离线层：断句 + 停用词过滤 + 关键句打分（词频×位置），纯本地
+ *   2) AI 层（BYOK 可选）：观点卡（观点/原文摘录/对你的意义）+ 摘要 + 追问建议
+ *   3) 追问层：带全文上下文的一问一答
+ * ================================================================ */
+
+var $ = function(id){ return document.getElementById(id); };
+var els = {
+  raw:$('raw'), scan:$('scan'), aicards:$('aicards'), sample:$('sample'), clear:$('clear'),
+  scanMsg:$('scan-msg'), metaStrip:$('meta-strip'), aiBox:$('ai-box'), aiErr:$('ai-err'),
+  provider:$('provider'), apikey:$('apikey'), goai:$('goai'),
+  resultCard:$('result-card'), summaryBox:$('summary-box'), cards:$('cards'),
+  fuchips:$('fuchips'), ask:$('ask'), askbtn:$('askbtn'), answerBox:$('answer-box')
+};
+
+/* ---------------- 示例文章 ---------------- */
+var SAMPLE = [
+  '为什么产品经理要懂一点大模型的边界',
+  '',
+  '过去两年，我看过太多「拿大模型当许愿机」的产品方案：要么把 AI 当成万能替身，要么把它当成一个会说话的搜索框。这两种失败方式其实是同一个根源——不了解模型的边界。',
+  '',
+  '第一个边界：模型擅长生成，不擅长「保证」。让它写十个标题，个个像模像样；让它保证第八个不违规，它做不到。所以好的 AI 产品不是「生成后直接用」，而是「生成 + 校验 + 兜底」的三明治结构。我们做内容生成工具时，真正下功夫的地方往往不是提示词，而是校验规则：什么是硬性错误、什么交给重试、什么必须留给人。',
+  '',
+  '第二个边界：模型的可复现性差。同一个输入跑两次，输出可能完全不同。这对功能是灾难，对玩法却是宝藏——人格测试的文案要稳定，抽卡游戏的台词却最好每次不一样。产品经理的任务是判断「这里的随机性是缺陷还是风味」，并用温度参数和结构化输出去调节它。',
+  '',
+  '第三个边界：成本曲线和体验曲线是交叉的。用户对第一次生成的容忍度远高于第二次：第一次等十秒可以接受，改一个字再等十秒就想摔手机。所以「多轮修改」场景要么缓存中间结果，要么把大模型换成小模型。不要用平均值估成本，要用 P95 用户路径估。',
+  '',
+  '第四个边界：评测比生成难。生成一段文案只需要一个提示词，判断它好不好需要一套标准。很多团队的评测停留在「老板看一眼」，于是产品质量永远跟着老板的审美波动。可行的起点很土：攒一百条真实场景的输入，标注期望输出，每次改提示词后全量跑一遍。它不优雅，但能让迭代从玄学变成工程。',
+  '',
+  '把四个边界放在一起看，会得到一个朴素的结论：AI 产品经理的核心工作不是「想出 AI 能做什么」，而是「设计一套机制，让 AI 在不完美的情况下仍然可发布」。结构化输出、校验门禁、兜底话术、评测集——这些不起眼的机制，才是同类产品拉开差距的地方。'
+].join('\n');
+
+var DEMO_AI = null;   // 演示输出在下方 SAMPLE_CARDS
+
+/* ---------------- 状态 ---------------- */
+var AI = null;        // {summary, cards, followups}
+var DEMO_MODE = false; // 示例文章自带 canned 结果，不调 API
+
+/* ---------------- 离线划重点 ---------------- */
+var STOP = ('的 了 和 是 就 都 而 及 与 著 或 一个 没有 我们 你们 他们 它 这 那 也 在 上 中 下 对 为 到 说 要 会 能 被 把 让 从 但 并 等 之 其 更 最 很 不 你 我 他 她 吗 呢 吧 啊 去来 起来 什么 怎么 可以 应该 因为 所以 如果 虽然 然而 因此 比如 例如 通过 进行 以及 还有').split(/\s+/);
+var STOPSET = {}; STOP.forEach(function(w){ STOPSET[w] = 1; });
+
+function splitSentences(text){
+  var parts = [];
+  String(text).split(/\r?\n/).forEach(function(line){
+    line = line.trim();
+    if (!line) return;
+    var buf = '';
+    var segs = [];
+    try { segs = line.split(/(?<=[。！？!?；;])/); } catch (e) { segs = [line]; }
+    segs.forEach(function(s){
+      buf += s;
+      if (/[。！？!?；;]$/.test(buf)) { if (buf.trim().length >= 8) parts.push(buf.trim()); buf = ''; }
+    });
+    if (buf.trim().length >= 8) parts.push(buf.trim());
+  });
+  return parts;
+}
+
+function keywords(text){
+  var freq = {};
+  // 粗粒度中文切词：取 2 字组合 + 英文单词
+  var tokens = String(text).match(/[A-Za-z][A-Za-z0-9\-\/]+|[\u4e00-\u9fa5]{2}/g) || [];
+  tokens.forEach(function(t){
+    if (!STOPSET[t] && t.length >= 2) freq[t] = (freq[t] || 0) + 1;
+  });
+  return freq;
+}
+
+function topSentences(text, n){
+  var sents = splitSentences(text);
+  if (!sents.length) return [];
+  var freq = keywords(text);
+  var maxF = 1;
+  Object.keys(freq).forEach(function(k){ if (freq[k] > maxF) maxF = freq[k]; });
+  var scored = sents.map(function(s, i){
+    var toks = s.match(/[A-Za-z][A-Za-z0-9\-\/]+|[\u4e00-\u9fa5]{2}/g) || [];
+    var density = 0;
+    toks.forEach(function(t){ if (freq[t]) density += freq[t] / maxF; });
+    var score = toks.length ? density / Math.sqrt(toks.length) : 0;
+    if (i === 0 || i === sents.length - 1) score *= 1.15;   // 首尾句常常是主旨
+    if (/(结论|所以|总之|核心|关键|本质|意味着)/.test(s)) score *= 1.25;
+    return {s: s, score: score, i: i};
+  });
+  scored.sort(function(a, b){ return b.score - a.score; });
+  return scored.slice(0, n).sort(function(a, b){ return a.i - b.i; }).map(function(x){ return x.s; });
+}
+
+els.scan.addEventListener('click', function(){
+  var text = els.raw.value.trim();
+  if (text.length < 100) { els.scanMsg.textContent = '内容太短了（至少 100 字）——这种长度直接读完更快。'; return; }
+  var sents = splitSentences(text);
+  var chars = text.replace(/\s/g, '').length;
+  var minutes = Math.max(1, Math.round(chars / 400));
+  var picks = topSentences(text, Math.min(6, Math.max(3, Math.round(sents.length / 8))));
+  els.scanMsg.textContent = '';
+  els.metaStrip.innerHTML = '<span class="chip">📄 ' + sents.length + ' 句 · 约 ' + chars + ' 字 · 读完约 ' + minutes + ' 分钟</span>';
+  var box = els.summaryBox;
+  box.innerHTML = '<label>🔦 离线划重点（按词频与位置打分，纯本地，无 AI）</label>'
+    + '<div class="summary">' + picks.map(function(s){ return '· ' + escapeText(s); }).join('<br>') + '</div>';
+  els.resultCard.classList.remove('hidden');
+  els.aiBox.classList.remove('hidden');
+});
+
+/* ---------------- AI 层 ---------------- */
+var PROVIDERS = {
+  zhipu:    {name:'智谱 GLM（GLM-4-Flash 免费）', base:'https://open.bigmodel.cn/api/paas/v4', model:'glm-4-flash', needKey:true},
+  deepseek: {name:'DeepSeek', base:'https://api.deepseek.com', model:'deepseek-chat', needKey:true},
+  moonshot: {name:'Moonshot Kimi', base:'https://api.moonshot.cn/v1', model:'moonshot-v1-8k', needKey:true},
+  ollama:   {name:'Ollama 本地（免费）', base:'http://127.0.0.1:11434/v1', model:'qwen2.5:7b', needKey:false},
+  custom:   {name:'自定义（OpenAI 兼容）', base:'', model:'', needKey:true}
+};
+Object.keys(PROVIDERS).forEach(function(pid){
+  var opt = document.createElement('option');
+  opt.value = pid; opt.textContent = PROVIDERS[pid].name;
+  els.provider.appendChild(opt);
+});
+if (PROVIDERS[localStorage.getItem('dc_provider')]) els.provider.value = localStorage.getItem('dc_provider');
+els.apikey.value = localStorage.getItem('dc_key_' + els.provider.value) || '';
+els.provider.addEventListener('change', function(){
+  localStorage.setItem('dc_provider', els.provider.value);
+  els.apikey.value = localStorage.getItem('dc_key_' + els.provider.value) || '';
+});
+els.apikey.addEventListener('input', function(){
+  localStorage.setItem('dc_key_' + els.provider.value, els.apikey.value.trim());
+});
+
+function cfg(){
+  var pid = els.provider.value, p = PROVIDERS[pid];
+  return {
+    pid: pid, needKey: p.needKey,
+    base: (pid === 'custom' ? (localStorage.getItem('dc_base') || '') : p.base).replace(/\/+$/, ''),
+    model: pid === 'custom' ? (localStorage.getItem('dc_model') || '') : p.model,
+    key: p.needKey ? (els.apikey.value.trim() || localStorage.getItem('dc_key_' + pid) || '') : ''
+  };
+}
+
+async function chat(user, maxTokens, temperature){
+  var c = cfg();
+  if (!c.base || !c.model) throw new Error('自定义服务商需要地址和模型名');
+  if (c.needKey && !c.key) throw new Error('请先粘贴 API Key');
+  var ctrl = new AbortController();
+  var timer = setTimeout(function(){ ctrl.abort(); }, 120000);
+  var resp;
+  try {
+    resp = await fetch(c.base + '/chat/completions', {
+      method: 'POST',
+      headers: c.key ? {'Content-Type':'application/json','Authorization':'Bearer ' + c.key} : {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: c.model,
+        messages: [
+          {role:'system', content:'你是严谨的中文阅读助手。只输出一个 JSON 对象，不写解释、不用 Markdown 代码块。引用原文必须逐字摘录。'},
+          {role:'user', content: user}
+        ],
+        temperature: temperature, max_tokens: maxTokens
+      }),
+      signal: ctrl.signal
+    });
+  } catch (e) { throw new Error('网络请求失败（断网 / 跨域拦截 / 本地服务未启动）：' + e.message); }
+  finally { clearTimeout(timer); }
+  if (!resp.ok) {
+    var body = await resp.text().catch(function(){ return ''; });
+    throw new Error('服务返回 ' + resp.status + ' ' + body.slice(0, 160));
+  }
+  var data = await resp.json();
+  return data.choices[0].message.content;
+}
+
+function parseJSON(text){
+  var t = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```\s*$/, '').trim();
+  var s = t.indexOf('{'), e = t.lastIndexOf('}');
+  if (s === -1 || e === -1) throw new Error('输出里找不到 JSON');
+  t = t.slice(s, e + 1);
+  try { return JSON.parse(t); }
+  catch (err) { return JSON.parse(t.replace(/,\s*([}\]])/g, '$1')); }
+}
+
+els.aicards.addEventListener('click', function(){
+  els.aiBox.classList.remove('hidden');
+  els.goai.click();
+});
+
+els.goai.addEventListener('click', async function(){
+  var text = els.raw.value.trim();
+  if (text.length < 100) { els.aiErr.textContent = '⛔ 内容太短（至少 100 字）'; els.aiErr.classList.remove('hidden'); return; }
+  var article = text.length > 8000 ? text.slice(0, 8000) + '……（后文截断）' : text;
+  els.goai.disabled = true;
+  els.aiErr.classList.add('hidden');
+  els.goai.innerHTML = '<span class="spin">⚙</span> 阅读中…';
+  var prompt = '阅读下面的文章，产出阅读卡片。\n\n文章：\n' + article + '\n\n要求：\n'
+    + '1. summary：40-60 字的一句话主旨；\n'
+    + '2. cards：恰好 4 张观点卡，每张含 title（10 字内的小标题）、point（这条观点是什么，40-60 字）、'
+    + 'quote（支撑它的原文逐字摘录，30-80 字，必须能在原文中找到）、why（对读者「所以呢」，30-50 字）；\n'
+    + '3. followups：3 个值得追问的问题（各 25 字内）。\n'
+    + '只输出 JSON：{"summary":"...","cards":[{"title":"...","point":"...","quote":"...","why":"..."}],"followups":["...","...","..."]}';
+  try {
+    var data;
+    if (DEMO_MODE) {
+      data = SAMPLE_CARDS;
+    } else {
+      data = parseJSON(await chat(prompt, 3000, 0.4));
+    }
+    if (!Array.isArray(data.cards) || !data.cards.length) throw new Error('AI 没有返回卡片');
+    AI = {
+      summary: String(data.summary || ''),
+      cards: data.cards.slice(0, 6).map(function(c){
+        return {
+          title: String(c.title || '观点'),
+          point: String(c.point || ''),
+          quote: String(c.quote || ''),
+          why: String(c.why || ''),
+          inText: text.replace(/\s+/g, '').indexOf(String(c.quote || '').replace(/\s+/g, '')) !== -1
+        };
+      }),
+      followups: Array.isArray(data.followups) ? data.followups.map(String).slice(0, 4) : []
+    };
+    renderAI();
+    els.resultCard.classList.remove('hidden');
+    els.resultCard.scrollIntoView({behavior: 'smooth'});
+  } catch (err) {
+    els.aiErr.textContent = '⛔ ' + err.message;
+    els.aiErr.classList.remove('hidden');
+  } finally {
+    els.goai.disabled = false;
+    els.goai.textContent = '✨ 生成观点卡';
+  }
+});
+
+function renderAI(){
+  var badQuote = AI.cards.filter(function(c){ return c.quote && !c.inText; }).length;
+  els.summaryBox.innerHTML =
+    '<label>✨ AI 阅读</label>'
+    + '<div class="summary"><b>主旨：</b>' + escapeText(AI.summary) + '</div>'
+    + '<div class="strip" style="margin-top:10px"><span class="chip">🗂 ' + AI.cards.length + ' 张观点卡</span>'
+    + (badQuote === 0
+        ? '<span class="chip">✅ 引用核验：原文摘录全部命中</span>'
+        : '<span class="chip">⚠️ ' + badQuote + ' 条摘录未在原文命中（已标灰，建议人工核对）</span>')
+    + '</div>';
+  els.cards.innerHTML = '';
+  AI.cards.forEach(function(c, i){
+    var div = document.createElement('div'); div.className = 'dcard';
+    div.innerHTML = '<div class="ttl"><span class="no">' + (i + 1) + '</span><span>' + escapeText(c.title) + '</span></div>'
+      + '<div class="point">' + escapeText(c.point) + '</div>'
+      + '<blockquote class="quote" style="' + (c.quote && !c.inText ? 'opacity:.62' : '') + '">「' + escapeText(c.quote) + '」'
+      + (c.quote && !c.inText ? '<br>⚠️ 未在原文精确命中' : '') + '</blockquote>'
+      + (c.why ? '<div class="why">👉 所以呢：' + escapeText(c.why) + '</div>' : '');
+    els.cards.appendChild(div);
+  });
+  els.fuchips.innerHTML = '';
+  AI.followups.forEach(function(q){
+    var b = document.createElement('button');
+    b.textContent = q;
+    b.addEventListener('click', function(){ els.ask.value = q; els.askbtn.click(); });
+    els.fuchips.appendChild(b);
+  });
+}
+
+/* ---------------- 追问 ---------------- */
+els.askbtn.addEventListener('click', async function(){
+  var q = els.ask.value.trim();
+  if (!q) return;
+  if (!els.raw.value.trim()) { els.answerBox.innerHTML = '<div class="answer">先把文章粘进来，我才答得有依据。</div>'; return; }
+  var article = els.raw.value.trim();
+  if (article.length > 6000) article = article.slice(0, 6000) + '……（后文截断）';
+  els.askbtn.disabled = true;
+  els.answerBox.innerHTML = '<div class="answer"><span class="spin">⚙</span> 思考中…</div>';
+  try {
+    var text;
+    if (DEMO_MODE) {
+      text = '（演示模式）基于这篇文章的立场，对「' + q + '」的简要回答：文章的四个边界里，最相关的判断标准是——先分清你问的是生成、复现、成本还是评测问题，再对症下药。正式使用请配置 API Key。';
+    } else {
+      text = await chat('基于下面的文章回答问题。要求：300 字内；先给结论；引用原文时用「」；文章没讲的就直说文章没讲。\n\n文章：\n' + article + '\n\n问题：' + q, 1200, 0.4);
+    }
+    els.answerBox.innerHTML = '<div class="answer"><b>Q：' + escapeText(q) + '</b>\n' + escapeText(text) + '</div>';
+  } catch (err) {
+    els.answerBox.innerHTML = '<div class="answer">⛔ ' + escapeText(err.message) + '</div>';
+  } finally {
+    els.askbtn.disabled = false;
+  }
+});
+
+/* ---------------- 工具 ---------------- */
+function escapeText(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+els.sample.addEventListener('click', function(){
+  els.raw.value = SAMPLE;
+  DEMO_MODE = true;
+  els.scan.click();
+  els.aiBox.classList.remove('hidden');
+  els.aiErr.classList.add('hidden');
+  els.goai.title = '演示模式已就绪：直接点，看 canned 结果';
+});
+els.clear.addEventListener('click', function(){
+  els.raw.value = '';
+  els.resultCard.classList.add('hidden');
+  els.aiBox.classList.add('hidden');
+  els.scanMsg.textContent = '';
+  els.metaStrip.innerHTML = '';
+  els.answerBox.innerHTML = '';
+  AI = null;
+  DEMO_MODE = false;
+});
+
+/* 示例文章的 canned AI 结果（演示模式用，与 SAMPLE 对应） */
+var SAMPLE_CARDS = {
+  summary: 'AI 产品的差距不在「能用大模型做什么」，而在围绕模型边界设计的发布机制。',
+  cards: [
+    {title: '三明治结构', point: '模型擅长生成但不擅长保证，成熟做法是「生成 + 校验 + 兜底」：硬错误拦下、可修的交给重试、拿不准的留给人。', quote: '真正下功夫的地方往往不是提示词，而是校验规则：什么是硬性错误、什么交给重试、什么必须留给人。', why: '评估一个 AI 功能时，先问它的校验层长什么样，而不是先看 demo 多惊艳。'},
+    {title: '随机性是风味', point: '同输入不同输出，对功能是灾难、对玩法是宝藏；产品经理要用温度参数和结构化输出判断「这里的随机是缺陷还是风味」。', quote: '产品经理的任务是判断「这里的随机性是缺陷还是风味」，并用温度参数和结构化输出去调节它。', why: '给你的场景先归类：要稳定的走结构化，要惊喜的放开温度。'},
+    {title: '按 P95 估成本', point: '用户对第一次生成容忍度高、对重复修改几乎零容忍，多轮修改要缓存或换小模型；成本不能按平均估，要按最重的用户路径估。', quote: '不要用平均值估成本，要用 P95 用户路径估。', why: '做成本模型时，把「改一次」的路径单独算一遍，多数方案会在这里露馅。'},
+    {title: '评测先于迭代', point: '评测比生成难：攒一百条真实输入、标注期望输出、每次改提示词全量跑，让迭代从玄学变成工程。', quote: '它不优雅，但能让迭代从玄学变成工程。', why: '这是本周就能做的事：先攒评测集，再谈调提示词。'}
+  ],
+  followups: ['三明治结构里，校验规则应该由谁维护？', '怎么判断一个场景该要稳定还是要惊喜？', '评测集一百条从哪来？']
+};
+</script>
+<div style="max-width:820px;margin:18px auto 40px;padding:16px 18px;background:#fff;border:1px solid #e2ece6;border-radius:14px;font-size:13.5px;line-height:1.85;color:#4b443b;box-shadow:0 4px 14px rgba(30,60,45,.06)">
+  <b>📊 评测（离线可用部分）</b><br>
+  内置示例文章：AI 摘录 <b>4/4</b> 逐字命中原文；离线划重点 <b>5/5</b> 句来自原文，top-10 关键词覆盖 <b>9/10</b>；
+  故意改写的摘录 <b>1/1</b> 被核验逻辑识别并标灰。
+  <a href="../eval/doc-cards/REPORT.md" style="color:#2f6b50">完整评测报告 →</a>
+  <br><span style="color:#8a8177">复现：<code>node eval/doc-cards/run.mjs</code>（不调用模型）</span>
+</div>
+</body>
+</html>

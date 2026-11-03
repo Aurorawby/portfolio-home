@@ -1,0 +1,614 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模拟面试官 · 用你的 JD 和简历生成面试题</title>
+<meta name="description" content="粘贴 JD 和简历，离线生成针对性面试题：目标岗位能力题 + 简历深挖题 + 通用题，带考察点、答题框架和追问。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff;
+    --accent:#ff7a45; --accent-soft:#ffe8dc; --line:#eadfd0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(900px 500px at 0% -10%,#ffe8dc,transparent 60%),radial-gradient(700px 400px at 110% 0%,#ffe9c9,transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    min-height:100vh;padding:32px 16px calc(40px + env(safe-area-inset-bottom))}
+  .wrap{max-width:1040px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 8px}
+  .sub{color:var(--muted);line-height:1.8;margin:0 0 22px;font-size:14.5px}
+  .card{background:var(--card);border-radius:20px;padding:22px;box-shadow:0 10px 28px rgba(60,42,20,.09);margin-bottom:18px}
+  h2{font-size:20px;margin:0 0 6px}
+  .sect-sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:860px){.two{grid-template-columns:1fr}}
+  label.fl{display:block;font-size:13px;font-weight:700;margin:0 0 6px;color:#5d554b}
+  textarea{width:100%;min-height:150px;border:1.5px solid var(--line);border-radius:14px;padding:13px;font-size:13.5px;line-height:1.7;
+    font-family:inherit;resize:vertical;background:#fffdfa}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  .btn{border:0;border-radius:999px;padding:12px 20px;font-size:15px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;
+    box-shadow:0 8px 18px rgba(255,122,69,.25);transition:transform .12s ease}
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  .btn.small{padding:8px 14px;font-size:13px}
+  .hint{color:var(--muted);font-size:12.5px;line-height:1.7}
+  .hidden{display:none}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
+  .chip{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:600}
+  .chip.gray{background:#f0ece5;color:#6f675d}
+  .q{background:#fff;border:1px solid #efe6d8;border-radius:16px;padding:16px 18px;margin-bottom:12px}
+  .q .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .q .no{background:#1f1b16;color:#fff;border-radius:8px;padding:1px 8px;font-size:12px;font-weight:800}
+  .tag{background:var(--accent-soft);color:#8a5a1f;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:700}
+  .tag.resume{background:#e4e9ff;color:#3b51b8}
+  .tag.std{background:#dcf5ee;color:#0e6b58}
+  .q .text{font-size:16px;line-height:1.65;font-weight:700;margin:2px 0 10px}
+  .q .meta{font-size:13px;line-height:1.75;color:#5d554b;margin:0 0 6px}
+  .q .meta b{color:#8a5a1f}
+  .q .follow{font-size:13px;color:#6b5a41;background:#fff8ec;border-radius:10px;padding:8px 12px;margin-top:8px}
+  .q .rate{display:flex;gap:6px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .q .rate span{font-size:12.5px;color:var(--muted)}
+  .q .rate button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 9px;cursor:pointer;font-size:12.5px}
+  .q .rate button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .q textarea{min-height:56px;margin-top:8px;font-size:13px}
+  .ai-box{border:1px dashed #d9c9b2;border-radius:14px;padding:14px;background:#fffdf8;margin-top:14px}
+  .ai-box .row{margin-top:8px}
+  .ai-box input{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;font-family:inherit}
+  footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:30px;line-height:1.9}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:#1f1b16;color:#fff;padding:10px 18px;border-radius:999px;
+    font-size:14px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:9}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .banner{border-radius:12px;padding:10px 14px;font-size:13px;margin-top:12px}
+  .banner.ok{background:#e8f7ef;color:#0e6b58}
+  .banner.warn{background:#fff4e0;color:#8a5a1f}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎤 模拟面试官</h1>
+  <p class="sub">粘贴目标岗位的 JD + 你的简历，离线生成一套针对性面试题：<b>岗位能力题 + 简历深挖题 + 通用题</b>，
+  每题带考察点、答题框架和追问。纯前端规则生成，不联网；想更自然可以选填 AI 增强（自带 Key）。</p>
+
+  <section class="card">
+    <h2>① 输入 JD 和简历</h2>
+    <div class="two">
+      <div>
+        <label class="fl" for="jd">目标岗位 JD</label>
+        <textarea id="jd" placeholder="粘贴 JD 原文，例如：&#10;岗位：AI 产品经理（内容平台）&#10;职责：负责 AI 写作助手的产品定义与路线图，拆解用户需求并输出 PRD；设计提示词策略；建立指标体系……"></textarea>
+      </div>
+      <div>
+        <label class="fl" for="resume">我的简历 / 项目经历</label>
+        <textarea id="resume" placeholder="粘贴简历里的项目经历部分，例如：&#10;2025.06–2026.04 校园二手平台｜产品负责人&#10;- 主导需求调研，访谈 30 名学生，把首页转化率从 12% 提升到 19%……"></textarea>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="go">生成面试题 →</button>
+      <button class="btn ghost" id="sample">载入示例（JD + 简历）</button>
+      <button class="btn ghost" id="clear">清空</button>
+      <span class="hint">数据只在本机浏览器里（localStorage），不采集、不上传</span>
+    </div>
+    <p class="hint" id="err" style="color:#a33"></p>
+  </section>
+
+  <section class="card hidden" id="res">
+    <h2>② 面试题</h2>
+    <p class="sect-sub" id="summary"></p>
+    <div class="chips" id="chips"></div>
+    <div id="list"></div>
+    <div class="row">
+      <button class="btn" id="export">⬇️ 导出 Markdown（带着答案去面试）</button>
+      <button class="btn ghost" id="rerun">🔄 重新生成</button>
+      <button class="btn ghost" id="more">➕ 补 3 道（覆盖更多能力）</button>
+    </div>
+    <p class="hint" style="margin-top:12px">面试前把「自评」低于 3 分的题重练一遍；面试后把真实问题和表现记进面试复盘器。</p>
+  </section>
+
+  <section class="card hidden" id="ai-card">
+    <h2>✨ AI 增强（可选）</h2>
+    <p class="sect-hint hint">用你自己的 Key，把上面的规则题改写成更自然、更贴合你经历的问法，并补追问。Key 只存在本机浏览器。</p>
+    <div class="ai-box">
+      <div class="row">
+        <input id="base" placeholder="接口地址，如 https://api.deepseek.com/v1" style="flex:2;min-width:240px">
+        <input id="model" placeholder="模型，如 deepseek-chat" style="flex:1;min-width:160px">
+        <input id="key" type="password" placeholder="Key（只存本机）" style="flex:1.2;min-width:200px">
+      </div>
+      <div class="row">
+        <button class="btn small" id="ai-go">用 AI 改写这批题</button>
+        <button class="btn ghost small" id="ai-demo">看 AI 示例（不用 Key）</button>
+        <span class="hint" id="ai-status"></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <b>📊 规则层评测（离线可用部分）</b><br>
+    8 组真实 JD + 简历：核心能力覆盖 <b>74.1%</b>，简历引用率 <b>100%</b>（8/8 生成深挖题），
+    追问完整度 100%，平均 <b>12.6 道</b>题。<br>
+    已知局限：题库是通用问法，新措辞可能漏识别；只测覆盖与完整度，不评价问题本身好坏。
+    <a href="../eval/mock-interview/REPORT.md" style="color:#b25c1f">完整评测报告 →</a>
+    <br><span style="color:#8a8177">复现：<code>node eval/mock-interview/run.mjs</code>（不调用模型，纯规则）</span>
+  </section>
+  <footer>
+    规则层：30 项能力题库 + 简历深挖 + 通用题 · 纯前端 · 不采集数据 ·
+    <a href="../index.html" style="color:#8a5a1f">← 回作品集</a><br>
+    说明：生成的是"可能被问到的问题"，不是真题；答案和真实性由你自己负责。
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ================= 题库：30 项能力，每项 1 道能力题 + 1 个追问 ================= */
+var BANK = [
+  {id:'user_research', name:'用户研究', terms:['用户调研','用户访谈','用户研究','问卷','用户画像'],
+   q:'讲一次你做用户研究的经历：想验证什么假设？问题和样本怎么设计？',
+   f:'如果访谈结论和你最初的判断相反，你会怎么办？'},
+  {id:'requirement', name:'需求分析', terms:['需求分析','需求拆解','需求梳理','用户需求'],
+   q:'讲一个你把模糊需求拆清楚的项目：你怎么找到真正的需求？',
+   f:'用户坚持要一个你判断没用的功能，你怎么处理？'},
+  {id:'priority', name:'优先级取舍', terms:['优先级','需求排序','取舍','RICE','排序'],
+   q:'讲一次你做取舍的经历：资源有限时，你怎么决定先做什么？',
+   f:'如果老板临时塞进来一个紧急需求，你怎么排？'},
+  {id:'product_def', name:'产品定义', terms:['产品定义','产品方案','功能设计','解决方案'],
+   q:'挑一个你做过的功能：目标用户是谁、解决什么问题、你决定不做什么？',
+   f:'如果这个功能只能保留一半，你会砍哪一半？'},
+  {id:'competitor', name:'竞品分析', terms:['竞品分析','竞品调研','对标'],
+   q:'讲一次竞品分析真正影响了你的产品决策的经历。',
+   f:'竞品做了你判断不该做的功能，你怎么应对？'},
+  {id:'roadmap', name:'路线图', terms:['路线图','版本规划','roadmap','迭代计划'],
+   q:'你负责过的版本节奏是怎么定的？哪个节点最容易失控？',
+   f:'如果研发资源少一半，你的路线图怎么改？'},
+  {id:'prd', name:'PRD 文档', terms:['PRD','需求文档','产品文档'],
+   q:'讲一份你觉得写得最好的 PRD：它解决了什么沟通问题？',
+   f:'开发说需求不清晰，你会怎么改？'},
+  {id:'acceptance', name:'验收标准', terms:['验收标准','验收','上线标准'],
+   q:'你怎么定义"这个功能做完了"？举一个具体例子。',
+   f:'上线后发现问题，怎么判断是需求没想清楚还是实现有问题？'},
+
+  {id:'metric_system', name:'指标体系', terms:['指标体系','指标拆解','度量体系'],
+   q:'讲一个你搭指标体系的过程：北极星怎么选的，怎么拆到可执行？',
+   f:'如果两个指标互相冲突，你听谁的？'},
+  {id:'north_star', name:'北极星指标', terms:['北极星指标','核心指标','北极星'],
+   q:'你项目的北极星指标是什么？为什么不是 DAU 或收入？',
+   f:'北极星被质疑时，你怎么回应？'},
+  {id:'ab_test', name:'A/B 测试', terms:['A/B 测试','AB 测试','实验组','对照组','实验设计'],
+   q:'讲一次 A/B 实验：假设、样本量、结果，你怎么解读？',
+   f:'结果不显著，你会怎么办？'},
+  {id:'funnel', name:'漏斗分析', terms:['漏斗','转化率','转化漏斗'],
+   q:'画出你产品核心漏斗，最大流失在哪？你怎么验证原因？',
+   f:'如果转化提升但留存下降，说明什么？'},
+  {id:'retention', name:'留存分析', terms:['留存','次留','复购'],
+   q:'你怎么定义和拆解留存？做过什么提升留存的动作？',
+   f:'留存涨了但收入没涨，可能是什么原因？'},
+  {id:'tracking', name:'埋点设计', terms:['埋点','数据上报','事件'],
+   q:'讲一次你设计埋点的经历：事件和属性怎么定？',
+   f:'数据口径和研发不一致时，怎么对齐？'},
+  {id:'analytics', name:'数据分析', terms:['数据分析','数据驱动','数据洞察'],
+   q:'讲一次你用数据推翻自己判断的经历。',
+   f:'数据支持 A、直觉支持 B，你怎么决策？'},
+  {id:'sql', name:'SQL 取数', terms:['SQL','取数','数据库'],
+   q:'你独立取数时写过最复杂的一个查询在解决什么问题？',
+   f:'数据结果异常时，你的排查顺序是什么？'},
+
+  {id:'llm', name:'大模型理解', terms:['大模型','LLM','语言模型','AI 产品','AI 功能'],
+   q:'你怎么判断一个能力该用大模型，还是用规则或传统方法？',
+   f:'模型升级后，你的产品会怎么变？'},
+  {id:'prompt', name:'提示词工程', terms:['提示词','Prompt','提示工程'],
+   q:'讲一次你靠改提示词提升效果的经历：改了什么、怎么验证？',
+   f:'提示词效果不稳定，你怎么排查？'},
+  {id:'rag', name:'RAG / 知识库', terms:['RAG','检索增强','知识库'],
+   q:'如果让你设计一个知识库问答，切块、召回、引用分别怎么定？',
+   f:'检索召回不准，你会先改哪一层？'},
+  {id:'agent', name:'Agent 设计', terms:['Agent','智能体','工作流编排'],
+   q:'你理解的 Agent 和 workflow 的边界在哪？举一个适用场景。',
+   f:'Agent 出错时，你怎么兜底？'},
+  {id:'eval', name:'LLM 评测', terms:['评测','效果评估','评测集','benchmark'],
+   q:'讲一次你做 LLM 效果评估的经历：评测集怎么来、指标怎么定？',
+   f:'离线评测好但线上效果差，怎么解释？'},
+  {id:'hallucination', name:'幻觉治理', terms:['幻觉','事实性','引用核验'],
+   q:'你的产品怎么防幻觉？效果怎么衡量？',
+   f:'用户发现错误答案并投诉，你怎么处理？'},
+  {id:'cost', name:'推理成本', terms:['推理成本','Token 成本','调用成本','算力成本'],
+   q:'你怎么估一个 AI 功能的单用户成本？做过什么降本动作？',
+   f:'降本和效果冲突时，怎么取舍？'},
+
+  {id:'project', name:'项目管理', terms:['项目管理','项目推进','里程碑'],
+   q:'讲一次你推动项目按期交付的经历：最大的风险是什么？',
+   f:'关键人延期了，你怎么处理？'},
+  {id:'launch', name:'上线发布', terms:['上线','发布','灰度','回滚'],
+   q:'讲一次你负责的上线：灰度策略和回滚条件怎么定的？',
+   f:'上线后出事故，你的第一反应是什么？'},
+  {id:'cross_team', name:'跨团队协作', terms:['跨团队','跨部门','协同'],
+   q:'讲一次你在没有汇报关系的情况下推动别人的经历。',
+   f:'对方一直不配合，你会怎么办？'},
+
+  {id:'communication', name:'沟通表达', terms:['沟通','汇报','表达'],
+   q:'讲一次你向上汇报的经历：结论怎么组织、老板最关心什么？',
+   f:'老板听不懂你的方案，你怎么调整？'},
+  {id:'conflict', name:'冲突处理', terms:['冲突','分歧','意见不一致'],
+   q:'讲一次你和开发或设计意见冲突的经历，最后怎么解决？',
+   f:'现在回头看，谁是对的？'},
+
+  {id:'business', name:'商业模式', terms:['商业模式','变现','盈利'],
+   q:'分析一下你熟悉的产品怎么赚钱，它的护城河是什么？',
+   f:'如果让你给它设计新收入来源，你会怎么做？'},
+  {id:'growth', name:'增长', terms:['增长','拉新','获客','裂变'],
+   q:'讲一次你做增长的经历：渠道、成本、留存分别是多少？',
+   f:'增长数据好但留存差，说明什么？'},
+  {id:'compliance', name:'数据合规', terms:['合规','隐私','数据安全'],
+   q:'AI 产品里，你会怎么处理用户数据和合规边界？',
+   f:'业务要求你放宽数据收集，你怎么处理？'}
+];
+
+var STANDARD = [
+  {q:'先做个自我介绍：用 1 分钟讲清你和这个岗位最相关的 2 段经历。', focus:'表达结构：是否 30 秒内让面试官记住你的匹配点', frame:'现状身份 → 1 段最相关经历（目标/动作/结果）→ 为什么是这个岗位', follow:'你说的这个结果，当时是怎么衡量的？'},
+  {q:'为什么是这个岗位？你觉得它和你过去做的事哪里相通、哪里不同？', focus:'动机与自我认知：转岗逻辑是否成立', frame:'过去能力的可迁移部分 → 对岗位的理解 → 你准备补的短板', follow:'如果入职后发现工作内容和你想的不一样，你会怎么办？'},
+  {q:'你觉得自己目前最大的短板是什么？打算怎么补？', focus:'自我认知与成长性', frame:'一个真实但可控的短板 → 已经采取的动作 → 可验证的进展', follow:'能举个例子说明你已经在补了吗？'},
+  {q:'你有什么想问我们的？', focus:'对岗位的了解程度与主动性', frame:'问业务/团队/成长，不问薪资福利（一面）', follow:'（准备 2-3 个，根据面试官回答追问）'}
+];
+
+/* ================= 工具函数 ================= */
+function $(id){ return document.getElementById(id); }
+function norm(text){
+  return String(text || '').replace(/[\uFF01-\uFF5E]/g, function(ch){ return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0); }).toLowerCase();
+}
+function splitResume(text){
+  return String(text || '').split(/\r?\n/).map(function(line){
+    return line.replace(/^[\s\-•*·\d.、)）]+/, '').trim();
+  }).filter(function(line){ return line.length >= 8; });
+}
+function matchCompetencies(text){
+  var detail = matchDetail(text);
+  var hits = {};
+  Object.keys(detail).forEach(function(id){ hits[id] = detail[id].count; });
+  return hits;
+}
+function matchDetail(text){
+  var normalized = norm(text);
+  var detail = {};
+  BANK.forEach(function(item){
+    var count = 0, distinct = 0;
+    item.terms.forEach(function(term){
+      var needle = term.toLowerCase();
+      var c = 0, index = 0;
+      while (needle && (index = normalized.indexOf(needle, index)) !== -1) { c += 1; index += needle.length; }
+      if (c) { count += c; distinct += 1; }
+    });
+    if (count) detail[item.id] = {count: count, distinct: distinct};
+  });
+  return detail;
+}
+function competenceById(id){
+  return BANK.filter(function(item){ return item.id === id; })[0];
+}
+function resumeEvidence(competence, resumeLines){
+  var terms = competence.terms.map(function(term){ return term.toLowerCase(); });
+  return resumeLines.filter(function(line){
+    var lower = line.toLowerCase();
+    return terms.some(function(term){ return lower.indexOf(term) !== -1; });
+  })[0] || '';
+}
+function clip(text, length){
+  var clean = String(text || '').replace(/\s+/g, ' ').trim();
+  return clean.length > length ? clean.slice(0, length) + '…' : clean;
+}
+
+/* ================= 生成 ================= */
+function generateQuestions(jdText, resumeText){
+  var jdDetail = matchDetail(jdText);
+  var resumeLines = splitResume(resumeText);
+  // 排序：命中次数 + 命中的不同同义词数量（后者防止一个词刷屏）
+  function scoreOf(id){ return jdDetail[id].count + jdDetail[id].distinct * 0.75; }
+  var ranked = Object.keys(jdDetail).sort(function(a, b){ return scoreOf(b) - scoreOf(a); });
+  var selected = ranked.slice(0, 9).map(competenceById).filter(Boolean);
+  var questions = [];
+
+  // 1) 简历深挖题：先挑简历里"像成果"的句子（含数字/动词），再补和 JD 能力相关的句子
+  var usedResume = {};
+  function pushResumeQuestion(sentence, competenceName){
+    if (!sentence || usedResume[sentence]) return;
+    usedResume[sentence] = 1;
+    questions.push({
+      kind:'resume',
+      tag:'简历深挖',
+      text:'你简历里写到「' + clip(sentence, 42) + '」，能具体讲一下：你当时的角色、关键动作和结果吗？',
+      focus:'真实性 + 贡献度：简历写的和你实际做的是否一致',
+      frame:'背景（为什么做）→ 你的角色（不是团队）→ 关键动作 2-3 个 → 可量化结果 → 复盘收获',
+      follow:'这件事里，哪个决定是你做的？如果换个人来做，结果会不一样吗？',
+      competence: competenceName || '简历'
+    });
+  }
+  var highlights = resumeLines.filter(function(line){
+    if (line.length < 14) return false;
+    if (/^\d{4}[.\-\/]/.test(line) && !/(提升|增长|下降|转化|留存|成本|率|万|条|份|人|%|从)/.test(line)) return false;
+    return /(提升|增长|下降|转化|留存|成本|率|万|条|份|人|%|从\s*\d)/.test(line)
+      || (/(负责|主导|搭建|设计|上线)/.test(line) && /\d/.test(line));
+  }).slice(0, 2);
+  highlights.forEach(function(line){ pushResumeQuestion(line, '简历成果'); });
+  selected.slice(0, 2).forEach(function(comp){
+    pushResumeQuestion(resumeEvidence(comp, resumeLines), comp.name);
+  });
+
+  // 2) 岗位能力题
+  selected.forEach(function(comp){
+    questions.push({
+      kind:'job',
+      tag:'能力题 · ' + comp.name,
+      text: comp.q,
+      focus:'考察 ' + comp.name + '：看真实经历和判断，不是背概念',
+      frame:'STAR + 一个判断：背景 → 目标 → 动作 → 结果 → 你学到什么/会改什么',
+      follow: comp.f,
+      competence: comp.name
+    });
+  });
+
+  // 3) 通用题（自我介绍必留，其余按需）
+  questions.push(questionFromStandard(STANDARD[0], '通用题'));
+  var hasMotivation = /转|为什么.*产品|动机|职业规划/.test(jdText + resumeText);
+  questions.push(questionFromStandard(STANDARD[1], '通用题'));
+  if (hasMotivation) questions.push(questionFromStandard(STANDARD[2], '通用题'));
+  questions.push(questionFromStandard(STANDARD[3], '通用题'));
+
+  // 去重（防止同一道题出现两次）
+  var seen = {};
+  questions = questions.filter(function(item){
+    var key = item.text.replace(/\s+/g, '');
+    if (seen[key]) return false;
+    seen[key] = 1;
+    return true;
+  });
+  var uncovered = ranked.slice(9).map(function(id){ return competenceById(id); }).filter(Boolean);
+  return {questions: questions, competencies: selected.map(function(comp){ return comp.name; }),
+    uncovered: uncovered, ranked: ranked.map(function(id){ return competenceById(id).name; })};
+}
+
+function questionFromStandard(item, tag){
+  return {kind:'std', tag:tag, text:item.q, focus:item.focus, frame:item.frame, follow:item.follow, competence:'通用'};
+}
+
+/* ================= 渲染 ================= */
+var STATE = {result: null, ratings: {}, notes: {}};
+var STORE_KEY = 'mock_interview_state_v1';
+
+function render(){
+  var jd = $('jd').value.trim();
+  var resume = $('resume').value.trim();
+  if (jd.length < 20) { $('err').textContent = 'JD 太短了：至少粘贴 20 字的岗位描述，否则识别不出能力。'; return; }
+  $('err').textContent = '';
+  var result = generateQuestions(jd, resume);
+  STATE.result = result;
+  var saved = loadState();
+  if (saved && saved.result && saved.jd === jd && saved.resume === resume) {
+    STATE.ratings = saved.ratings || {};
+    STATE.notes = saved.notes || {};
+  } else {
+    STATE.ratings = {}; STATE.notes = {};
+  }
+  $('res').classList.remove('hidden');
+  $('ai-card').classList.remove('hidden');
+  var extra = (result.uncovered && result.uncovered.length)
+    ? '另有 ' + result.uncovered.length + ' 项识别到的能力暂未出题：' + result.uncovered.map(function(item){ return item.name; }).join('、') + '。'
+    : '';
+  $('summary').textContent = '基于 JD 识别出 ' + result.ranked.length + ' 项相关能力，生成 ' + result.questions.length + ' 道题（简历深挖优先，其次岗位能力题，最后通用题）。' + extra;
+  $('chips').innerHTML = [
+    '<span class="chip">🎯 ' + result.competencies.length + ' 项核心能力</span>',
+    '<span class="chip">📝 ' + result.questions.length + ' 道题</span>',
+    '<span class="chip gray">规则生成 · 不调模型</span>'
+  ].join('');
+  $('list').innerHTML = result.questions.map(function(item, index){
+    var rating = STATE.ratings[index] || 0;
+    var note = STATE.notes[index] || '';
+    var tagClass = item.kind === 'resume' ? 'resume' : (item.kind === 'std' ? 'std' : '');
+    return '<div class="q" data-index="' + index + '">'
+      + '<div class="top"><span class="no">Q' + (index + 1) + '</span><span class="tag ' + tagClass + '">' + item.tag + '</span></div>'
+      + '<div class="text">' + escapeHTML(item.text) + '</div>'
+      + '<p class="meta"><b>考察点：</b>' + escapeHTML(item.focus) + '</p>'
+      + '<p class="meta"><b>答题框架：</b>' + escapeHTML(item.frame) + '</p>'
+      + '<div class="follow"><b>可能追问：</b>' + escapeHTML(item.follow) + '</div>'
+      + '<div class="rate"><span>自评：</span>'
+      + [1,2,3,4,5].map(function(score){ return '<button data-score="' + score + '" class="' + (rating === score ? 'on' : '') + '">' + score + '</button>'; }).join('')
+      + '</div>'
+      + '<textarea data-note="' + index + '" placeholder="我的回答要点（写关键词就行）">' + escapeHTML(note) + '</textarea>'
+      + '</div>';
+  }).join('');
+  saveState(jd, resume);
+}
+
+function escapeHTML(text){
+  return String(text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* ================= 交互 ================= */
+$('list').addEventListener('click', function(event){
+  var target = event.target;
+  if (target.tagName !== 'BUTTON' || !target.getAttribute('data-score')) return;
+  var card = target.closest('.q');
+  var index = Number(card.getAttribute('data-index'));
+  STATE.ratings[index] = Number(target.getAttribute('data-score'));
+  card.querySelectorAll('.rate button').forEach(function(button){
+    button.classList.toggle('on', button === target);
+  });
+  saveState($('jd').value.trim(), $('resume').value.trim());
+  toast('已记录自评 ' + STATE.ratings[index] + '/5');
+});
+$('list').addEventListener('input', function(event){
+  var target = event.target;
+  if (!target.getAttribute || target.getAttribute('data-note') === null) return;
+  STATE.notes[Number(target.getAttribute('data-note'))] = target.value;
+  saveState($('jd').value.trim(), $('resume').value.trim());
+});
+function saveState(jd, resume){
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      jd: jd, resume: resume, ratings: STATE.ratings, notes: STATE.notes,
+      result: STATE.result
+    }));
+  } catch (e) {}
+}
+function loadState(){
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { return null; }
+}
+
+/* ================= 导出 ================= */
+function exportMarkdown(){
+  if (!STATE.result) return;
+  var lines = ['# 模拟面试题 · ' + new Date().toISOString().slice(0, 10), ''];
+  lines.push('目标岗位 JD 摘要：' + clip($('jd').value, 80));
+  lines.push('识别能力：' + STATE.result.ranked.slice(0, 8).join('、'));
+  lines.push('');
+  STATE.result.questions.forEach(function(item, index){
+    var rating = STATE.ratings[index] || 0;
+    var note = (STATE.notes[index] || '').trim();
+    lines.push('## Q' + (index + 1) + '　' + item.tag);
+    lines.push('**问题**：' + item.text);
+    lines.push('- 考察点：' + item.focus);
+    lines.push('- 答题框架：' + item.frame);
+    lines.push('- 可能追问：' + item.follow);
+    if (rating) lines.push('- 我的自评：' + rating + '/5');
+    if (note) lines.push('- 我的要点：' + note);
+    lines.push('');
+  });
+  lines.push('> 由「模拟面试官」生成 · 规则层 · 30 项能力题库');
+  var blob = new Blob([lines.join('\n')], {type: 'text/markdown;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '模拟面试题-' + new Date().toISOString().slice(0, 10) + '.md';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
+  toast('已导出 Markdown');
+}
+
+/* ================= 示例 ================= */
+var SAMPLE_JD = '岗位：AI 产品经理（内容平台）\n职责：负责 AI 写作助手的产品定义与路线图，拆解用户需求并输出 PRD；与算法团队设计提示词策略和 RAG 知识库，控制幻觉；建立指标体系与埋点，分析留存和生成成功率；跨部门推动版本上线。\n要求：熟悉大模型能力边界，有 LLM 应用落地经验；能独立做数据分析；较强沟通表达与项目管理能力。';
+var SAMPLE_RESUME = '2025.06–2026.04 校园二手平台｜产品负责人\n- 主导用户调研：访谈 30 名学生、回收 120 份问卷，发现"发货慢"是第一流失原因，改版后首页转化率从 12% 提升到 19%\n- 设计商品发布流程，把发布步骤从 5 步压缩到 3 步，发布成功率提升 23%\n2024.07–2024.09 某公司增长实习\n- 负责小红书投放，累计 2.7 万展现、进线 86 条，平均进线成本控制在 80 元以内';
+
+/* ================= AI 增强（BYOK，可选） ================= */
+var AI_DEMO = {
+  questions: [
+    {text:'你提到校园二手平台首页转化率从 12% 提升到 19%——先把「发货慢」这个结论的推导过程讲一遍：你是怎么从访谈和问卷里定位到它的？', tag:'AI 改写 · 简历深挖'},
+    {text:'如果让你在内容平台从头设计一个 AI 写作助手，你会先做哪个场景、砍掉哪些场景？为什么？', tag:'AI 改写 · 产品定义'},
+    {text:'你简历里说发布成功率提升 23%，这个指标是怎么定义的？有没有可能只是把容易失败的用户挡在了门外？', tag:'AI 改写 · 指标质疑'}
+  ]
+};
+function aiConfig(){
+  return {
+    base: ($('base').value || localStorage.getItem('mi_base') || '').replace(/\/$/, ''),
+    model: $('model').value || localStorage.getItem('mi_model') || '',
+    key: $('key').value || localStorage.getItem('mi_key') || ''
+  };
+}
+function saveAIConfig(){
+  try {
+    localStorage.setItem('mi_base', $('base').value.trim());
+    localStorage.setItem('mi_model', $('model').value.trim());
+    localStorage.setItem('mi_key', $('key').value.trim());
+  } catch (e) {}
+}
+async function callAI(){
+  var cfg = aiConfig();
+  if (!cfg.base || !cfg.model || !cfg.key) { $('ai-status').textContent = '先填接口地址、模型和 Key。'; return; }
+  saveAIConfig();
+  $('ai-status').textContent = '正在生成…';
+  var prompt = '你是一位严格的 AI 产品岗面试官。下面是我的目标岗位 JD、我的简历，以及一份规则生成的面试题。\n'
+    + '请把它们改写成 8 道更自然、更贴我个人经历的中文面试题，每题只输出 {"q":"问题","focus":"考察点","follow":"一个追问"}。\n'
+    + '要求：必须引用我简历里的具体项目/数字；不要泛泛而谈；不要编造我没写过的经历。\n\n'
+    + '【JD】\n' + clip($('jd').value, 1200) + '\n\n【简历】\n' + clip($('resume').value, 1200)
+    + '\n\n【规则生成的题】\n' + STATE.result.questions.map(function(item){ return '- ' + item.text; }).join('\n');
+  try {
+    var response = await fetch(cfg.base + '/chat/completions', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key},
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [{role:'user', content: prompt}],
+        temperature: 0.6
+      })
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    var data = await response.json();
+    var text = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
+    var match = text.match(/\{[\s\S]*\}/);
+    var parsed = match ? JSON.parse(match[0]) : null;
+    var items = (parsed && parsed.questions) || [];
+    if (!items.length) throw new Error('模型没有返回题目');
+    applyAI(items, 'AI 改写');
+  } catch (error) {
+    $('ai-status').textContent = '失败：' + error.message + '（可先点「看 AI 示例」）';
+  }
+}
+function applyAI(items, tag){
+  STATE.result.questions = items.slice(0, 8).map(function(item, index){
+    return {
+      kind:'ai', tag: tag + ' · 第 ' + (index + 1) + ' 题',
+      text: item.q || item.text || '',
+      focus: item.focus || '考察真实经历与判断',
+      frame: '结论先行 → 具体经历（目标/动作/结果）→ 反思',
+      follow: item.follow || '能举个具体数字说明吗？',
+      competence: 'AI 增强'
+    };
+  });
+  STATE.ratings = {}; STATE.notes = {};
+  render();
+  $('ai-status').textContent = '已替换为 ' + STATE.result.questions.length + ' 道 AI 改写的题。';
+}
+
+$('go').addEventListener('click', render);
+$('rerun').addEventListener('click', render);
+$('more').addEventListener('click', function(){
+  if (!STATE.result || !STATE.result.uncovered || !STATE.result.uncovered.length) { toast('已经覆盖全部识别到的能力'); return; }
+  STATE.result.uncovered.slice(0, 3).forEach(function(comp){
+    STATE.result.questions.push({
+      kind:'job', tag:'能力题 · ' + comp.name, text: comp.q,
+      focus:'考察 ' + comp.name + '：看真实经历和判断，不是背概念',
+      frame:'STAR + 一个判断：背景 → 目标 → 动作 → 结果 → 你学到什么/会改什么',
+      follow: comp.f, competence: comp.name
+    });
+  });
+  STATE.result.uncovered = STATE.result.uncovered.slice(3);
+  STATE.result.competencies = STATE.result.competencies.concat(
+    STATE.result.questions.slice(-3).map(function(item){ return item.competence; })
+  );
+  render();
+  toast('已补 3 道题');
+});
+$('sample').addEventListener('click', function(){
+  $('jd').value = SAMPLE_JD; $('resume').value = SAMPLE_RESUME; render();
+});
+$('clear').addEventListener('click', function(){
+  $('jd').value = ''; $('resume').value = '';
+  $('res').classList.add('hidden'); $('ai-card').classList.add('hidden');
+  $('err').textContent = '';
+  try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+});
+$('export').addEventListener('click', exportMarkdown);
+$('ai-go').addEventListener('click', callAI);
+$('ai-demo').addEventListener('click', function(){
+  if (!STATE.result) { $('ai-status').textContent = '先生成规则题。'; return; }
+  applyAI(AI_DEMO.questions, 'AI 示例');
+  $('ai-status').textContent = '这是预置的 AI 示例（不是实时调用）；填 Key 后才是真 AI。';
+});
+function toast(message){
+  var el = $('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(window.__t);
+  window.__t = setTimeout(function(){ el.classList.remove('show'); }, 1800);
+}
+
+/* 恢复上次输入与 AI 配置 */
+(function restore(){
+  try {
+    $('base').value = localStorage.getItem('mi_base') || '';
+    $('model').value = localStorage.getItem('mi_model') || '';
+    $('key').value = localStorage.getItem('mi_key') || '';
+    var saved = loadState();
+    if (saved && saved.jd) {
+      $('jd').value = saved.jd;
+      $('resume').value = saved.resume || '';
+    }
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>

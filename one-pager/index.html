@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>汇报一页纸 · 大纲变排版，打印即交付</title>
+<meta name="description" content="粘贴大纲，自动解析结构、诊断缺口（没数字？没下一步？），渲染成排版好的一页汇报，浏览器打印即得 PDF。AI 只做润色，结构判断由代码算。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --orange:#ff7a45; --orange-soft:#ffe8dc;
+    --purple:#7c3aed; --purple-soft:#f0e4ff;
+    --blue:#5b7cfa; --blue-soft:#e4e9ff;
+    --green:#12a184; --green-soft:#dcf5ee;
+    --red:#d64545; --red-soft:#fde5e5;
+    --radius:18px; --shadow:0 10px 26px rgba(60,42,20,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--blue-soft),transparent 60%),
+    radial-gradient(800px 420px at 100% 0%,var(--green-soft),transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 16px 40px}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:48em}
+  .sub b{color:var(--ink)}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#8a5a1f}
+  .topbtn{margin-left:auto;display:flex;gap:8px}
+  button{font-family:inherit;cursor:pointer}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--orange);color:#fff;box-shadow:0 6px 16px rgba(255,122,69,.28)}
+  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
+  section{margin-bottom:26px}
+  h2{font-size:18.5px;margin:0 0 10px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+  input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13.5px;font-family:inherit;background:#fff}
+  textarea{min-height:170px;resize:vertical;line-height:1.9;font-size:13.5px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+  .statusline{font-size:13px;color:var(--muted);margin:10px 0;min-height:20px}
+  .statusline.err{color:var(--red);font-weight:600}
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:10px}
+  /* 诊断 */
+  .diag{border-radius:10px;padding:9px 13px;font-size:12.8px;margin-bottom:7px;line-height:1.7}
+  .diag.warn{background:#fff3e0;color:#92600a}
+  .diag.bad{background:var(--red-soft);color:#b03030}
+  .diag.ok{background:var(--green-soft);color:#0b6b52}
+  .diag b{font-weight:800}
+  /* 版式选择 */
+  .styles{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .styles button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:6px 15px;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .styles button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  /* 一页纸预览：A4 比例 */
+  .paper-wrap{background:#e8e0d4;border-radius:14px;padding:22px;display:flex;justify-content:center;overflow-x:auto}
+  .onepager{background:#fff;width:100%;max-width:760px;min-height:1000px;padding:44px 48px;box-shadow:0 8px 30px rgba(0,0,0,.18);
+    font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#1f1b16;box-sizing:border-box}
+  .op-head{border-bottom:3px solid #1f1b16;padding-bottom:12px;margin-bottom:18px}
+  .op-title{font-size:26px;font-weight:800;letter-spacing:1px}
+  .op-meta{font-size:12px;color:#7a7268;margin-top:6px}
+  .op-tldr{background:#f5f1ea;border-left:4px solid var(--orange);padding:10px 14px;font-size:13px;line-height:1.9;margin-bottom:18px;border-radius:0 8px 8px 0}
+  .op-tldr b{color:var(--orange)}
+  .op-sec{margin-bottom:16px}
+  .op-sec-title{font-size:15.5px;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .op-sec-title::before{content:"";width:8px;height:16px;background:var(--orange);border-radius:3px;display:inline-block}
+  .op-sec ul{margin:0;padding-left:20px;font-size:13px;line-height:2.05;color:#3a352e}
+  .op-num{font-weight:800;color:var(--orange);font-size:14.5px}
+  .op-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+  .op-banner{background:#1f1b16;color:#fff;border-radius:10px;padding:12px 18px;margin-bottom:18px;font-size:13px;line-height:1.8}
+  .op-banner .op-num{color:#ffb38a}
+  .op-kpi{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .op-kpi .kpi{flex:1;min-width:130px;background:#f7f4ef;border-radius:10px;padding:12px 14px;text-align:center}
+  .kpi .v{font-size:24px;font-weight:800;color:var(--orange)}
+  .kpi .k{font-size:11.5px;color:#7a7268;margin-top:2px}
+  .ai-out{background:#faf6ef;border-radius:10px;padding:12px 14px;font-size:12.8px;line-height:1.9;margin-top:10px;white-space:pre-wrap}
+  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
+  footer a{color:#8a5a1f}
+  @media print{
+    body{background:#fff;padding:0}
+    body *{visibility:hidden}
+    .onepager, .onepager *{visibility:visible}
+    .onepager{box-shadow:none;position:absolute;left:0;top:0;width:100%;max-width:none;min-height:auto;padding:32px 40px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>📄 汇报一页纸 <span style="font-size:15px;color:var(--muted);font-weight:600">OnePager</span></h1>
+  <p class="sub">汇报 / 述职 / 开题的最后一公里：<b>粘贴大纲 → 自动解析结构、诊断缺口（没数字？没下一步？）→ 渲染成排版好的一页</b>，
+  点打印就是 PDF。版式和结构诊断由代码完成，AI 只负责把话润得更像汇报。</p>
+
+  <div class="topbar">
+    <span class="pill">🔒 数据只存本机浏览器</span>
+    <span class="pill">🧪 无 AI 可用演示大纲</span>
+    <span class="pill">🖨 打印即 PDF</span>
+    <span class="topbtn">
+      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+    </span>
+  </div>
+
+  <section>
+    <div class="card">
+      <h2>① 汇报设定与大纲</h2>
+      <div class="grid" style="margin-bottom:10px">
+        <div><label>标题 *</label><input id="op-title" placeholder="如：文献 Agent 十月进展汇报"></div>
+        <div><label>汇报人 / 日期</label><input id="op-meta" placeholder="如：Aurorawby · 2026-11"></div>
+        <div><label>受众</label>
+          <select id="op-audience">
+            <option>直属老板 / 导师</option><option>跨部门同事</option><option>客户 / 外部</option><option>答辩评委</option>
+          </select></div>
+        <div><label>汇报目标</label>
+          <select id="op-goal">
+            <option>进展汇报</option><option>争取资源</option><option>复盘问题</option><option>提案 / 立项</option>
+          </select></div>
+      </div>
+      <label>大纲（支持 # 标题、- 要点，直接粘贴任意文本也行）</label>
+      <textarea id="op-outline" placeholder="# 本月进展&#10;- 完成 10 主题 A/B 评测，Precision@10 从 6% 提升到 57.5%&#10;- 修复 3 个缺陷&#10;# 下一步&#10;- 用户测试 5 人&#10;- 补充引用核验"></textarea>
+      <div class="topbar" style="margin:12px 0 0">
+        <button class="btn a" id="btn-build">🔨 生成一页纸</button>
+        <button class="btn b" id="btn-demo">🧪 装载演示大纲</button>
+        <button class="btn b" id="btn-polish">✨ AI 润色要点</button>
+        <button class="btn b" id="btn-tldr">🧾 AI 写执行摘要</button>
+      </div>
+      <div class="statusline" id="op-status"></div>
+      <div id="diag-box"></div>
+      <div class="note">大纲解析、结构诊断、数字高亮、版式渲染全部离线完成；AI 两个按钮是锦上添花，没有 Key 不影响主流程。</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>② 版式与预览（打印时只打印这一页）</h2>
+      <div class="styles" id="styles">
+        <button data-s="classic" class="on">经典纵列</button>
+        <button data-s="two">双栏</button>
+        <button data-s="banner">横幅 + KPI</button>
+      </div>
+      <div class="paper-wrap"><div class="onepager" id="paper"></div></div>
+      <div class="topbar" style="margin-top:14px">
+        <button class="btn a" id="btn-print">🖨 打印 / 存为 PDF</button>
+        <button class="btn b" id="btn-copy-html">📋 复制页面 HTML</button>
+      </div>
+      <div id="ai-box"></div>
+    </div>
+  </section>
+
+  <footer>
+    📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
+    结构诊断是启发式规则（有数字 / 有下一步 / 篇幅），不是「保证老板点头」 ·
+    打印排版以浏览器为准，建议 Chrome / Edge · 单文件 HTML 可离线使用 · AI 结对编程产出
+  </footer>
+</div>
+
+<!-- AI 设置 -->
+<div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto">
+    <h3 style="margin:0 0 12px;font-size:16px">⚙️ AI 设置（Key 只存本机，请求直接发给你选的服务商）</h3>
+    <label>服务商</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="ollama">本地 Ollama（需已启动）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>API Key（Ollama 可留空）</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn b" id="api-cancel">取消</button>
+      <button class="btn a" id="api-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   汇报一页纸 OnePager
+   结构：大纲解析与诊断引擎（纯函数，可被 eval 提取）→ 版式渲染 →
+        AI 层（润色 / 摘要）→ 打印导出
+   解析 / 诊断 / 数字识别 / 版式全部由代码完成，AI 只润色文案。
+   ============================================================ */
+
+/* ---------- ① 解析与诊断引擎（纯函数，勿加入 DOM 依赖；eval/one-pager 直接调用） ---------- */
+
+function parseOutline(text) {
+  var lines = String(text || '').split(/\r?\n/);
+  var sections = [], intro = [], current = null;
+  var numberRe = /([0-9０-９]+(?:\.[0-9]+)?%?|[0-9.]+\s*(?:万|千|亿|倍|倍|天|周|人|元|次|分钟|小时)|[一二三四五六七八九十]+(?:个|种|步|条|项))/;
+  var numberCount = 0;
+  lines.forEach(function(raw) {
+    var line = raw.trim();
+    if (!line) return;
+    var m = line.match(/^(#{1,3}|【|##?)\s*(.+?)(】)?$/);
+    if (m && (line.indexOf('#') === 0 || line.indexOf('【') === 0)) {
+      current = { title: m[2].trim(), bullets: [] };
+      sections.push(current);
+      return;
+    }
+    var body = line.replace(/^[-•·*]\s*/, '').replace(/^\d+[.、)]\s*/, '');
+    var numMatches = body.match(new RegExp(numberRe.source, 'g'));
+    if (numMatches) numberCount += numMatches.length;
+    if (current) current.bullets.push(body); else intro.push(body);
+  });
+  return { sections: sections, intro: intro, numberCount: numberCount,
+    bulletCount: sections.reduce(function(s, x) { return s + x.bullets.length; }, 0) + intro.length,
+    totalChars: sections.reduce(function(s, x) { return s + x.title.length + x.bullets.join('').length; }, intro.join('').length) };
+}
+
+function diagnoseOutline(parsed, goal) {
+  var tips = [];
+  if (!parsed.sections.length && !parsed.intro.length) {
+    tips.push({ level: 'bad', text: '大纲是空的——先粘贴内容，或点「装载演示大纲」。' });
+    return tips;
+  }
+  if (parsed.numberCount === 0) {
+    tips.push({ level: 'bad', text: '整页没有一个数字。汇报的说服力 = 数字 + 事实：至少补 1-2 个关键指标（完成了多少、提升多少、花了多少）。' });
+  } else if (parsed.numberCount < 3) {
+    tips.push({ level: 'warn', text: '只有 ' + parsed.numberCount + ' 处数字——进展汇报最好每块都有数据支撑。' });
+  }
+  if (parsed.sections.length > 5) {
+    tips.push({ level: 'warn', text: '大纲有 ' + parsed.sections.length + ' 个板块——一页纸超过 5 块就看不动了，合并同类项。' });
+  }
+  var hasNext = parsed.sections.some(function(s) {
+    return /下一步|计划|Next|TODO|待办|规划|后续/.test(s.title);
+  }) || parsed.intro.some(function(b) { return /下一步|计划|后续/.test(b); });
+  if (!hasNext && goal !== '复盘问题') {
+    tips.push({ level: 'warn', text: '没有「下一步 / 计划」板块。汇报的收尾要么是 Next Step，要么是明确的 Ask——别让读者猜你要什么。' });
+  }
+  if (goal === '争取资源') {
+    var hasAsk = (parsed.intro.join('') + parsed.sections.map(function(s) { return s.title + s.bullets.join(''); }).join('')).match(/资源|人力|预算|headcount|服务器|经费|支持/);
+    if (!hasAsk) tips.push({ level: 'warn', text: '目标选了「争取资源」，但大纲里没有资源相关的具体请求（人力 / 预算 / 设备）——Ask 要具体到数字。' });
+  }
+  var longBullets = 0;
+  parsed.sections.forEach(function(s) { s.bullets.forEach(function(b) { if (b.length > 40) longBullets += 1; }); });
+  if (longBullets > 2) {
+    tips.push({ level: 'warn', text: longBullets + ' 条要点超过 40 字——一页纸的要点要能一眼读完，长的拆短或下沉到口头讲。' });
+  }
+  if (!tips.length) tips.push({ level: 'ok', text: '结构体检通过：有数字、有收尾、篇幅合适——直接生成吧。' });
+  return tips;
+}
+
+/* ---------- ② 版式渲染 ---------- */
+
+var STYLE_NAMES = { classic: '经典纵列', two: '双栏', banner: '横幅 + KPI' };
+var currentStyle = 'classic';
+var currentParsed = null;
+var currentMeta = null;
+
+function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function numify(text) {
+  return esc(text).replace(/([0-9０-９]+(?:\.[0-9]+)?%?|[0-9.]+\s*(?:万|千|亿|倍|天|周|人|元|次|分钟|小时))/g, '<span class="op-num">$1</span>');
+}
+
+function renderPaper(parsed, meta, style) {
+  var paper = document.getElementById('paper');
+  var head = '<div class="op-head"><div class="op-title">' + esc(meta.title) + '</div>'
+    + '<div class="op-meta">' + esc(meta.meta) + (meta.meta ? ' ｜ ' : '') + '受众：' + esc(meta.audience) + ' · 目标：' + esc(meta.goal) + '</div></div>';
+  var secHtml = function(s) {
+    return '<div class="op-sec"><div class="op-sec-title">' + esc(s.title) + '</div><ul>'
+      + s.bullets.map(function(b) { return '<li>' + numify(b) + '</li>'; }).join('') + '</ul></div>';
+  };
+  var body = '';
+  if (style === 'two') {
+    body = '<div class="op-cols">' + parsed.sections.slice(0, Math.ceil(parsed.sections.length / 2)).map(secHtml).join('')
+      + '</div><div class="op-cols">' + parsed.sections.slice(Math.ceil(parsed.sections.length / 2)).map(secHtml).join('') + '</div>';
+  } else if (style === 'banner') {
+    var numbers = [];
+    parsed.sections.forEach(function(s) {
+      s.bullets.forEach(function(b) {
+        var m = b.match(/[0-9０-９]+(?:\.[0-9]+)?%|[0-9.]+\s*(?:万|千|亿)/);
+        if (m && numbers.length < 3) numbers.push({ v: m[0], k: s.title });
+      });
+    });
+    var kpi = numbers.length ? '<div class="op-kpi">' + numbers.map(function(n) {
+      return '<div class="kpi"><div class="v">' + esc(n.v) + '</div><div class="k">' + esc(n.k) + '</div></div>';
+    }).join('') + '</div>' : '';
+    body = kpi + parsed.sections.map(secHtml).join('');
+  } else {
+    body = parsed.sections.map(secHtml).join('');
+  }
+  var tldr = meta.tldr ? '<div class="op-tldr"><b>TL;DR：</b>' + numify(meta.tldr) + '</div>' : '';
+  paper.innerHTML = head + tldr + body;
+}
+
+/* ---------- ③ 演示数据 ---------- */
+
+var DEMO_OUTLINE = '# 本月进展\n- 完成 10 主题 A/B 评测，检索 Precision@10 从 6% 提升到 57.5%\n- 修复 3 个缺陷，其中 1 个是漏斗重复计数\n- 产出 4 份 PRD，覆盖 11 个小产品\n# 数据\n- 评测集 16 条标注，双命中率 100%\n- 区分度 40.5 分\n# 下一步\n- 5 人可用性测试（SUS 量表）\n- 投递 20 家实习，目标 3 个面试';
+
+/* ---------- ④ AI 层（润色 / 摘要，BYOK） ---------- */
+
+var PROVIDERS = {
+  zhipu:    { base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash' },
+  deepseek: { base: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
+  moonshot: { base: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k' },
+  ollama:   { base: 'http://localhost:11434/v1/chat/completions', model: 'qwen2.5:7b' },
+  custom:   { base: '', model: '' }
+};
+
+function loadApiConfig() { try { return JSON.parse(localStorage.getItem('op_api') || '{}'); } catch (e) { return {}; } }
+
+async function callChat(messages, maxTokens) {
+  var cfg = loadApiConfig();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.model || provider.model;
+  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({ model: model, messages: messages, temperature: 0.6, max_tokens: maxTokens || 1200 })
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+    throw new Error('接口返回 ' + res.status + '：' + detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+
+function extractJson(text) {
+  var m = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  var raw = m ? m[1] : text;
+  var start = raw.indexOf('{'), end = raw.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('模型没有返回 JSON');
+  return JSON.parse(raw.slice(start, end + 1));
+}
+
+async function aiPolish() {
+  if (!currentParsed) { status('先生成一页纸，再润色。', true); return; }
+  var box = document.getElementById('ai-box');
+  box.innerHTML = '<div class="ai-out">✨ 正在润色要点…</div>';
+  try {
+    var bullets = [];
+    currentParsed.sections.forEach(function(s) { s.bullets.forEach(function(b) { bullets.push(b); }); });
+    var text = await callChat([
+      { role: 'system', content: '你是向上汇报的文案教练。只输出 JSON，不输出任何其他文字。' },
+      { role: 'user', content: '受众是「' + currentMeta.audience + '」，汇报目标是「' + currentMeta.goal + '」。把下面每条要点改写成更精炼、更有分量的汇报语言（每条 ≤30 字，保留所有数字，不编造新数字），严格输出 JSON：{"bullets":["改写后的每条"]}。原要点：\n' + bullets.map(function(b, i) { return (i + 1) + '. ' + b; }).join('\n') }
+    ]);
+    var obj = extractJson(text);
+    if (!Array.isArray(obj.bullets) || obj.bullets.length !== bullets.length) throw new Error('返回条数与原要点不一致，请重试');
+    // 回写：按顺序替换所有 section 的 bullets
+    var idx = 0;
+    currentParsed.sections.forEach(function(s) {
+      s.bullets = s.bullets.map(function() { return obj.bullets[idx++]; });
+    });
+    renderPaper(currentParsed, currentMeta, currentStyle);
+    box.innerHTML = '<div class="ai-out">✨ 已润色并回写一页纸。改动是否如实？数字是否被动过？请对照原文检查——AI 保留数字是约定，不是保证。</div>';
+  } catch (e) {
+    box.innerHTML = '<div class="ai-out">❌ ' + esc(e.message) + '</div>';
+  }
+}
+
+async function aiTldr() {
+  if (!currentParsed) { status('先生成一页纸，再写摘要。', true); return; }
+  var box = document.getElementById('ai-box');
+  box.innerHTML = '<div class="ai-out">🧾 正在写执行摘要…</div>';
+  try {
+    var text = await callChat([
+      { role: 'system', content: '你是向上汇报的文案教练。只输出 JSON，不输出任何其他文字。' },
+      { role: 'user', content: '汇报标题「' + currentMeta.title + '」，目标「' + currentMeta.goal + '」。根据大纲写 3 句话执行摘要（每句 ≤25 字，第 1 句结论、第 2 句关键数字、第 3 句下一步），严格输出 JSON：{"tldr":"三句话用；连接"}。大纲：' + JSON.stringify(currentParsed.sections) }
+    ]);
+    var obj = extractJson(text);
+    currentMeta.tldr = obj.tldr || '';
+    renderPaper(currentParsed, currentMeta, currentStyle);
+    box.innerHTML = '<div class="ai-out">🧾 摘要已写入一页纸顶部（橙色块）。数字请人工核对。</div>';
+  } catch (e) {
+    box.innerHTML = '<div class="ai-out">❌ ' + esc(e.message) + '</div>';
+  }
+}
+
+/* ---------- ⑤ 事件 ---------- */
+
+function status(msg, isErr) {
+  var el = document.getElementById('op-status');
+  el.textContent = msg || '';
+  el.className = 'statusline' + (isErr ? ' err' : '');
+}
+
+function build() {
+  var title = document.getElementById('op-title').value.trim();
+  var outline = document.getElementById('op-outline').value;
+  if (!title) { status('标题必填。', true); return; }
+  currentMeta = {
+    title: title,
+    meta: document.getElementById('op-meta').value.trim(),
+    audience: document.getElementById('op-audience').value,
+    goal: document.getElementById('op-goal').value,
+    tldr: currentMeta && currentMeta.title === title ? currentMeta.tldr : ''
+  };
+  currentParsed = parseOutline(outline);
+  var tips = diagnoseOutline(currentParsed, currentMeta.goal);
+  document.getElementById('diag-box').innerHTML = tips.map(function(t) {
+    var icon = t.level === 'ok' ? '✅' : (t.level === 'warn' ? '⚠️' : '⛔');
+    return '<div class="diag ' + t.level + '">' + icon + ' ' + esc(t.text) + '</div>';
+  }).join('');
+  renderPaper(currentParsed, currentMeta, currentStyle);
+  status('📄 已生成（' + STYLE_NAMES[currentStyle] + ' · ' + currentParsed.sections.length + ' 板块 · ' + currentParsed.bulletCount + ' 要点 · ' + currentParsed.numberCount + ' 处数字）。');
+}
+
+function init() {
+  document.getElementById('btn-build').addEventListener('click', build);
+  document.getElementById('btn-demo').addEventListener('click', function() {
+    document.getElementById('op-title').value = '文献 Agent 十一月进展汇报';
+    document.getElementById('op-meta').value = 'Aurorawby · 2026-11';
+    document.getElementById('op-outline').value = DEMO_OUTLINE;
+    build();
+    status('🧪 已装载演示大纲并生成——注意诊断区对「下一步」板块和数字密度的判定。');
+  });
+  document.getElementById('btn-polish').addEventListener('click', aiPolish);
+  document.getElementById('btn-tldr').addEventListener('click', aiTldr);
+  document.getElementById('btn-print').addEventListener('click', function() { window.print(); });
+  document.getElementById('btn-copy-html').addEventListener('click', function() {
+    navigator.clipboard.writeText(document.getElementById('paper').outerHTML);
+    status('📋 一页纸 HTML 已复制——可粘进邮件正文或富文本编辑器。');
+  });
+  document.getElementById('styles').addEventListener('click', function(ev) {
+    var s = ev.target.getAttribute && ev.target.getAttribute('data-s');
+    if (!s) return;
+    currentStyle = s;
+    document.querySelectorAll('#styles button').forEach(function(b) { b.classList.toggle('on', b.getAttribute('data-s') === s); });
+    if (currentParsed) renderPaper(currentParsed, currentMeta, currentStyle);
+  });
+
+  var drawer = document.getElementById('drawer-api');
+  document.getElementById('btn-settings').addEventListener('click', function() {
+    var cfg = loadApiConfig();
+    document.getElementById('api-provider').value = cfg.provider || 'zhipu';
+    document.getElementById('api-key').value = cfg.key || '';
+    document.getElementById('api-model').value = cfg.model || '';
+    document.getElementById('api-base').value = cfg.base || '';
+    drawer.style.display = 'flex';
+  });
+  document.getElementById('api-cancel').addEventListener('click', function() { drawer.style.display = 'none'; });
+  drawer.addEventListener('click', function(ev) { if (ev.target === drawer) drawer.style.display = 'none'; });
+  document.getElementById('api-save').addEventListener('click', function() {
+    localStorage.setItem('op_api', JSON.stringify({
+      provider: document.getElementById('api-provider').value,
+      key: document.getElementById('api-key').value.trim(),
+      model: document.getElementById('api-model').value.trim(),
+      base: document.getElementById('api-base').value.trim()
+    }));
+    drawer.style.display = 'none';
+    status('✅ AI 设置已保存（只存在本机）。');
+  });
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}
+</script>
+</body>
+</html>

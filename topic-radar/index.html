@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>选题雷达 · 给公众号 / 小红书博主的 AI 选题工坊</title>
+<meta name="description" content="粘贴账号定位，AI 生成 12 个带评分和选题逻辑的候选；离线规则引擎给任意标题 6 维打分。数据只存在你自己的浏览器里。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --orange:#ff7a45; --orange-soft:#ffe8dc;
+    --purple:#7c3aed; --purple-soft:#f0e4ff;
+    --blue:#5b7cfa; --blue-soft:#e4e9ff;
+    --green:#12a184; --green-soft:#dcf5ee;
+    --red:#d64545; --red-soft:#fde5e5;
+    --radius:18px; --shadow:0 10px 26px rgba(60,42,20,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--orange-soft),transparent 60%),
+    radial-gradient(800px 420px at 100% 0%,var(--purple-soft),transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 16px 40px}
+  .wrap{max-width:920px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:46em}
+  .sub b{color:var(--ink)}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#8a5a1f}
+  .topbtn{margin-left:auto;display:flex;gap:8px}
+  button{font-family:inherit;cursor:pointer}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--orange);color:#fff;box-shadow:0 6px 16px rgba(255,122,69,.28)}
+  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.b:hover{border-color:#c9b1ec}
+  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  section{margin-bottom:26px}
+  h2{font-size:18.5px;margin:0 0 10px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  /* 账号设定 */
+  .profile{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  .profile label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+  .profile input,.profile select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13.5px;font-family:inherit;background:#fff}
+  .profile input:focus,.profile select:focus{outline:none;border-color:var(--orange)}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.7}
+  /* 打分器 */
+  .scorer{display:flex;gap:10px;flex-wrap:wrap}
+  .scorer input{flex:1;min-width:260px;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;font-size:14px;font-family:inherit}
+  .scorer input:focus{outline:none;border-color:var(--orange)}
+  .score-result{margin-top:14px;display:none}
+  .score-result.show{display:block}
+  .bars{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px 18px;margin:10px 0}
+  .bar-row{display:grid;grid-template-columns:96px 1fr 30px;gap:8px;align-items:center;font-size:12.3px}
+  .bar-track{height:8px;background:#f1e8dc;border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#ffb38a,var(--orange))}
+  .score-total{font-size:14px;font-weight:700}
+  .score-total b{font-size:22px;color:var(--orange)}
+  .advice{background:var(--orange-soft);border-radius:10px;padding:10px 13px;font-size:12.8px;line-height:1.8;margin-top:8px}
+  .advice b{color:#b45309}
+  /* 选题卡 */
+  .filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .filter button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:5px 14px;font-size:12.5px;font-weight:600;color:var(--muted)}
+  .filter button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+  .idea{background:#fff;border-radius:16px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+  .idea .head{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .idea .title{font-size:14.8px;font-weight:700;line-height:1.5}
+  .tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:10.8px;font-weight:700}
+  .tag.g0{background:var(--orange-soft);color:#b45309}
+  .tag.g1{background:var(--purple-soft);color:#6d28d9}
+  .tag.g2{background:var(--blue-soft);color:#3b5bdb}
+  .tag.g3{background:#ffe9b8;color:#92600a}
+  .tag.g4{background:var(--red-soft);color:#b03030}
+  .tag.g5{background:var(--green-soft);color:#0b6b52}
+  .state{border-radius:999px;padding:2px 9px;font-size:10.8px;font-weight:700}
+  .state.todo{background:#f1e8dc;color:#8a5a1f}
+  .state.doing{background:var(--blue-soft);color:#3b5bdb}
+  .state.done{background:var(--green-soft);color:#0b6b52}
+  .state.drop{background:#eee;color:#999}
+  .logic{font-size:12.3px;color:var(--muted);line-height:1.7}
+  .logic b{color:#8a5a1f}
+  .risk{font-size:11.8px;color:#b03030;background:var(--red-soft);border-radius:8px;padding:6px 9px;line-height:1.6}
+  .idea .ops{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:4px}
+  .idea .ops .btn{border:1.2px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:5px 10px;font-size:11.8px;font-weight:600}
+  .idea .ops .btn:hover{border-color:var(--orange)}
+  .sub-out{background:#faf6ef;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.9;white-space:pre-wrap}
+  /* 看板 */
+  .board{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .board .card h3{margin:0 0 10px;font-size:14px;color:#8a5a1f}
+  .hbar{display:grid;grid-template-columns:76px 1fr 34px;gap:8px;align-items:center;font-size:12px;margin-bottom:6px}
+  .funnel{display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:600;flex-wrap:wrap}
+  .funnel .step{background:var(--orange-soft);border-radius:8px;padding:6px 10px;color:#b45309}
+  .funnel .arrow{color:var(--muted)}
+  /* 抽屉 */
+  .drawer{position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50}
+  .drawer.open{display:flex}
+  .drawer .panel{background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:80vh;overflow:auto}
+  .drawer h3{margin:0 0 12px;font-size:16px}
+  .drawer label{display:block;font-size:12.5px;color:var(--muted);font-weight:600;margin:10px 0 4px}
+  .drawer input,.drawer select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13.5px;font-family:inherit}
+  .drawer .row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:12px}
+  /* 状态条 */
+  .statusline{font-size:13px;color:var(--muted);margin:10px 0;min-height:20px}
+  .statusline.err{color:var(--red);font-weight:600}
+  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
+  footer a{color:#8a5a1f}
+  code{background:#f1e8dc;border-radius:5px;padding:1px 6px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>📡 选题雷达 <span style="font-size:15px;color:var(--muted);font-weight:600">TopicRadar</span></h1>
+  <p class="sub">给公众号 / 小红书 / 知乎博主的选题工坊：<b>AI 按你的账号定位一次生成 12 个候选选题</b>，每条自带
+  「为什么能爆」和 6 维规则打分；也可以把任意标题丢进打分器，看它缺什么。生成是 AI 的，<b>评分和诊断是代码算的，可复现</b>。</p>
+
+  <div class="topbar">
+    <span class="pill">🔒 数据只存本机浏览器</span>
+    <span class="pill">🧪 无 Key 可用演示模式</span>
+    <span class="pill">📏 规则打分 · 可解释</span>
+    <span class="topbtn">
+      <button class="btn b" id="btn-export-copy">📋 复制 Markdown</button>
+      <button class="btn b" id="btn-export-dl">⬇️ 下载 .md</button>
+      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+    </span>
+  </div>
+
+  <section>
+    <div class="card">
+      <h2>① 账号设定（AI 生成会用到）</h2>
+      <div class="profile">
+        <div><label>平台</label>
+          <select id="pf-platform">
+            <option>微信公众号</option><option>小红书</option><option>知乎</option>
+            <option>B站</option><option>视频号</option>
+          </select></div>
+        <div><label>赛道 / 领域</label><input id="pf-track" placeholder="如：职场成长 / AI 工具测评"></div>
+        <div><label>目标读者</label><input id="pf-audience" placeholder="如：0-3 年的职场新人"></div>
+        <div><label>变现方向（可不填）</label><input id="pf-monetize" placeholder="如：知识付费 / 不考虑"></div>
+      </div>
+      <div class="hint">设定会自动保存在本机；「赛道」为空时 AI 按通用职场赛道处理。</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>② 生成 / 添加选题</h2>
+      <div class="topbar" style="margin-bottom:4px">
+        <button class="btn a" id="btn-gen">🤖 AI 生成 12 个选题</button>
+        <button class="btn b" id="btn-demo">🧪 装载演示选题</button>
+        <button class="btn b" id="btn-add">✏️ 手动添加一条</button>
+      </div>
+      <div class="statusline" id="gen-status"></div>
+      <div class="note">AI 生成需要自备 API Key（⚙️ 里配，支持智谱 GLM-4-Flash 免费档 / DeepSeek / Moonshot / 本地 Ollama）。
+      没有 Key 可以先点「装载演示选题」看完整流程——演示数据也是人工精写的真实风格选题，评分由同一套规则引擎现算。</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>③ 标题打分器（离线规则引擎）</h2>
+      <div class="scorer">
+        <input id="scorer-input" placeholder="粘贴任意一个标题，例如：工作了 3 年，我为什么劝你别做运营">
+        <button class="btn a" id="btn-score">📊 打分</button>
+      </div>
+      <div class="score-result" id="score-result"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>④ 选题池 <span id="pool-count" style="font-size:13px;color:var(--muted);font-weight:600"></span></h2>
+    <div class="filter" id="filter"></div>
+    <div class="statusline" id="pool-empty" style="display:none">选题池还是空的——先在上面生成或添加。</div>
+    <div class="pool" id="pool"></div>
+  </section>
+
+  <section>
+    <h2>⑤ 选题池看板</h2>
+    <div class="board" id="board"></div>
+  </section>
+
+  <footer>
+    📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
+    评分是词典规则不是流量预测 · AI 候选发布前请人工判断 · 清浏览器数据会丢选题池<br>
+    本页面是单文件 HTML，可离线使用 · AI 结对编程产出
+  </footer>
+</div>
+
+<div class="drawer" id="drawer">
+  <div class="panel">
+    <h3>⚙️ AI 设置（Key 只存本机，请求直接发给你选的服务商）</h3>
+    <label>服务商</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="ollama">本地 Ollama（需已启动）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>API Key（Ollama 可留空）</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div class="note">说明：调用从你的浏览器直接发到服务商，本页面不经过任何中间服务器；Key 保存在 localStorage，
+    换设备需重新填写。浏览器直连部分服务商可能有跨域限制——遇到报错可换智谱（官方支持跨域）或本地 Ollama。</div>
+    <div class="row">
+      <button class="btn b" id="api-cancel">取消</button>
+      <button class="btn a" id="api-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   选题雷达 TopicRadar
+   结构：规则打分引擎（纯函数，可被 eval 提取）→ 演示数据 →
+        选题池状态管理 → AI 层（BYOK）→ 渲染与事件
+   评分全部由代码计算；AI 只负责生成候选内容。
+   ============================================================ */
+
+/* ---------- ① 规则打分引擎（纯函数，勿加入 DOM 依赖；eval/topic-radar 直接调用） ---------- */
+
+var SCORE_DIMS = [
+  { id:'number',   name:'数字具体', weight:1.15 },
+  { id:'identity', name:'身份代入', weight:1.25 },
+  { id:'emotion',  name:'情绪唤起', weight:1.2  },
+  { id:'tension',  name:'反差悬念', weight:1.2  },
+  { id:'fresh',    name:'时效钩子', weight:0.9  },
+  { id:'length',   name:'长度健康', weight:1.0  }
+];
+
+var LEX = {
+  identity: ['你','我','新人','新手','小白','普通人','打工人','宝妈','宝爸','学生','应届','实习生','职场','老板','领导','同事','大厂','体制内','考公','考研','面试','35岁','30岁','25岁','00后','90后','大学生','毕业生','程序员','产品经理','运营','自媒体人','博主','女生','男生'],
+  emotion: ['焦虑','崩溃','慌','怕','后悔','遗憾','扎心','解气','逆袭','翻身','躺平','内卷','裸辞','裁员','失业','工资','月薪','年薪','存款','副业','爆','封神','绝了','破防','清醒','顿悟','醒醒','警惕','劝','偷偷','悄悄','终于','不敢','沉默','破圈','起飞','暴涨','暴跌','扒','无脑','血泪','搞钱'],
+  tension: ['却','居然','竟然','其实','真相','为什么','凭什么','才发现','发现','根本','别再','难怪','原来','反而','恰恰','未必','不一定','骗','踩坑','误区','反常识','颠覆','说难听','扎心的是','结果是','到头来','后来我','想明白','才明白','才懂','不是','差别','区别','还是']
+};
+
+function scoreTitle(title) {
+  var text = String(title || '').trim();
+  var out = {};
+  // 1. 数字具体：出现 2+ 处数字/量词 → 5 分，1 处 → 3 分
+  var nums = (text.match(/[0-9０-９]+|[一二两三四五六七八九十]+(个|种|步|条|招|件事|大|年|天|小时|分钟|倍|万|千|元)/g) || []).length;
+  out.number = nums >= 2 ? 5 : (nums === 1 ? 3 : 0);
+  // 2-4. 身份代入 / 情绪唤起 / 反差悬念：命中 2+ 词 → 5 分，1 词 → 3 分
+  var idHits = LEX.identity.filter(function(w){ return text.indexOf(w) !== -1; });
+  out.identity = idHits.length >= 2 ? 5 : (idHits.length === 1 ? 3 : 0);
+  var emHits = LEX.emotion.filter(function(w){ return text.indexOf(w) !== -1; });
+  out.emotion = emHits.length >= 2 ? 5 : (emHits.length === 1 ? 3 : 0);
+  var teHits = LEX.tension.filter(function(w){ return text.indexOf(w) !== -1; });
+  out.tension = teHits.length >= 2 ? 5 : (teHits.length === 1 ? 3 : 0);
+  // 5. 时效钩子：命中 1 次即有效
+  var frHits = text.match(/20[12][0-9]年?|最新|刚刚|今天|本月|今年|上周|新规|新政策|开始流行|又双叒/g) || [];
+  out.fresh = frHits.length >= 1 ? 4 : 0;
+  // 6. 长度健康：10–30 字最佳
+  var len = text.length;
+  if (len >= 10 && len <= 30) out.length = 5;
+  else if (len >= 8 && len <= 38) out.length = 3.5;
+  else if (len > 0) out.length = 2;
+  else out.length = 0;
+  // 加权总分 → 0-100
+  var total = 0, weightSum = 0;
+  SCORE_DIMS.forEach(function(d){ total += out[d.id] * d.weight; weightSum += d.weight; });
+  out._total = Math.round(total / weightSum / 5 * 100);
+  return out;
+}
+
+var ADVICE = {
+  number:  '标题里没有具体数字。加「3 个方法」「涨粉 7000」这类可验证的量词通常更易点开——但一条标题别堆超过两个数字。',
+  identity:'没有身份代入词。想清楚这条写给谁：应届生 / 新手宝妈 / 打工人……让目标读者第一眼对号入座。',
+  emotion: '情绪唤起偏弱。同类内容常用「后悔」「扎心」「逆袭」唤起情绪——但别做夸张标题党，会反噬账号信任。',
+  tension: '缺少悬念或反差。试试「其实」「却」「为什么」制造认知缺口，让人不点开难受。',
+  fresh:   '没有时效钩子。内容跟当下有关就加年份或「最新」；如果是常青干货，不加也没关系。',
+  length:  '标题字数偏离健康区间（10–30 字）：太短没信息量，太长在信息流里会被截断。'
+};
+
+/* ---------- ② 演示数据（人工精写；分数由规则引擎现算，保证与产品一致） ---------- */
+
+var ANGLE_NAMES = ['数字清单','身份代入','反差冲突','热点借势','避坑指南','资源盘点'];
+var ANGLE_CLASS = { '数字清单':'g0','身份代入':'g1','反差冲突':'g2','热点借势':'g3','避坑指南':'g4','资源盘点':'g5' };
+
+var DEMO_ITEMS = [
+  { title:'工作 3 年才想明白：运营最值钱的能力不是写文案', angle:'反差冲突',
+    logic:'用年限堆信任感 + 「不是X」制造认知缺口，目标读者会拿自己对照。',
+    benchmark:'「工作 N 年，我劝你…」系列在职场号长盛不衰，转发多来自「认同并 @ 同事」。',
+    risk:'观点要立得住，正文得给出比「写文案」更值钱的能力并论证，否则评论区翻车。' },
+  { title:'应届生第一份工作：选大厂边缘岗还是小公司核心岗？', angle:'身份代入',
+    logic:'应届生年年有，两难选择天然带站队感，评论区容易吵起来，吵起来就有互动。',
+    benchmark:' Offer 对比类是小红书职场赛道的常青题，收藏率高于点赞率。',
+    risk:'两边都要认真分析，明显偏袒一边会被骂「何不食肉糜」。' },
+  { title:'我扒了 30 个 10 万粉的知识博主，发现他们只做这 3 种选题', angle:'数字清单',
+    logic:'「扒了 30 个」给方法论背书，「只做 3 种」给确定性，干货感直接拉满。',
+    benchmark:'「我分析了 N 个账号」是自媒体赛道高收藏结构，适合作为涨粉主力内容。',
+    risk:'30 个样本要真的扒过，正文最好放一两个截图级证据，否则被质疑编数据。' },
+  { title:'为什么 2026 年了，还有人劝你做公众号？', angle:'热点借势',
+    logic:'借「公众号不行了」的行业情绪反过来做钩子，自带讨论度，同行会来留言。',
+    benchmark:'唱衰/反唱衰类内容每隔一阵就有一波，角度新就能吃到流量。',
+    risk:'容易被认为是抬杠，正文必须给出「为什么现在还值得做」的真实理由。' },
+  { title:'别再无脑背面试题了：面试官真正筛人的 4 个信号', angle:'避坑指南',
+    logic:'「别再」劝止式开头 + 面试官视角的信息差，求职季搜索量稳定。',
+    benchmark:'求职类避坑内容 3-6 月和 9-11 月是流量高峰，可做成系列。',
+    risk:'「4 个信号」必须给到可直接执行的做法，泛泛而谈会被收藏夹雪藏。' },
+  { title:'月薪 8 千和月薪 3 万的运营，做周报的差别在哪', angle:'反差冲突',
+    logic:'薪酬数字自带代入感，读者会立刻对号入座自己属于哪一档，完播率友好。',
+    benchmark:'薪资对比是小红书职场流量密码，但各平台对薪资内容的推荐策略不同。',
+    risk:'数字要标注「为化名/调研样本」，避免被质疑贩卖焦虑。' },
+  { title:'副业半年亏了 2 万，我总结出 5 条血泪教训', angle:'数字清单',
+    logic:'自曝损失换信任，「血泪教训」提供情绪 + 干货双价值，转发里「真实」出现率最高。',
+    benchmark:'失败复盘类比成功学更易被转发，因为它帮读者省了试错成本。',
+    risk:'要真给教训，不能通篇是「下次注意」，否则读感空洞。' },
+  { title:'普通女生搞钱最大的误区：只会卖时间，不会买时间', angle:'身份代入',
+    logic:'「普通女生」精准圈定人群，「误区」自带查漏动机，适合做系列开篇。',
+    benchmark:'女性成长 + 搞钱是小红书强势赛道，系列化能稳定涨粉。',
+    risk:'避免堆鸡汤，「买时间」要落到具体例子（如外包/工具/AI）上。' }
+];
+
+/* ---------- ③ 选题池状态（localStorage） ---------- */
+
+var STATE_KEY = 'tr_pool', FILTER_KEY = 'tr_filter';
+var STATES = { todo:'待写', doing:'在写', done:'已发', drop:'弃' };
+var STATE_FLOW = { todo:'doing', doing:'done', done:'todo', drop:'todo' };
+
+function loadPool() {
+  try { return JSON.parse(localStorage.getItem(STATE_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+function savePool(pool) { localStorage.setItem(STATE_KEY, JSON.stringify(pool)); }
+
+function decorate(item) {
+  // 打分由引擎现算，不信任外部给的分数
+  var s = scoreTitle(item.title);
+  return {
+    title: item.title, angle: ANGLE_NAMES.indexOf(item.angle) >= 0 ? item.angle : '反差冲突',
+    logic: item.logic || '', benchmark: item.benchmark || '', risk: item.risk || '',
+    scores: s, state: item.state || 'todo'
+  };
+}
+
+/* ---------- ④ AI 层（BYOK，OpenAI 兼容） ---------- */
+
+var PROVIDERS = {
+  zhipu:    { base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash' },
+  deepseek: { base:'https://api.deepseek.com/chat/completions', model:'deepseek-chat' },
+  moonshot: { base:'https://api.moonshot.cn/v1/chat/completions', model:'moonshot-v1-8k' },
+  ollama:   { base:'http://localhost:11434/v1/chat/completions', model:'qwen2.5:7b' },
+  custom:   { base:'', model:'' }
+};
+
+function loadApiConfig() {
+  try { return JSON.parse(localStorage.getItem('tr_api') || '{}'); } catch (e) { return {}; }
+}
+
+function buildSystemPrompt(profile) {
+  return '你是「' + profile.platform + '」账号的内容主编。账号定位：赛道=' + (profile.track || '通用职场成长')
+    + '；目标读者=' + (profile.audience || '对成长和副业感兴趣的年轻人')
+    + '；变现方向=' + (profile.monetize || '暂不考虑') + '。'
+    + '请生成 12 个选题，一半偏干货收藏向，一半偏情绪共鸣转发向。'
+    + '严格输出 JSON 数组，不要输出任何其他文字。数组每项格式：'
+    + '{"title":"标题，10-30字","angle":"从【数字清单/身份代入/反差冲突/热点借势/避坑指南/资源盘点】中选一个",'
+    + '"logic":"一句话说明为什么能爆","benchmark":"同类爆款的一般规律","risk":"这条选题的风险提醒"}。';
+}
+
+function extractJson(text) {
+  var m = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  var raw = m ? m[1] : text;
+  var start = raw.indexOf('['), end = raw.lastIndexOf(']');
+  if (start === -1 || end === -1) throw new Error('模型没有返回 JSON 数组');
+  return JSON.parse(raw.slice(start, end + 1));
+}
+
+async function callChat(messages, maxTokens) {
+  var cfg = loadApiConfig();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.model || provider.model;
+  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({ model: model, messages: messages, temperature: 0.9, max_tokens: maxTokens || 3000 })
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+    throw new Error('接口返回 ' + res.status + '：' + detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+
+/* ---------- ⑤ 渲染 ---------- */
+
+var pool = loadPool();
+var currentFilter = localStorage.getItem(FILTER_KEY) || 'all';
+
+function status(msg, isErr) {
+  var el = document.getElementById('gen-status');
+  el.textContent = msg || '';
+  el.className = 'statusline' + (isErr ? ' err' : '');
+}
+
+function esc(text) {
+  return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderFilter() {
+  var tabs = [['all','全部'],['todo','待写'],['doing','在写'],['done','已发'],['drop','弃']];
+  document.getElementById('filter').innerHTML = tabs.map(function(t){
+    var n = t[0] === 'all' ? pool.length : pool.filter(function(i){ return i.state === t[0]; }).length;
+    return '<button data-f="' + t[0] + '" class="' + (currentFilter === t[0] ? 'on' : '') + '">' + t[1] + ' ' + n + '</button>';
+  }).join('');
+}
+
+function barHtml(scores) {
+  return '<div class="bars">' + SCORE_DIMS.map(function(d){
+    var v = Math.round(scores[d.id] / 5 * 100);
+    return '<div class="bar-row"><span>' + d.name + '</span><div class="bar-track"><div class="bar-fill" style="width:' + v + '%"></div></div><span>' + scores[d.id] + '</span></div>';
+  }).join('') + '</div>';
+}
+
+function renderPool() {
+  var visible = pool.map(function(item, i){ return { item: item, i: i }; })
+    .filter(function(x){ return currentFilter === 'all' || x.item.state === currentFilter; })
+    .sort(function(a, b){ return b.item.scores._total - a.item.scores._total; });
+  document.getElementById('pool-empty').style.display = pool.length ? 'none' : 'block';
+  document.getElementById('pool-count').textContent = pool.length ? '· 共 ' + pool.length + ' 条' : '';
+  document.getElementById('pool').innerHTML = visible.map(function(x){
+    var it = x.item, s = it.scores;
+    return '<div class="idea">'
+      + '<div class="head"><span class="tag ' + (ANGLE_CLASS[it.angle] || 'g0') + '">' + esc(it.angle) + '</span>'
+      + '<span class="state ' + it.state + '">' + STATES[it.state] + '</span>'
+      + '<span class="score-total" style="margin-left:auto"><b>' + s._total + '</b> 分</span></div>'
+      + '<div class="title">' + esc(it.title) + '</div>'
+      + barHtml(s)
+      + '<div class="logic"><b>为什么能爆：</b>' + esc(it.logic) + (it.benchmark ? '<br><b>同类规律：</b>' + esc(it.benchmark) : '') + '</div>'
+      + (it.risk ? '<div class="risk">⚠ ' + esc(it.risk) + '</div>' : '')
+      + '<div class="ops">'
+      + '<button class="btn" data-act="variants" data-i="' + x.i + '">🅰 标题变体</button>'
+      + '<button class="btn" data-act="outline" data-i="' + x.i + '">📝 大纲</button>'
+      + '<button class="btn" data-act="next" data-i="' + x.i + '">→ ' + STATES[STATE_FLOW[it.state]] + '</button>'
+      + '<button class="btn" data-act="del" data-i="' + x.i + '">🗑</button>'
+      + '</div><div class="sub-out" id="sub-' + x.i + '" style="display:none"></div>'
+      + '</div>';
+  }).join('');
+  renderBoard();
+}
+
+function renderBoard() {
+  var byAngle = {}, byState = { todo:0, doing:0, done:0, drop:0 };
+  var avg = 0;
+  pool.forEach(function(it){
+    byAngle[it.angle] = (byAngle[it.angle] || 0) + 1;
+    byState[it.state] += 1;
+    avg += it.scores._total;
+  });
+  avg = pool.length ? Math.round(avg / pool.length) : 0;
+  var angleBars = ANGLE_NAMES.map(function(a){
+    var n = byAngle[a] || 0;
+    var max = Math.max(1, ANGLE_NAMES.map(function(k){ return byAngle[k] || 0; }).sort().reverse()[0] || 1);
+    return '<div class="hbar"><span>' + a + '</span><div class="bar-track"><div class="bar-fill" style="width:' + Math.round(n / max * 100) + '%"></div></div><span>' + n + '</span></div>';
+  }).join('');
+  var board = document.getElementById('board');
+  if (!pool.length) { board.innerHTML = '<div class="card" style="color:var(--muted);font-size:13px">有选题之后，这里会显示类型分布和状态漏斗。</div>'; return; }
+  board.innerHTML =
+    '<div class="card"><h3>结构类型分布</h3>' + angleBars + '</div>'
+    + '<div class="card"><h3>状态漏斗</h3><div class="funnel">'
+    + '<span class="step">待写 ' + byState.todo + '</span><span class="arrow">→</span>'
+    + '<span class="step" style="background:var(--blue-soft);color:#3b5bdb">在写 ' + byState.doing + '</span><span class="arrow">→</span>'
+    + '<span class="step" style="background:var(--green-soft);color:#0b6b52">已发 ' + byState.done + '</span>'
+    + '</div><div class="hint" style="margin-top:10px">已发率 ' + (pool.length ? Math.round(byState.done / pool.length * 100) : 0) + '% · 平均分 ' + avg + ' · 弃 ' + byState.drop + '</div></div>';
+}
+
+/* ---------- ⑥ 事件绑定 ---------- */
+
+function getProfile() {
+  return {
+    platform: document.getElementById('pf-platform').value,
+    track: document.getElementById('pf-track').value.trim(),
+    audience: document.getElementById('pf-audience').value.trim(),
+    monetize: document.getElementById('pf-monetize').value.trim()
+  };
+}
+
+function saveProfile() {
+  localStorage.setItem('tr_profile', JSON.stringify(getProfile()));
+}
+
+function loadProfile() {
+  try {
+    var p = JSON.parse(localStorage.getItem('tr_profile') || '{}');
+    if (p.platform) document.getElementById('pf-platform').value = p.platform;
+    if (p.track) document.getElementById('pf-track').value = p.track;
+    if (p.audience) document.getElementById('pf-audience').value = p.audience;
+    if (p.monetize) document.getElementById('pf-monetize').value = p.monetize;
+  } catch (e) {}
+}
+
+function showScoreCard(title, mountId) {
+  var s = scoreTitle(title);
+  var weak = SCORE_DIMS.filter(function(d){ return s[d.id] <= 2; })
+    .sort(function(a, b){ return s[a.id] - s[b.id]; }).slice(0, 2);
+  var advice = weak.length
+    ? '最该补的两点：<b>' + weak.map(function(d){ return ADVICE[d.id]; }).join('　') + '</b>'
+    : '<b>六维全绿</b>——结构上没有明显短板。能不能爆还取决于内容质量与发布时机，分数只回答「标题像不像会被点开的标题」。';
+  return '<div class="score-total">综合 <b>' + s._total + '</b> / 100</div>'
+    + barHtml(s) + '<div class="advice">' + advice + '</div>';
+}
+
+async function generate() {
+  var profile = getProfile(); saveProfile();
+  status('🤖 正在生成，请稍等（免费模型约 10-40 秒）…');
+  var sys = buildSystemPrompt(profile);
+  try {
+    var text = await callChat([
+      { role: 'system', content: sys },
+      { role: 'user', content: '开始生成 12 个选题。' }
+    ]);
+    var items = extractJson(text);
+    if (!Array.isArray(items) || !items.length) throw new Error('返回内容不是非空数组');
+    items.forEach(function(raw){ if (raw && raw.title) pool.push(decorate(raw)); });
+    savePool(pool);
+    currentFilter = 'all';
+    renderFilter(); renderPool();
+    status('✅ 已生成 ' + items.length + ' 条（评分由规则引擎现算），可在下方筛选和管理。');
+  } catch (e) {
+    status('❌ ' + e.message + ' —— 若是跨域报错，试试智谱或本地 Ollama；没有 Key 可点「装载演示选题」。', true);
+  }
+}
+
+function loadDemo() {
+  DEMO_ITEMS.forEach(function(raw){ pool.push(decorate(raw)); });
+  savePool(pool);
+  currentFilter = 'all';
+  renderFilter(); renderPool();
+  status('🧪 已装载 8 条演示选题（人工精写，评分由规则引擎现算）。');
+}
+
+async function subTask(kind, index) {
+  var box = document.getElementById('sub-' + index);
+  var it = pool[index];
+  if (!box || !it) return;
+  box.style.display = 'block';
+  box.textContent = kind === 'variants' ? '🅰 正在要 3 个标题变体…' : '📝 正在写 200 字大纲…';
+  try {
+    var profile = getProfile();
+    var ask = kind === 'variants'
+      ? '给这条选题出 3 个更抓人的标题变体，严格输出 JSON 数组：["变体1","变体2","变体3"]，不要输出其他文字。选题：「' + it.title + '」'
+      : '为这条选题写一份约 200 字的内容大纲（分 3-4 段，说清每段写什么），严格输出 JSON：{"outline":"大纲全文"}，不要输出其他文字。选题：「' + it.title + '」，选题逻辑：' + it.logic;
+    var text = await callChat([
+      { role: 'system', content: '你是「' + profile.platform + '」账号的内容主编，赛道=' + (profile.track || '通用职场成长') + '。只输出 JSON，不输出任何其他文字。' },
+      { role: 'user', content: ask }
+    ], 800);
+    if (kind === 'variants') {
+      var list = extractJson(text.replace(/^\s*\[/, '[').includes('[') ? text : '[]');
+      box.textContent = '🅰 标题变体：\n' + list.map(function(v, i){ return (i + 1) + '. ' + v + '　（' + scoreTitle(v)._total + ' 分）'; }).join('\n');
+    } else {
+      var obj = JSON.parse((text.match(/\{[\s\S]*\}/) || [text])[0]);
+      box.textContent = '📝 大纲：\n' + (obj.outline || text);
+    }
+  } catch (e) {
+    box.textContent = '❌ ' + e.message;
+  }
+}
+
+function exportMarkdown() {
+  var p = getProfile();
+  var lines = ['# 选题雷达 · 选题池（' + new Date().toLocaleDateString('zh-CN') + '）', '',
+    '- 平台：' + p.platform, '- 赛道：' + (p.track || '—'), '- 目标读者：' + (p.audience || '—'), '',
+    '| 状态 | 标题 | 类型 | 评分 | 为什么能爆 |', '|---|---|---|---|---|'];
+  pool.forEach(function(it){
+    lines.push('| ' + STATES[it.state] + ' | ' + it.title.replace(/\|/g, '／') + ' | ' + it.angle + ' | ' + it.scores._total + ' | ' + it.logic.replace(/\|/g, '／') + ' |');
+  });
+  return lines.join('\n');
+}
+
+function init() {
+  loadProfile();
+  renderFilter(); renderPool();
+
+  ['pf-platform','pf-track','pf-audience','pf-monetize'].forEach(function(id){
+    document.getElementById(id).addEventListener('change', saveProfile);
+    document.getElementById(id).addEventListener('blur', saveProfile);
+  });
+
+  document.getElementById('btn-gen').addEventListener('click', generate);
+  document.getElementById('btn-demo').addEventListener('click', loadDemo);
+
+  document.getElementById('btn-add').addEventListener('click', function(){
+    var title = (document.getElementById('scorer-input').value || '').trim();
+    if (!title) { status('先在打分器输入框里写个标题，再用「手动添加」把它加入选题池。', true); return; }
+    pool.push(decorate({ title: title, angle: '反差冲突', logic: '手动添加，选题逻辑待补充。' }));
+    savePool(pool); renderFilter(); renderPool();
+    document.getElementById('scorer-input').value = '';
+    status('✅ 已加入选题池。');
+  });
+
+  document.getElementById('btn-score').addEventListener('click', function(){
+    var title = (document.getElementById('scorer-input').value || '').trim();
+    var mount = document.getElementById('score-result');
+    if (!title) { mount.classList.remove('show'); return; }
+    mount.innerHTML = showScoreCard(title);
+    mount.classList.add('show');
+  });
+
+  document.getElementById('filter').addEventListener('click', function(ev){
+    var f = ev.target.getAttribute && ev.target.getAttribute('data-f');
+    if (!f) return;
+    currentFilter = f; localStorage.setItem(FILTER_KEY, f);
+    renderFilter(); renderPool();
+  });
+
+  document.getElementById('pool').addEventListener('click', function(ev){
+    var act = ev.target.getAttribute && ev.target.getAttribute('data-act');
+    var i = Number(ev.target.getAttribute && ev.target.getAttribute('data-i'));
+    if (!act || isNaN(i)) return;
+    if (act === 'del') {
+      if (confirm('删除这条选题？')) { pool.splice(i, 1); savePool(pool); renderFilter(); renderPool(); }
+    } else if (act === 'next') {
+      pool[i].state = STATE_FLOW[pool[i].state]; savePool(pool); renderFilter(); renderPool();
+    } else {
+      subTask(act, i);
+    }
+  });
+
+  document.getElementById('btn-export-copy').addEventListener('click', function(){
+    navigator.clipboard.writeText(exportMarkdown());
+    status('📋 Markdown 已复制到剪贴板。');
+  });
+  document.getElementById('btn-export-dl').addEventListener('click', function(){
+    var blob = new Blob([exportMarkdown()], { type: 'text/markdown;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '选题池-' + new Date().toISOString().slice(0, 10) + '.md';
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  // AI 设置抽屉
+  var drawer = document.getElementById('drawer');
+  function openDrawer() {
+    var cfg = loadApiConfig();
+    document.getElementById('api-provider').value = cfg.provider || 'zhipu';
+    document.getElementById('api-key').value = cfg.key || '';
+    document.getElementById('api-model').value = cfg.model || '';
+    document.getElementById('api-base').value = cfg.base || '';
+    drawer.classList.add('open');
+  }
+  document.getElementById('btn-settings').addEventListener('click', openDrawer);
+  document.getElementById('api-cancel').addEventListener('click', function(){ drawer.classList.remove('open'); });
+  drawer.addEventListener('click', function(ev){ if (ev.target === drawer) drawer.classList.remove('open'); });
+  document.getElementById('api-save').addEventListener('click', function(){
+    localStorage.setItem('tr_api', JSON.stringify({
+      provider: document.getElementById('api-provider').value,
+      key: document.getElementById('api-key').value.trim(),
+      model: document.getElementById('api-model').value.trim(),
+      base: document.getElementById('api-base').value.trim()
+    }));
+    drawer.classList.remove('open');
+    status('✅ AI 设置已保存（只存在本机）。');
+  });
+}
+
+/* 沙箱/测试环境里不执行 UI 初始化；浏览器里等待 DOM 就绪 */
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>数据看板 · Quiz Factory 数据版</title>
+<style>
+  :root{--ink:#1f1b16;--muted:#7a7268;--bg:#f7f2ea;--accent:#ff7a45;--accent-soft:#ffe8dc;--blue:#5b7cfa}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 18px}
+  .wrap{max-width:860px;margin:0 auto}
+  h1{font-size:27px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 24px;line-height:1.7}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px}
+  .kpi{background:#fff;border-radius:16px;padding:16px;box-shadow:0 8px 22px rgba(60,42,20,.08);text-align:center}
+  .kpi .num{font-size:26px;font-weight:800}
+  .kpi .lbl{font-size:12px;color:var(--muted);margin-top:3px}
+  h2{font-size:18px;margin:26px 0 12px}
+  .panel{background:#fff;border-radius:18px;box-shadow:0 8px 22px rgba(60,42,20,.08);padding:18px}
+  .row{display:grid;grid-template-columns:150px 1fr 58px;gap:10px;align-items:center;padding:6px 0;font-size:13.5px}
+  .row .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar{height:14px;background:#f2e9de;border-radius:999px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .4s ease}
+  .bar.b > i{background:var(--blue)}
+  .row .pct{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  .qblock{padding:12px 0;border-top:1px dashed #eee2d2}
+  .qblock:first-child{border-top:0}
+  .qblock .qt{font-weight:700;font-size:14.5px;margin-bottom:8px}
+  .qblock .qn{font-size:12px;color:#a89b8a;margin-bottom:6px}
+  .lead{color:#0b6b52;font-weight:700}
+  .empty{text-align:center;color:var(--muted);padding:30px 0;line-height:1.9}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .live i{width:8px;height:8px;border-radius:50%;background:#0e9f6e;animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.3}}
+  footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:30px;line-height:1.8}
+  footer a{color:#8a5a1f}
+  @media (max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}.row{grid-template-columns:110px 1fr 52px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title">数据看板</h1>
+  <p class="sub">完成漏斗、结果分布、逐题选项分布——都是刚落库的真实作答。<span class="live"><i></i>每 8 秒自动刷新</span>
+  · <a id="play-link" href="#">去答一次</a></p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="num" id="k-starts">—</div><div class="lbl">开始答题</div></div>
+    <div class="kpi"><div class="num" id="k-finishes">—</div><div class="lbl">完成</div></div>
+    <div class="kpi"><div class="num" id="k-rate">—</div><div class="lbl">完成率</div></div>
+    <div class="kpi"><div class="num" id="k-dur">—</div><div class="lbl">平均用时</div></div>
+  </div>
+
+  <h2>🎭 结果分布</h2>
+  <div class="panel" id="results"></div>
+
+  <h2>📝 逐题选项分布</h2>
+  <div class="panel" id="questions"></div>
+
+  <footer>匿名会话数据 · 不含 IP / 账号 / Cookie · <a href="/">← 测试库</a></footer>
+</div>
+<script>
+'use strict';
+var slug = new URLSearchParams(location.search).get('s');
+document.getElementById('play-link').href = '/play?s=' + slug;
+
+function pctBar(v, max, blue){
+  return '<div class="bar' + (blue ? ' b' : '') + '"><i style="width:' + Math.min(v / max * 100, 100) + '%"></i></div>';
+}
+
+function render(d){
+  document.getElementById('title').textContent = '数据看板 · ' + d.title;
+  document.getElementById('k-starts').textContent = d.starts;
+  document.getElementById('k-finishes').textContent = d.finishes;
+  document.getElementById('k-rate').textContent = d.completion_rate === null ? '—' : d.completion_rate + '%';
+  document.getElementById('k-dur').textContent = d.avg_duration_s === null ? '—' : d.avg_duration_s + 's';
+
+  var resBox = document.getElementById('results');
+  var keys = Object.keys(d.results || {});
+  if (!keys.length){
+    resBox.innerHTML = '<div class="empty">还没有完成数据。<br>去<a href="/play?s=' + slug + '">答一次</a>，8 秒后这里就会亮起来。</div>';
+  } else {
+    var maxR = Math.max.apply(null, keys.map(k => d.results[k]));
+    resBox.innerHTML = keys.map(k =>
+      '<div class="row"><span class="name">' + k + '</span>' + pctBar(d.results[k], maxR) + '<span class="pct">' + d.results[k] + '%</span></div>'
+    ).join('');
+  }
+
+  var qBox = document.getElementById('questions');
+  if (!d.questions || !d.questions.some(q => q.answers > 0)){
+    qBox.innerHTML = '<div class="empty">逐题分布等第一份完成的作答。</div>';
+  } else {
+    qBox.innerHTML = d.questions.map((q, i) => {
+      var maxO = Math.max.apply(null, q.options.map(o => o.pct));
+      return '<div class="qblock"><div class="qt">' + (i + 1) + '. ' + q.q + '</div>'
+        + '<div class="qn">' + q.answers + ' 人作答</div>'
+        + q.options.map(o =>
+          '<div class="row"><span class="name' + (o.pct === maxO ? ' lead' : '') + '">' + o.text + '</span>'
+          + pctBar(o.pct, maxO || 1, true) + '<span class="pct">' + o.pct + '%</span></div>'
+        ).join('')
+        + '</div>';
+    }).join('');
+  }
+}
+
+function tick(){
+  fetch('/api/quizzes/' + slug + '/stats').then(r => r.json()).then(render).catch(() => {});
+}
+tick();
+setInterval(tick, 8000);
+</script>
+</body>
+</html>

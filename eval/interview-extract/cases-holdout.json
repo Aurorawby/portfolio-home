@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "title": "面试复盘器 · 留出集评测（规则调整时未见过）",
+    "n_cases": 4,
+    "labeler": "人工标注（1 人）",
+    "matching": "中文 bigram 相似度 ≥ 0.5"
+  },
+  "cases": [
+    {
+      "id": "H1-hr-phone",
+      "note": "HR 电话初面，口语化、带寒暄",
+      "text": "HR：hello，现在方便聊几分钟吗？\nHR：先简单介绍一下你自己吧。\nHR：你是做运营的，为什么想转产品？\nHR：你未来三年的职业规划是什么？\nHR：目前手上有其他 offer 吗？\nHR：期望薪资大概多少？",
+      "expected": [
+        {"q": "先简单介绍一下你自己吧", "type": "经历深挖"},
+        {"q": "你是做运营的，为什么想转产品？", "type": "动机匹配"},
+        {"q": "你未来三年的职业规划是什么？", "type": "动机匹配"},
+        {"q": "目前手上有其他 offer 吗？", "type": "动机匹配"},
+        {"q": "期望薪资大概多少？", "type": "动机匹配"}
+      ]
+    },
+    {
+      "id": "H2-business",
+      "note": "业务面：指标、竞品、复盘",
+      "text": "面试官问：你们产品的北极星指标是什么？\n面试官问：如果这个指标掉了 20%，你会从哪几个维度排查？\n面试官问：你平时怎么看竞品？举个例子。\n面试官问：讲一个你判断失误的需求，后来怎么补救的？\n面试官问：你觉得我们产品现在最大的问题是什么？",
+      "expected": [
+        {"q": "你们产品的北极星指标是什么？", "type": "产品方法"},
+        {"q": "如果这个指标掉了 20%，你会从哪几个维度排查？", "type": "情景模拟"},
+        {"q": "你平时怎么看竞品？举个例子。", "type": "产品方法"},
+        {"q": "讲一个你判断失误的需求，后来怎么补救的？", "type": "经历深挖"},
+        {"q": "你觉得我们产品现在最大的问题是什么？", "type": "开放问题"}
+      ]
+    },
+    {
+      "id": "H3-group",
+      "note": "群面记录：问题夹杂讨论陈述",
+      "text": "群面题目：某 AI 笔记产品想在 3 个月内把次留从 20% 提到 30%，请给出方案。\n面试官：给大家 5 分钟读题，然后开始讨论。\n面试官：请每组派一个代表做总结陈述。\n面试官：你觉得刚才团队里谁贡献最大？为什么？\n面试官：如果只能保留一个功能，你保留哪个？",
+      "expected": [
+        {"q": "你觉得刚才团队里谁贡献最大？为什么？", "type": "开放问题"},
+        {"q": "如果只能保留一个功能，你保留哪个？", "type": "情景模拟"}
+      ]
+    },
+    {
+      "id": "H4-english-second",
+      "note": "英文二面，混合结构化问题",
+      "text": "Interviewer: Walk me through your resume?\nInterviewer: How do you prioritize features when resources are limited?\nInterviewer: Why AI product management, not traditional PM?\nInterviewer: Tell me about a time you disagreed with an engineer.\nInterviewer: Do you have any questions for me?",
+      "expected": [
+        {"q": "Walk me through your resume?", "type": "经历深挖"},
+        {"q": "How do you prioritize features when resources are limited?", "type": "产品方法"},
+        {"q": "Why AI product management, not traditional PM?", "type": "动机匹配"},
+        {"q": "Tell me about a time you disagreed with an engineer.", "type": "情景模拟"},
+        {"q": "Do you have any questions for me?", "type": "反问环节"}
+      ]
+    }
+  ]
+}

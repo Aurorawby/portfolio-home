@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投递看板 · 实习 / 秋招投递追踪与复盘</title>
+<meta name="description" content="把每一次投递记进看板：漏斗转化率、渠道进面率、14 天无回音提醒、挂掉原因复盘。数据只存在你自己的浏览器里。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --orange:#ff7a45; --orange-soft:#ffe8dc;
+    --purple:#7c3aed; --purple-soft:#f0e4ff;
+    --blue:#5b7cfa; --blue-soft:#e4e9ff;
+    --green:#12a184; --green-soft:#dcf5ee;
+    --red:#d64545; --red-soft:#fde5e5;
+    --gray:#9a938a;
+    --radius:18px; --shadow:0 10px 26px rgba(60,42,20,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--blue-soft),transparent 60%),
+    radial-gradient(800px 420px at 100% 0%,var(--orange-soft),transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 16px 40px}
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:48em}
+  .sub b{color:var(--ink)}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#8a5a1f}
+  .topbtn{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  button{font-family:inherit;cursor:pointer}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--orange);color:#fff;box-shadow:0 6px 16px rgba(255,122,69,.28)}
+  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.b:hover{border-color:#9cb3f7}
+  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  section{margin-bottom:26px}
+  h2{font-size:18.5px;margin:0 0 10px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  /* 总览与统计 */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+  .stat-num{font-size:26px;font-weight:800;margin-bottom:2px}
+  .stat-label{font-size:12.3px;color:var(--muted);font-weight:600}
+  .funnel{display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:700;flex-wrap:wrap;margin-top:4px}
+  .funnel .step{border-radius:8px;padding:7px 11px;background:var(--blue-soft);color:#3b5bdb}
+  .funnel .step.hot{background:var(--orange-soft);color:#b45309}
+  .funnel .step.win{background:var(--green-soft);color:#0b6b52}
+  .funnel .arrow{color:var(--muted);font-weight:400}
+  .rate{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-top:3px}
+  .hbar{display:grid;grid-template-columns:88px 1fr 74px;gap:8px;align-items:center;font-size:12px;margin-bottom:6px}
+  .bar-track{height:8px;background:#f1e8dc;border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#9cb3f7,var(--blue))}
+  .follow-item{background:#fff8ef;border:1px solid #f2ddb8;border-radius:10px;padding:9px 12px;font-size:12.8px;margin-bottom:7px;line-height:1.7}
+  .follow-item b{color:#b45309}
+  /* 看板 */
+  .kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px}
+  .kcol{min-width:186px;flex:0 0 auto;background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:14px;padding:10px}
+  .kcol h3{font-size:13px;margin:0 0 9px;display:flex;justify-content:space-between;align-items:center}
+  .kcol h3 .cnt{background:#fff;border:1px solid var(--line);border-radius:99px;padding:0 8px;font-size:11px;color:var(--muted)}
+  .kcard{background:#fff;border-radius:12px;padding:10px 11px;box-shadow:0 4px 12px rgba(60,42,20,.08);margin-bottom:8px;font-size:12.3px;line-height:1.6}
+  .kcard .co{font-weight:700;font-size:13px}
+  .kcard .meta{color:var(--muted);font-size:11.3px;margin-top:2px}
+  .kcard .warn{color:#b03030;font-weight:700;font-size:11.3px}
+  .kcard .cause{display:inline-block;background:var(--red-soft);color:#b03030;border-radius:99px;padding:1px 8px;font-size:10.8px;font-weight:700;margin-top:4px}
+  .kcard .ops{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+  .kcard .ops button{border:1.2px solid var(--line);background:#fff;border-radius:7px;padding:3px 8px;font-size:11px;font-weight:600;color:var(--ink)}
+  .kcard .ops button:hover{border-color:var(--orange)}
+  .kcard.ai-out{background:#faf6ef;font-size:11.8px}
+  .empty-col{color:#bbb;font-size:11.5px;text-align:center;padding:14px 0}
+  .statusline{font-size:13px;color:var(--muted);margin:8px 0;min-height:20px}
+  .statusline.err{color:var(--red);font-weight:600}
+  /* 抽屉 */
+  .drawer{position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50}
+  .drawer.open{display:flex}
+  .drawer .panel{background:#fff;border-radius:18px;max-width:560px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto}
+  .drawer h3{margin:0 0 12px;font-size:16px}
+  .drawer label{display:block;font-size:12.5px;color:var(--muted);font-weight:600;margin:10px 0 4px}
+  .drawer input,.drawer select,.drawer textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13.5px;font-family:inherit}
+  .drawer textarea{min-height:64px;resize:vertical}
+  .drawer .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .drawer .row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:12px}
+  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
+  footer a{color:#8a5a1f}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🗂 投递看板 <span style="font-size:15px;color:var(--muted);font-weight:600">ApplicationBoard</span></h1>
+  <p class="sub">实习 / 秋招投递的追踪与复盘：每投一家记一条，看板流转状态；<b>漏斗转化率、渠道进面率、挂掉原因分布全部由代码现算</b>，
+  超过 14 天没回音、流程里 7 天没动静的自动列进「该跟进」清单。投了谁、走到哪、死在哪，一眼看清。</p>
+
+  <div class="topbar">
+    <span class="pill">🔒 数据只存本机浏览器</span>
+    <span class="pill">🧪 无 AI 可用演示数据</span>
+    <span class="pill">📈 统计由代码现算</span>
+    <span class="topbtn">
+      <button class="btn a" id="btn-add">➕ 记一条投递</button>
+      <button class="btn b" id="btn-demo">🧪 装载演示数据</button>
+      <button class="btn b" id="btn-export-copy">📋 复制汇总</button>
+      <button class="btn b" id="btn-export-dl">⬇️ 下载 .md</button>
+      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+    </span>
+  </div>
+
+  <section>
+    <h2>📊 求职漏斗与渠道效果</h2>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section>
+    <h2>⏰ 该跟进清单 <span id="follow-count" style="font-size:13px;color:var(--muted);font-weight:600"></span></h2>
+    <div class="card" id="followups"></div>
+  </section>
+
+  <section>
+    <h2>🗂 投递看板</h2>
+    <div class="statusline" id="board-status"></div>
+    <div class="kanban" id="kanban"></div>
+  </section>
+
+  <section>
+    <h2>💀 挂掉原因分布 <span style="font-size:13px;color:var(--muted);font-weight:600">（复盘用：高频死因就是你下一轮要补的洞）</span></h2>
+    <div class="card" id="causes"></div>
+  </section>
+
+  <footer>
+    📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
+    统计与提醒由规则计算，「14 天 / 7 天」阈值是经验设定，可在产品说明里看依据 ·
+    清浏览器数据会丢记录 · 单文件 HTML 可离线使用 · AI 结对编程产出
+  </footer>
+</div>
+
+<!-- 添加 / 编辑投递 -->
+<div class="drawer" id="drawer-edit">
+  <div class="panel">
+    <h3 id="edit-title">➕ 记一条投递</h3>
+    <div class="grid2">
+      <div><label>公司 *</label><input id="f-company" placeholder="如：字节跳动"></div>
+      <div><label>岗位 *</label><input id="f-role" placeholder="如：AI 产品实习生"></div>
+      <div><label>渠道</label>
+        <select id="f-channel">
+          <option>官网</option><option>BOSS 直聘</option><option>实习僧</option>
+          <option>牛客</option><option>内推</option><option>邮箱直投</option><option>其他</option>
+        </select></div>
+      <div><label>投递日期 *</label><input id="f-date" type="date"></div>
+      <div><label>当前状态</label>
+        <select id="f-state">
+          <option value="applied">已投递</option><option value="test">笔试</option>
+          <option value="interview">面试中</option><option value="final">终面</option>
+          <option value="hr">HR 面</option><option value="offer">Offer 🎉</option>
+          <option value="rejected">挂了</option><option value="ghost">无回音（放弃跟进）</option>
+        </select></div>
+      <div><label>薪资 / 天（可选）</label><input id="f-salary" placeholder="如：200/天"></div>
+    </div>
+    <label>死因（挂了 / 放弃时填，复盘的关键字段）</label>
+    <select id="f-cause">
+      <option value="">— 不适用 —</option>
+      <option>简历关（没进笔试/面试）</option><option>笔试挂</option><option>八股/知识题</option>
+      <option>项目深挖没接住</option><option>行为面/沟通</option><option>case/业务题</option>
+      <option>薪资/时间不合</option><option>个人选择放弃</option>
+    </select>
+    <label>备注 / JD 链接（可选）</label>
+    <textarea id="f-note" placeholder="JD 重点要求、面试官提过的问题、内推人…"></textarea>
+    <div class="row">
+      <button class="btn b" id="f-cancel">取消</button>
+      <button class="btn a" id="f-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI 设置 -->
+<div class="drawer" id="drawer-api">
+  <div class="panel">
+    <h3>⚙️ AI 设置（Key 只存本机，请求直接发给你选的服务商）</h3>
+    <label>服务商</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="ollama">本地 Ollama（需已启动）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>API Key（Ollama 可留空）</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div class="note">AI 只做两件锦上添花的事：给挂掉的投递写复盘建议、给卡住的流程写跟进话术。
+    漏斗、渠道、提醒、统计全部离线可用，没有 Key 不影响主要功能。</div>
+    <div class="row">
+      <button class="btn b" id="api-cancel">取消</button>
+      <button class="btn a" id="api-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   投递看板 ApplicationBoard
+   结构：统计引擎（纯函数，可被 eval 提取）→ 演示数据 →
+        记录管理 → AI 层（复盘建议 / 跟进话术）→ 渲染
+   漏斗 / 渠道 / 死因 / 提醒全部由代码计算，AI 只做文案。
+   ============================================================ */
+
+/* ---------- ① 统计引擎（纯函数，勿加入 DOM 依赖；eval/application-board 直接调用） ---------- */
+
+var STATES = {
+  applied: '已投递', test: '笔试', interview: '面试中', final: '终面',
+  hr: 'HR 面', offer: 'Offer', rejected: '挂了', ghost: '无回音'
+};
+var FLOW = ['applied', 'test', 'interview', 'final', 'hr', 'offer'];  // 主流程顺序
+var DEAD = ['rejected', 'ghost'];
+
+var FOLLOW_STALLED_DAYS = 7;   // 流程中超过 N 天没动 → 该跟进
+var FOLLOW_GHOST_DAYS = 14;    // 已投递超过 N 天没下文 → 无回音，该跟进或放弃
+
+function daysBetween(fromStr, toStr) {
+  if (!fromStr || !toStr) return 0;
+  var a = new Date(fromStr + 'T00:00:00');
+  var b = new Date(toStr + 'T00:00:00');
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+
+function pct(n, d) { return d ? Math.round(n / d * 100) : 0; }
+
+function funnelStats(pool) {
+  // 「到达过某阶段」按当前状态的主流程序号 >= 阶段序号 计（终态按死前位置不追溯，简明口径）
+  var reached = { applied: 0, test: 0, interview: 0, final: 0, hr: 0, offer: 0 };
+  var endCause = { rejected: 0, ghost: 0 };
+  pool.forEach(function(r) {
+    reached.applied += 1; // 每条记录都投递过
+    var idx = FLOW.indexOf(r.state);
+    if (idx >= 1) {
+      for (var k = 1; k <= idx; k++) reached[FLOW[k]] += 1; // applied 已在上面计入
+    } else if (DEAD.indexOf(r.state) >= 0) {
+      endCause[r.state] += 1;
+    }
+  });
+  return {
+    reached: reached,
+    rejected: endCause.rejected, ghost: endCause.ghost,
+    rates: {
+      appliedToTest: pct(reached.test, reached.applied),
+      testToInterview: pct(reached.interview, reached.test),
+      interviewToFinal: pct(reached.final, reached.interview),
+      toOffer: pct(reached.offer, reached.applied)
+    }
+  };
+}
+
+function channelStats(pool) {
+  var by = {};
+  pool.forEach(function(r) {
+    var ch = r.channel || '其他';
+    if (!by[ch]) by[ch] = { total: 0, advanced: 0 };
+    by[ch].total += 1;
+    // advanced = 走到面试及以后，或非简历关死亡（说明简历过了）
+    var idx = FLOW.indexOf(r.state);
+    if (idx >= FLOW.indexOf('interview')) by[ch].advanced += 1;
+    else if (DEAD.indexOf(r.state) >= 0 && r.cause && r.cause.indexOf('简历关') === -1) by[ch].advanced += 1;
+  });
+  Object.keys(by).forEach(function(ch) { by[ch].rate = pct(by[ch].advanced, by[ch].total); });
+  return by;
+}
+
+function causeStats(pool) {
+  var by = {};
+  pool.forEach(function(r) {
+    if (DEAD.indexOf(r.state) < 0) return;
+    var c = r.cause || '未记录（下次挂了记得填）';
+    by[c] = (by[c] || 0) + 1;
+  });
+  return by;
+}
+
+function followUps(pool, todayStr) {
+  var list = [];
+  pool.forEach(function(r, i) {
+    var idx = FLOW.indexOf(r.state);
+    if (r.state === 'applied') {
+      var d = daysBetween(r.date, todayStr);
+      if (d > FOLLOW_GHOST_DAYS) list.push({ i: i, company: r.company, role: r.role, days: d,
+        reason: 'no-response', text: '已投 ' + d + ' 天没有下文——可以跟进一次或标记「无回音」放下。' });
+    } else if (idx >= 1 && idx <= FLOW.indexOf('hr')) {
+      var base = r.updated || r.date;
+      var d2 = daysBetween(base, todayStr);
+      if (d2 > FOLLOW_STALLED_DAYS) list.push({ i: i, company: r.company, role: r.role, days: d2,
+        reason: 'stalled', text: '「' + STATES[r.state] + '」阶段停了 ' + d2 + ' 天——礼貌问一下进度，或准备下一家。' });
+    }
+  });
+  return list.sort(function(a, b) { return b.days - a.days; });
+}
+
+function exportSummary(pool, todayStr) {
+  var f = funnelStats(pool), ch = channelStats(pool), cs = causeStats(pool), fu = followUps(pool, todayStr);
+  var lines = ['# 投递看板 · 汇总（' + todayStr + '）', ''];
+  lines.push('- 总投递 ' + pool.length + '：进行中 ' + (pool.length - f.rejected - f.ghost) + '，挂 ' + f.rejected + '，无回音 ' + f.ghost);
+  lines.push('- 漏斗：投递 ' + f.reached.applied + ' → 笔试 ' + f.reached.test + '（' + f.rates.appliedToTest + '%）→ 面试 ' + f.reached.interview
+    + ' → 终面 ' + f.reached.final + ' → Offer ' + f.reached.offer + '（总 Offer 率 ' + f.rates.toOffer + '%）');
+  lines.push('- 该跟进 ' + fu.length + ' 条（详见看板 ⏰）', '');
+  lines.push('| 状态 | 公司 | 岗位 | 渠道 | 日期 | 死因 |', '|---|---|---|---|---|---|');
+  pool.forEach(function(r) {
+    lines.push('| ' + STATES[r.state] + ' | ' + r.company + ' | ' + r.role + ' | ' + (r.channel || '—') + ' | ' + r.date + ' | ' + (r.cause || '—') + ' |');
+  });
+  lines.push('', '## 渠道进面率', '');
+  Object.keys(ch).forEach(function(k) { lines.push('- ' + k + '：' + ch[k].advanced + '/' + ch[k].total + '（' + ch[k].rate + '%）'); });
+  var causes = Object.keys(cs);
+  if (causes.length) {
+    lines.push('', '## 挂掉原因', '');
+    causes.sort(function(a, b) { return cs[b] - cs[a]; }).forEach(function(k) { lines.push('- ' + k + '：' + cs[k] + ' 次'); });
+  }
+  return lines.join('\n');
+}
+
+/* ---------- ② 演示数据（相对今天生成日期，保证任何时候装载都有效） ---------- */
+
+function dateNDaysAgo(n) {
+  var d = new Date(Date.now() - n * 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
+var DEMO_ITEMS = [
+  { company: '字节跳动', role: 'AI 产品实习生', channel: '内推', state: 'interview', date: dateNDaysAgo(10), updated: dateNDaysAgo(2), salary: '300/天', note: '一面聊了文献 Agent 的评测设计，二面约下周' },
+  { company: '小红书', role: '增长产品实习生', channel: 'BOSS 直聘', state: 'test', date: dateNDaysAgo(6), updated: dateNDaysAgo(3), salary: '200/天', note: '笔试偏 case，练一下估算题' },
+  { company: '腾讯', role: '产品培训生', channel: '官网', state: 'applied', date: dateNDaysAgo(21), note: '官网投的，状态一直没变' },
+  { company: '美团', role: '产品实习生', channel: '实习僧', state: 'applied', date: dateNDaysAgo(16), note: '' },
+  { company: '快手', role: '数据产品实习生', channel: '牛客', state: 'rejected', date: dateNDaysAgo(30), cause: '八股/知识题', note: 'SQL 窗口函数没答上来' },
+  { company: '百度', role: 'AI 产品实习生', channel: '官网', state: 'rejected', date: dateNDaysAgo(26), cause: '项目深挖没接住', note: '被追问 Precision@10 的标注口径，答得虚' },
+  { company: '阿里', role: '产品实习生', channel: '内推', state: 'hr', date: dateNDaysAgo(18), updated: dateNDaysAgo(10), salary: '250/天', note: 'HR 面完说两周内给结果' },
+  { company: '网易', role: '游戏运营转产品', channel: '实习僧', state: 'rejected', date: dateNDaysAgo(35), cause: '简历关（没进笔试/面试）', note: '' },
+  { company: '京东', role: '产品实习生', channel: 'BOSS 直聘', state: 'ghost', date: dateNDaysAgo(40), note: '已读不回' }
+];
+
+/* ---------- ③ 数据与 AI 层 ---------- */
+
+var POOL_KEY = 'ab_pool';
+var FLOW_NEXT = { applied: 'test', test: 'interview', interview: 'final', final: 'hr', hr: 'offer' };
+var FLOW_PREV = { test: 'applied', interview: 'test', final: 'interview', hr: 'final', offer: 'hr' };
+
+function loadPool() { try { return JSON.parse(localStorage.getItem(POOL_KEY) || '[]'); } catch (e) { return []; } }
+function savePool(p) { localStorage.setItem(POOL_KEY, JSON.stringify(p)); }
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+var PROVIDERS = {
+  zhipu:    { base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash' },
+  deepseek: { base: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
+  moonshot: { base: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k' },
+  ollama:   { base: 'http://localhost:11434/v1/chat/completions', model: 'qwen2.5:7b' },
+  custom:   { base: '', model: '' }
+};
+
+function loadApiConfig() { try { return JSON.parse(localStorage.getItem('ab_api') || '{}'); } catch (e) { return {}; } }
+
+async function callChat(messages, maxTokens) {
+  var cfg = loadApiConfig();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.model || provider.model;
+  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({ model: model, messages: messages, temperature: 0.7, max_tokens: maxTokens || 800 })
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+    throw new Error('接口返回 ' + res.status + '：' + detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+
+/* ---------- ④ 渲染 ---------- */
+
+var pool = loadPool();
+var editingIndex = -1;
+
+function status(msg, isErr) {
+  var el = document.getElementById('board-status');
+  el.textContent = msg || '';
+  el.className = 'statusline' + (isErr ? ' err' : '');
+}
+
+function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function renderStats() {
+  var f = funnelStats(pool), ch = channelStats(pool);
+  var offerCount = f.reached.offer;
+  var alive = pool.length - f.rejected - f.ghost;
+  var stepCls = { applied: '', test: '', interview: 'hot', final: 'hot', hr: 'hot', offer: 'win' };
+  var funnel = FLOW.map(function(st, i) {
+    var rateHtml = '';
+    if (st === 'test') rateHtml = '<span class="rate">简历过 ' + f.rates.appliedToTest + '%</span>';
+    if (st === 'offer') rateHtml = '<span class="rate">总 Offer 率 ' + f.rates.toOffer + '%</span>';
+    return (i > 0 ? '<span class="arrow">→</span>' : '') +
+      '<span class="step ' + stepCls[st] + '">' + STATES[st] + ' ' + f.reached[st] + rateHtml + '</span>';
+  }).join('') +
+    '<span class="arrow">｜</span><span class="step" style="background:var(--red-soft);color:#b03030">挂 ' + f.rejected + '</span>' +
+    '<span class="arrow">→</span><span class="step" style="background:#eee;color:#888">无回音 ' + f.ghost + '</span>';
+
+  var channelBars = Object.keys(ch).sort(function(a, b) { return ch[b].rate - ch[a].rate; }).map(function(k) {
+    return '<div class="hbar"><span>' + esc(k) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + ch[k].rate + '%"></div></div><span>' + ch[k].advanced + '/' + ch[k].total + ' · ' + ch[k].rate + '%</span></div>';
+  }).join('') || '<span style="color:#bbb;font-size:12px">还没有数据</span>';
+
+  document.getElementById('stats').innerHTML =
+    '<div class="card"><div class="stat-label">总投递 / 进行中</div><div class="stat-num">' + pool.length + ' <span style="font-size:14px;color:var(--muted)">/ ' + alive + '</span></div>'
+    + '<div class="funnel" style="margin-top:10px">' + funnel + '</div></div>'
+    + '<div class="card"><div class="stat-label">渠道进面率（简历过了算进面）</div><div style="margin-top:8px">' + channelBars + '</div></div>';
+}
+
+function renderFollowUps() {
+  var fu = followUps(pool, todayStr());
+  document.getElementById('follow-count').textContent = fu.length ? '· ' + fu.length + ' 条待处理' : '';
+  document.getElementById('followups').innerHTML = fu.length
+    ? fu.map(function(x) { return '<div class="follow-item">⏰ <b>' + esc(x.company) + ' · ' + esc(x.role) + '</b>：' + esc(x.text) + '</div>'; }).join('')
+    : '<span style="color:var(--muted);font-size:13px">暂无待跟进——都控制在节奏内，很好。</span>';
+}
+
+function renderKanban() {
+  var cols = FLOW.concat(DEAD);
+  document.getElementById('kanban').innerHTML = cols.map(function(st) {
+    var items = pool.map(function(r, i) { return { r: r, i: i }; }).filter(function(x) { return x.r.state === st; });
+    var cards = items.length ? items.map(function(x) {
+      var r = x.r;
+      var days = daysBetween(r.updated || r.date, todayStr());
+      var warn = (st !== 'offer' && FLOW.indexOf(st) >= 1 && days > FOLLOW_STALLED_DAYS) || (st === 'applied' && daysBetween(r.date, todayStr()) > FOLLOW_GHOST_DAYS);
+      var ops = '';
+      if (FLOW_NEXT[st]) ops += '<button data-act="next" data-i="' + x.i + '">→ ' + STATES[FLOW_NEXT[st]] + '</button>';
+      if (FLOW_PREV[st]) ops += '<button data-act="prev" data-i="' + x.i + '">← ' + STATES[FLOW_PREV[st]] + '</button>';
+      if (st !== 'offer' && st !== 'rejected' && st !== 'ghost') ops += '<button data-act="dead" data-i="' + x.i + '">挂了</button>';
+      if (st === 'rejected' || st === 'ghost' || st === 'offer') ops += '<button data-act="ai" data-i="' + x.i + '">🤖 AI</button>';
+      ops += '<button data-act="edit" data-i="' + x.i + '">✏️</button><button data-act="del" data-i="' + x.i + '">🗑</button>';
+      return '<div class="kcard"><div class="co">' + esc(r.company) + '</div><div>' + esc(r.role) + '</div>'
+        + '<div class="meta">' + esc(r.channel || '') + ' · ' + esc(r.date) + (r.salary ? ' · ' + esc(r.salary) : '') + '</div>'
+        + (warn ? '<div class="warn">⏰ 停了 ' + days + ' 天</div>' : '')
+        + (r.cause ? '<span class="cause">' + esc(r.cause) + '</span>' : '')
+        + '<div class="ops">' + ops + '</div><div class="kcard ai-out" id="ai-' + x.i + '" style="display:none"></div></div>';
+    }).join('') : '<div class="empty-col">—</div>';
+    return '<div class="kcol"><h3>' + STATES[st] + ' <span class="cnt">' + items.length + '</span></h3>' + cards + '</div>';
+  }).join('');
+}
+
+function renderCauses() {
+  var cs = causeStats(pool);
+  var keys = Object.keys(cs).sort(function(a, b) { return cs[b] - cs[a]; });
+  var totalDead = keys.reduce(function(s, k) { return s + cs[k]; }, 0);
+  document.getElementById('causes').innerHTML = keys.length
+    ? keys.map(function(k) {
+        var w = Math.round(cs[k] / Math.max(1, totalDead) * 100);
+        return '<div class="hbar"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(k) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + w + '%;background:linear-gradient(90deg,#f2a29a,var(--red))"></div></div><span>' + cs[k] + ' 次</span></div>';
+      }).join('') + '<div class="note">高频死因就是下一轮要补的洞：比如「项目深挖没接住」出现 2 次+，就该对着简历上的每个项目预演追问（用「模拟面试官」练）。</div>'
+    : '<span style="color:var(--muted);font-size:13px">还没有挂掉的记录——挂了记得回来填死因，复盘才有抓手。</span>';
+}
+
+function renderAll() { renderStats(); renderFollowUps(); renderKanban(); renderCauses(); }
+
+/* ---------- ⑤ AI：复盘建议 / 跟进话术 ---------- */
+
+async function aiHelp(kind, i) {
+  var box = document.getElementById('ai-' + i);
+  var r = pool[i];
+  if (!box || !r) return;
+  box.style.display = 'block';
+  box.textContent = kind === 'review' ? '🤖 正在写复盘建议…' : '🤖 正在写跟进话术…';
+  try {
+    var ask = kind === 'review'
+      ? '我在「' + r.company + '」的「' + r.role + '」投递' + (r.cause ? '挂在：' + r.cause : '没有下文') + '。' + (r.note ? '补充情况：' + r.note : '')
+        + '。请给 3 条具体的改进建议（每条一句话，可执行，别灌鸡汤），严格输出 JSON：{"tips":["","",""]}'
+      : '我投了「' + r.company + '」的「' + r.role + '」（渠道：' + (r.channel || '未知') + '），目前停在「' + STATES[r.state] + '」阶段 '
+        + daysBetween(r.updated || r.date, todayStr()) + ' 天。请写一段 80 字内、礼貌不卑微的跟进消息（可发给 HR 或内推人），严格输出 JSON：{"message":"..."}';
+    var text = await callChat([
+      { role: 'system', content: '你是帮应届生找实习的求职教练。只输出 JSON，不输出任何其他文字。' },
+      { role: 'user', content: ask }
+    ]);
+    var obj = JSON.parse((text.match(/\{[\s\S]*\}/) || [text])[0]);
+    box.textContent = kind === 'review' ? '🤖 复盘建议：\n' + (obj.tips || []).map(function(t, k) { return (k + 1) + '. ' + t; }).join('\n') : '✉️ 跟进话术：\n' + (obj.message || text);
+  } catch (e) {
+    box.textContent = '❌ ' + e.message;
+  }
+}
+
+/* ---------- ⑥ 事件 ---------- */
+
+function openEdit(i) {
+  editingIndex = i;
+  var r = i >= 0 ? pool[i] : {};
+  document.getElementById('edit-title').textContent = i >= 0 ? '✏️ 编辑投递' : '➕ 记一条投递';
+  document.getElementById('f-company').value = r.company || '';
+  document.getElementById('f-role').value = r.role || '';
+  document.getElementById('f-channel').value = r.channel || '官网';
+  document.getElementById('f-date').value = r.date || todayStr();
+  document.getElementById('f-state').value = r.state || 'applied';
+  document.getElementById('f-salary').value = r.salary || '';
+  document.getElementById('f-cause').value = r.cause || '';
+  document.getElementById('f-note').value = r.note || '';
+  document.getElementById('drawer-edit').classList.add('open');
+  if (i >= 0) document.getElementById('f-company').focus();
+}
+
+function init() {
+  renderAll();
+
+  document.getElementById('btn-add').addEventListener('click', function() { openEdit(-1); });
+  document.getElementById('btn-demo').addEventListener('click', function() {
+    pool = pool.concat(DEMO_ITEMS);
+    savePool(pool); renderAll();
+    status('🧪 已装载 9 条演示投递（日期相对今天生成，漏斗/提醒立即生效）。');
+  });
+  document.getElementById('f-cancel').addEventListener('click', function() { document.getElementById('drawer-edit').classList.remove('open'); });
+  document.getElementById('f-save').addEventListener('click', function() {
+    var company = document.getElementById('f-company').value.trim();
+    var role = document.getElementById('f-role').value.trim();
+    if (!company || !role) { status('公司和岗位必填。', true); return; }
+    var rec = {
+      company: company, role: role,
+      channel: document.getElementById('f-channel').value,
+      date: document.getElementById('f-date').value || todayStr(),
+      state: document.getElementById('f-state').value,
+      salary: document.getElementById('f-salary').value.trim(),
+      cause: document.getElementById('f-cause').value,
+      note: document.getElementById('f-note').value.trim()
+    };
+    if (editingIndex >= 0) { rec.updated = pool[editingIndex].updated || pool[editingIndex].date; pool[editingIndex] = rec; }
+    else { rec.updated = todayStr(); pool.push(rec); }
+    savePool(pool);
+    document.getElementById('drawer-edit').classList.remove('open');
+    renderAll();
+    status(editingIndex >= 0 ? '✅ 已更新。' : '✅ 已记录。祝面试顺利！');
+  });
+
+  document.getElementById('kanban').addEventListener('click', function(ev) {
+    var act = ev.target.getAttribute && ev.target.getAttribute('data-act');
+    var i = Number(ev.target.getAttribute && ev.target.getAttribute('data-i'));
+    if (!act || isNaN(i)) return;
+    var r = pool[i];
+    if (act === 'next') { r.state = FLOW_NEXT[r.state]; r.updated = todayStr(); }
+    else if (act === 'prev') { r.state = FLOW_PREV[r.state]; r.updated = todayStr(); }
+    else if (act === 'dead') {
+      r.state = 'rejected';
+      if (!r.cause) { savePool(pool); renderAll(); openEdit(i); status('状态改为「挂了」——记得选一下死因再保存。'); return; }
+    }
+    else if (act === 'ai') { aiHelp(r.state === 'offer' ? 'review' : (r.cause ? 'review' : 'nudge'), i); return; }
+    else if (act === 'edit') { openEdit(i); return; }
+    else if (act === 'del') { if (!confirm('删除「' + r.company + ' · ' + r.role + '」？')) return; pool.splice(i, 1); }
+    savePool(pool); renderAll();
+  });
+
+  document.getElementById('btn-export-copy').addEventListener('click', function() {
+    navigator.clipboard.writeText(exportSummary(pool, todayStr()));
+    status('📋 汇总已复制到剪贴板。');
+  });
+  document.getElementById('btn-export-dl').addEventListener('click', function() {
+    var blob = new Blob([exportSummary(pool, todayStr())], { type: 'text/markdown;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '投递看板-' + todayStr() + '.md';
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  var drawer = document.getElementById('drawer-api');
+  document.getElementById('btn-settings').addEventListener('click', function() {
+    var cfg = loadApiConfig();
+    document.getElementById('api-provider').value = cfg.provider || 'zhipu';
+    document.getElementById('api-key').value = cfg.key || '';
+    document.getElementById('api-model').value = cfg.model || '';
+    document.getElementById('api-base').value = cfg.base || '';
+    drawer.classList.add('open');
+  });
+  document.getElementById('api-cancel').addEventListener('click', function() { drawer.classList.remove('open'); });
+  drawer.addEventListener('click', function(ev) { if (ev.target === drawer) drawer.classList.remove('open'); });
+  document.getElementById('api-save').addEventListener('click', function() {
+    localStorage.setItem('ab_api', JSON.stringify({
+      provider: document.getElementById('api-provider').value,
+      key: document.getElementById('api-key').value.trim(),
+      model: document.getElementById('api-model').value.trim(),
+      base: document.getElementById('api-base').value.trim()
+    }));
+    drawer.classList.remove('open');
+    status('✅ AI 设置已保存（只存在本机）。');
+  });
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}
+</script>
+</body>
+</html>

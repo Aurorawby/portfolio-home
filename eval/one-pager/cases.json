@@ -1,0 +1,27 @@
+{
+  "note": "确定性回归用例：解析与诊断的期望值为手工计算结果，目的是保证代码与手算一致、防改动出错（回归测试），不是效果评测。",
+  "parse": [
+    {
+      "id": "p1", "note": "标准大纲：2 板块 3 要点 3 处数字",
+      "text": "# 本月进展\n- 完成 10 主题评测\n- 提升 57.5%\n# 下一步\n- 5 人测试",
+      "expect": { "sectionCount": 2, "bulletCount": 3, "numberCount": 3 }
+    },
+    {
+      "id": "p2", "note": "无结构自由文本：0 板块 2 要点 0 数字",
+      "text": "做了若干评测\n修了一些 bug",
+      "expect": { "sectionCount": 0, "bulletCount": 2, "numberCount": 0 }
+    },
+    {
+      "id": "p3", "note": "【】标题 + 编号要点 + intro 行",
+      "text": "先说结论：进展顺利\n【数据】\n1. 双命中率 100%\n2. 区分度 40.5 分",
+      "expect": { "sectionCount": 1, "bulletCount": 3, "numberCount": 2 }
+    }
+  ],
+  "diagnose": [
+    { "id": "d1", "note": "空大纲", "text": "", "goal": "进展汇报", "expectTipContains": "大纲是空的" },
+    { "id": "d2", "note": "无数字（有下一步）", "text": "# 进展\n- 修了若干缺陷\n# 计划\n- 做用户测试", "goal": "进展汇报", "expectTipContains": "没有一个数字" },
+    { "id": "d3", "note": "标准好大纲", "text": "# 本月进展\n- 完成 10 主题评测，Precision@10 提升 57.5%\n# 下一步\n- 5 人可用性测试", "goal": "进展汇报", "expectTipContains": "体检通过" },
+    { "id": "d4", "note": "争取资源但无具体 Ask", "text": "# 进展\n- 完成 10 场测试，通过率 90%\n# 下一步\n- 继续迭代", "goal": "争取资源", "expectTipContains": "资源相关的具体请求" },
+    { "id": "d5", "note": "缺下一步（进展汇报）", "text": "# 进展\n- 完成 10 场测试，通过率 90%", "goal": "进展汇报", "expectTipContains": "下一步" }
+  ]
+}
