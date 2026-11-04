@@ -314,7 +314,7 @@
           <tr><td>选题雷达</td><td>好坏标题双命中 100% · 区分度 40.5 分</td><td><a href="eval/topic-radar/REPORT.md">查看 →</a></td></tr>
           <tr><td>图表解读器</td><td>数字解读引擎 13/13 一致</td><td><a href="eval/chart-lens/REPORT.md">查看 →</a></td></tr>
           <tr><td>长文档阅读卡</td><td>摘录逐字核验 4/4 · 关键词覆盖 9/10</td><td><a href="eval/doc-cards/REPORT.md">查看 →</a></td></tr>
-          <tr><td>本地文献 Agent</td><td>10 主题 A/B：Precision@10 6.0% → 57.5%（噪声 ±11–14pp）</td><td><a id="lit-eval" href="https://github.com/Aurorawby/local-literature-agent" target="_blank" rel="noopener">查看 →</a></td></tr>
+          <tr><td>本地文献 Agent</td><td>201 篇人工盲标：P@10 84%（CI 66–97）· 规则 κ=0.23 · B1/B3 打平</td><td><a id="lit-eval" href="https://github.com/Aurorawby/local-literature-agent" target="_blank" rel="noopener">查看 →</a></td></tr>
         </tbody>
       </table>
     </div>
@@ -414,8 +414,8 @@ var CARDS = [
    desc:'长文压成几张卡：观点 + 逐字原文摘录 + 「所以呢」；AI 摘录自动回原文核验，没命中会标灰提醒。',
    metric:'摘录核验 4/4 · 关键词覆盖 9/10', href:'doc-cards/index.html', status:'online'},
   {group:'research', icon:'📚', type:'能做深', title:'本地文献 Agent',
-   desc:'跑在自己笔记本上的文献综述流水线：检索、精读、综述、引用核验；10 主题 A/B 把 Precision@10 从 6% 提升到 57.5%+。',
-   metric:'本地运行 · RAG + 引用核验', href:GH + '/local-literature-agent', status:'local'}
+   desc:'跑在自己笔记本上的文献综述流水线：检索、精读、综述、引用核验；201 篇人工盲标：人工口径 P@10 84%（CI 66–97），规则口径 6%→57.5%，但不宣称 B3 更准。',
+   metric:'本地运行 · 201 篇人工盲标 · 引用核验', href:GH + '/local-literature-agent', status:'local'}
 ];
 
 var BADGE = {
@@ -449,7 +449,7 @@ render('research', 'cards-research');
 document.getElementById('nav-github').href = GH;
 document.getElementById('hero-github').href = GH;
 document.getElementById('guide-lit').href = GH + '/local-literature-agent';
-document.getElementById('lit-eval').href = GH + '/local-literature-agent/blob/main/eval/RESULTS.md';
+document.getElementById('lit-eval').href = GH + '/local-literature-agent/blob/main/eval/HUMAN_EVAL.md';
 </script>
 </body>
 </html>
