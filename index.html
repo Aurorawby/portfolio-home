@@ -221,7 +221,7 @@
         <span class="g-note">02</span>
       </a>
       <a id="guide-lit" href="https://github.com/Aurorawby/local-literature-agent" target="_blank" rel="noopener">
-        <span><span class="g-title">本地文献 Agent</span><br><span class="g-note">检索 / 精读 / 综述 / 引用核验</span></span>
+        <span><span class="g-title">本地文献 Agent</span><br><span class="g-note">检索 / 精读 / 综述 / 引用审计</span></span>
         <span class="g-note">03</span>
       </a>
       <a href="AUDIT.md">
@@ -453,8 +453,8 @@ var CARDS = [
    desc:'长文压成几张卡：观点 + 逐字原文摘录 + 「所以呢」；AI 摘录自动回原文核验，没命中会标灰提醒。',
    metric:'摘录核验 4/4 · 关键词覆盖 9/10', href:'doc-cards/index.html', status:'online'},
   {group:'research', icon:'📚', type:'能做深', title:'本地文献 Agent',
-   desc:'跑在自己笔记本上的文献综述流水线：检索、精读、综述、引用核验；201 篇人工盲标：人工口径 P@10 84%（CI 66–97），规则口径 6%→57.5%，但不宣称 B3 更准。',
-   metric:'本地运行 · 201 篇人工盲标 · 引用核验', href:GH + '/local-literature-agent', status:'local'}
+   desc:'跑在自己笔记本上的文献综述流水线：检索、精读、综述、引用核验；新增逐条引用审计报告（来源/数字/页码，Markdown/HTML）；201 篇人工盲标：人工口径 P@10 84%（CI 66–97），规则口径 6%→57.5%，但不宣称 B3 更准。',
+   metric:'本地运行 · 201 篇人工盲标 · 逐条引用审计', href:GH + '/local-literature-agent', status:'local'}
 ];
 
 var BADGE = {
