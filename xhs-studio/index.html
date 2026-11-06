@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图文工作室 · 小红书爆款形态 → 可发布脚本</title>
+<meta name="description" content="5 种近期跑通的爆款形态（人设 Bot / 必看合集 / 必入榜 / 图文总结 / 对比测评）schema 化：AI 按形态生成封面、内页、正文、标签、评论区运营脚本与发布策略，规则层校验结构完整性与违禁词。发布包一键导出——发布这一步永远由人完成。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --orange:#ff7a45; --orange-soft:#ffe8dc;
+    --pink:#e84393; --pink-soft:#fdeaf3;
+    --red:#d64545; --red-soft:#fde5e5;
+    --green:#12a184; --green-soft:#dcf5ee;
+    --blue:#5b7cfa; --blue-soft:#e4e9ff;
+    --radius:18px; --shadow:0 10px 26px rgba(60,42,20,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--pink-soft),transparent 60%),
+    radial-gradient(800px 420px at 100% 0%,var(--orange-soft),transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 16px 40px}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:52em}
+  .sub b{color:var(--ink)}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#8a5a1f}
+  .pill.red{background:var(--red-soft);color:#b03030;border-color:#f2c8c8}
+  .topbtn{margin-left:auto;display:flex;gap:8px}
+  button{font-family:inherit;cursor:pointer}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--pink);color:#fff;box-shadow:0 6px 16px rgba(232,67,147,.28)}
+  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
+  section{margin-bottom:26px}
+  h2{font-size:18.5px;margin:0 0 10px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+  input,select,textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13.5px;font-family:inherit;background:#fff}
+  textarea{min-height:130px;resize:vertical;line-height:1.8}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+  .statusline{font-size:13px;color:var(--muted);margin:8px 0;min-height:20px}
+  .statusline.err{color:var(--red);font-weight:600}
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:10px}
+  /* 形态卡 */
+  .forms{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px}
+  .form-card{background:#fff;border:2px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
+  .form-card:hover{border-color:var(--pink)}
+  .form-card.on{border-color:var(--pink);background:var(--pink-soft)}
+  .form-card .fi{font-size:24px}
+  .form-card .fn{font-weight:800;font-size:13.8px;margin:6px 0 4px}
+  .form-card .fd{font-size:11.6px;color:var(--muted);line-height:1.6}
+  /* 脚本编辑 */
+  .sec-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .sec-head label{margin:0}
+  .script-title{width:100%;font-size:15px;font-weight:700}
+  .page-block{background:#faf6ef;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .page-block .ph{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .page-block .ph b{font-size:13px}
+  .page-block .ph .del{margin-left:auto;border:1.2px solid var(--line);background:#fff;border-radius:7px;padding:3px 9px;font-size:11.5px}
+  .page-block textarea{min-height:70px;font-size:13px}
+  .cm{background:var(--blue-soft);border-radius:10px;padding:10px 13px;font-size:12.8px;line-height:1.85;margin-bottom:8px}
+  .cm b{color:#3b5bdb}
+  /* 体检 */
+  .check-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  .badge{border-radius:999px;padding:4px 13px;font-size:12.5px;font-weight:700}
+  .badge.ok{background:var(--green-soft);color:#0b6b52}
+  .badge.bad{background:var(--red-soft);color:#b03030}
+  .badge.mid{background:#fff3e0;color:#92600a}
+  .v-item{border-radius:10px;padding:8px 12px;font-size:12.6px;margin-bottom:6px;line-height:1.7}
+  .v-item.limit{background:var(--red-soft);color:#b03030}
+  .v-item.struct{background:#fff3e0;color:#92600a}
+  .v-item.spam{background:var(--blue-soft);color:#3b5bdb}
+  .v-item b{font-weight:800}
+  .progress{height:9px;background:#f1e8dc;border-radius:99px;overflow:hidden;flex:1;min-width:140px}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#ffb3d9,var(--pink));border-radius:99px}
+  .checklist{font-size:12.6px;line-height:2}
+  .checklist label{display:flex;gap:8px;align-items:flex-start;margin-bottom:2px;color:var(--ink);font-weight:400;font-size:12.8px}
+  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
+  footer a{color:#8a5a1f}
+</style>
+</head>
+<body>
+<div class="pbar"><div class="pbar-in"><a href="../">← 作品集</a><span class="pbar-sp"></span><b>图文工作室</b><span class="pbar-sp"></span><a href="PRD.md">PRD</a></div></div>
+<style>
+.pbar{background:#f7f5f0;border-bottom:1px solid #e7e2d9;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.pbar-in{max-width:1120px;margin:0 auto;padding:9px 20px;display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.4;color:#6c675f}
+.pbar a{color:#6c675f;text-decoration:none;font-weight:600}
+.pbar a:hover{color:#1f4fd8}
+.pbar b{color:#171614;font-weight:700}
+.pbar-sp{flex:1}
+@media(max-width:640px){.pbar-in{padding:8px 14px;font-size:12px}}
+</style>
+
+<div class="wrap">
+
+  <h1>🖼 图文工作室 <span style="font-size:15px;color:var(--muted);font-weight:600">XhsStudio</span></h1>
+  <p class="sub">小红书图文的<b>全流程生产线</b>：选近期跑通的爆款形态（人设 Bot / 必看合集 / 必入榜 / 图文总结 / 对比测评）→
+  AI 按形态 schema 生成<b>封面、内页卡片、正文、标签、评论区运营脚本、发布策略</b> → 规则层校验结构完整性与违禁词 → 一键导出发布包。
+  <b>发布这一步永远由人完成</b>——平台禁止自动化发布，我们不碰这条红线。</p>
+
+  <div class="topbar">
+    <span class="pill">🔒 数据只存本机</span>
+    <span class="pill">🧪 内置精写示例</span>
+    <span class="pill red">🚫 不做自动发布（违反平台规则）</span>
+    <span class="topbtn">
+      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+    </span>
+  </div>
+
+  <section>
+    <div class="card">
+      <h2>① 选形态（近期跑通的 5 种爆款结构）</h2>
+      <div class="forms" id="forms"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>② 输入主题</h2>
+      <div class="grid" style="margin-bottom:10px">
+        <div style="grid-column:span 2"><label>主题 / 账号要发什么 *</label><input id="xs-topic" placeholder="如：秋冬大衣必入榜 / 「互联网嘴替」bot / 打工人养生必看"></div>
+        <div><label>目标人群</label><input id="xs-audience" placeholder="如：大学生 / 25+ 女生"></div>
+        <div><label>人设 / 口吻（可选）</label><input id="xs-persona" placeholder="如：毒舌但真诚的学姐"></div>
+      </div>
+      <div class="topbar" style="margin:12px 0 0">
+        <button class="btn a" id="btn-gen">🤖 生成全脚本</button>
+        <button class="btn b" id="btn-demo">🧪 装载精写示例</button>
+      </div>
+      <div class="statusline" id="xs-status"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>③ 脚本编辑台（全部可改）</h2>
+      <div id="editor"><div class="note">还没有脚本——选形态、填主题后点「生成全脚本」，或装载示例。</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>④ 体检与发布清单</h2>
+      <div class="check-row">
+        <span class="badge mid" id="badge-complete">完整性 —</span>
+        <div class="progress"><div class="progress-fill" id="complete-bar" style="width:0%"></div></div>
+        <span class="badge mid" id="badge-risk">违禁词 —</span>
+        <button class="btn b small" id="btn-check">🔄 重新体检</button>
+      </div>
+      <div id="check-detail"></div>
+      <div style="margin-top:12px">
+        <div style="font-size:13px;font-weight:800;margin-bottom:6px">发布前 checklist（人工逐项确认）</div>
+        <div class="checklist" id="checklist"></div>
+      </div>
+      <div class="topbar" style="margin-top:14px">
+        <button class="btn a" id="btn-export">📋 导出发布包（Markdown）</button>
+        <button class="btn b" id="btn-check-run">🔍 体检脚本</button>
+      </div>
+      <div class="note">发布包包含：封面文案 / 内页逐页文案 / 正文 / 标签 / 评论区脚本 / 发布策略 / 清单。
+      小红书发布本身请在 App 内手动完成（平台禁止自动化发布，这个红线我们不碰）。</div>
+    </div>
+  </section>
+
+  <footer>
+    📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
+    形态模板是结构 schema（可评测）· 违禁词覆盖常见风险词不替代平台审核 ·
+    <b>本工具不自动发布、不抓取平台数据</b> · 单文件 HTML 可离线使用 · AI 结对编程产出
+  </footer>
+</div>
+
+<!-- AI 设置 -->
+<div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto">
+    <h3 style="margin:0 0 12px;font-size:16px">⚙️ AI 设置（Key 只存本机）</h3>
+    <label>服务商</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="ollama">本地 Ollama（需已启动）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>API Key（Ollama 可留空）</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn b" id="api-cancel">取消</button>
+      <button class="btn a" id="api-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   图文工作室 XhsStudio
+   结构：形态模板库（schema + 提示词 + checklist）→ 脚本校验引擎
+        （纯函数，可被 eval 提取）→ AI 生成管线 → 编辑台 → 发布包导出
+   结构校验与违禁词由代码完成；AI 按形态 schema 生成内容。
+   明确不做：自动发布、平台数据抓取。
+   ============================================================ */
+
+/* ---------- ① 形态模板库（核心资产：近期跑通的爆款结构 schema 化） ---------- */
+
+var FORMS = {
+  bot: {
+    name: '人设 Bot 帖', icon: '🤖',
+    desc: '给自己造一个「人设 bot」（嘴替/怼人/赛博闺蜜），内页是 bot 的神回复合集，评论区扣 1 点歌',
+    coverWords: [6, 16], pages: { min: 5, max: 8, lineMin: 1, lineMax: 3 },
+    bodyWords: [80, 300], tags: [3, 6],
+    genPrompt: function(topic, audience, persona) {
+      return '做一个小红书「人设 Bot 帖」：给账号造一个鲜明人设 bot（人设方向：' + topic
+        + '；目标人群：' + audience + '；口吻：' + (persona || '有梗、真诚') + '）。'
+        + '封面 = 人设名 + 一句话人设（8-16 字，要具体到「听到会想点进来」，不要「贴心助手」这种烂大街的）。'
+        + '内页 ' + 5 + '-' + 8 + ' 页：每页是这个 bot 对一个典型问题的「神回复」，回复要有人设记忆点（口头禅/态度/梗），'
+        + '每个回复 1-3 行。正文 = 人设背景故事 + 怎么玩（80-300 字）。评论区脚本 = 作者置顶（引导扣 1 点问题）+ 2 条预埋神评。'
+        + '标签 3-6 个。';
+    },
+    checklist: ['人设一句话是否具体到「有点怪但记得住」', '每条神回复是否真的有梗（自己笑了吗）', '评论区置顶是否在引导互动（扣 1 / 点歌 / 提问）']
+  },
+  must_see: {
+    name: 'XX 必看合集', icon: '💊',
+    desc: '「养生必看」「租房必看」式恐惧+利益+清单结构，内页每页一条干货卡片',
+    coverWords: [8, 18], pages: { min: 4, max: 9, lineMin: 2, lineMax: 4 },
+    bodyWords: [100, 350], tags: [3, 6],
+    genPrompt: function(topic, audience, persona) {
+      return '做一个小红书「必看合集」帖：主题「' + topic + '」（目标人群：' + audience + '；口吻：' + (persona || '过来人学姐') + '）。'
+        + '封面 = 利益点 + 数字 + 紧迫感（8-18 字，如「打工人护肝必看，第 3 条 90% 的人不知道」）。'
+        + '内页 4-9 页：每页一条干货卡片（卡片标题 + 2-4 行要点，第 1 条要最抓人的）。'
+        + '正文 = 清单复述 + 一句真诚提醒（100-350 字）。注意：健康/医疗内容只做生活习惯建议，不做功效宣称，加「不构成医疗建议」。'
+        + '评论区脚本 = 作者置顶（补充最容易被忽略的一条）+ 1 条预埋提问式神评。标签 3-6 个。';
+    },
+    checklist: ['第 1 条干货是否是最抓人的（黄金位置）', '健康/法律类内容是否加了免责说明', '有没有一条「大多数人不知道」的信息差']
+  },
+  ranking: {
+    name: '必入榜 / 必吃榜', icon: '🏆',
+    desc: '榜单合集（大衣必入榜/必吃榜），内页每页 1 家 1 款，评论区逐楼补链接',
+    coverWords: [8, 16], pages: { min: 4, max: 10, lineMin: 2, lineMax: 4 },
+    bodyWords: [80, 300], tags: [3, 6],
+    genPrompt: function(topic, audience, persona) {
+      return '做一个小红书「榜单帖」：主题「' + topic + '」（目标人群：' + audience + '；口吻：' + (persona || '真金白银踩过坑的测评人') + '）。'
+        + '封面 = 榜单名 + 数量 + 人群（8-16 字，如「冬季大衣必入榜｜按预算分好了」）。'
+        + '内页 4-10 页：每页 1 家/1 款（名称 + 一句话锐评 + 适合谁/不适合谁 + 参考价）。'
+        + '正文 = 榜单逻辑（为什么是这几家、排序规则）+ 真诚免责（非广告，亲测/调研）。'
+        + '评论区脚本 = 作者置顶（「全部链接/地址整理在评论区，按楼层编号」）+ 预埋 2 条催更评论。标签 3-6 个。';
+    },
+    checklist: ['排序规则是否说清（按预算/按风格）', '每条锐评是否有「不适合谁」（避免像硬广）', '评论区置顶是否承诺了链接整理（并真的会去补）']
+  },
+  summary: {
+    name: '图文总结卡', icon: '🗂',
+    desc: '把一篇长文/一次访谈/一本书压成图文卡片：封面结论 + 每页一论点',
+    coverWords: [8, 18], pages: { min: 3, max: 8, lineMin: 2, lineMax: 3 },
+    bodyWords: [60, 250], tags: [3, 6],
+    genPrompt: function(topic, audience, persona) {
+      return '做一个小红书「图文总结卡」：主题「' + topic + '」（目标人群：' + audience + '；口吻：' + (persona || '帮你读完了的人') + '）。'
+        + '封面 = 核心结论（8-18 字）。内页 3-8 页：每页 1 个论点（论点标题 + 2-3 行展开）。'
+        + '正文 = 一句话总结 + 「原内容见 xxx」（60-250 字）。评论区脚本 = 作者置顶（最常被问的一个追问+简答）。标签 3-6 个。';
+    },
+    checklist: ['封面结论是否敢把话说满（但可证伪）', '每页是否独立成立（单页也能被截图传播）', '是否注明原内容出处']
+  },
+  versus: {
+    name: '对比测评', icon: '⚔️',
+    desc: 'A vs B 结构：封面悬念 + 内页维度对比卡片 + 结论人群划分',
+    coverWords: [6, 16], pages: { min: 3, max: 7, lineMin: 2, lineMax: 4 },
+    bodyWords: [80, 280], tags: [3, 6],
+    genPrompt: function(topic, audience, persona) {
+      return '做一个小红书「对比测评」帖：主题「' + topic + '」（目标人群：' + audience + '；口吻：' + (persona || '两边都用过的真人') + '）。'
+        + '封面 = A vs B + 悬念（6-16 字）。内页 3-7 页：每页 1 个对比维度（左右对比要点）。'
+        + '最后一页 = 结论（什么人选 A、什么人选 B）。正文 = 测评方法说明 + 结论（80-280 字）。'
+        + '评论区脚本 = 作者置顶（「你站哪边？评论区说说」）+ 1 条预埋站队神评。标签 3-6 个。';
+    },
+    checklist: ['对比维度是否公平（两边都用同一标准）', '结论是否落到「什么人选什么」（不是和稀泥）', '有无利益相关声明']
+  }
+};
+
+/* ---------- ② 脚本校验引擎（纯函数，勿加入 DOM 依赖；eval/xhs-studio 直接调用） ---------- */
+
+var RISK_WORDS = ['最好用', '最佳', '最优', '最强', '最有效', '全网最', '排名第一', '销量第一', '第一名', '顶级', '顶尖', '极致', '史上', '国家级', '世界级', '冠军', '首选', '万能', '100%', '百分百', '绝对', '治疗', '治好', '根治', '治愈', '消炎', '杀菌', '抗衰', '抗老', '祛疤', '祛痘', '瘦身', '减肥', '美白', '私信我', '私信领取', '加微信', '加V', '加v', '+V', '扫码', '点击链接', '关注领取', '代购', '刷单'];
+
+function checkRisks(text) {
+  var out = [];
+  RISK_WORDS.forEach(function(w) { if (String(text).indexOf(w) !== -1) out.push(w); });
+  return out;
+}
+
+function validateScript(script, formKey) {
+  var form = FORMS[formKey];
+  var issues = [];
+  var checks = { total: 0, pass: 0 };
+  function run(ok, level, text) {
+    checks.total += 1;
+    if (ok) checks.pass += 1;
+    else issues.push({ level: level, text: text });
+  }
+  if (!script) { return { issues: [{ level: 'struct', text: '脚本为空' }], completeness: 0, checks: checks }; }
+  // 封面
+  var cw = form.coverWords;
+  var coverLen = (script.cover || '').length;
+  run(coverLen >= cw[0] && coverLen <= cw[1], 'struct',
+    '封面 ' + coverLen + ' 字，建议 ' + cw[0] + '-' + cw[1] + ' 字（' + form.name + ' 的封面是点击率的第一道门）');
+  // 内页
+  var pages = script.pages || [];
+  run(pages.length >= form.pages.min && pages.length <= form.pages.max, 'struct',
+    '内页 ' + pages.length + ' 页，该形态建议 ' + form.pages.min + '-' + form.pages.max + ' 页');
+  var thinPage = null;
+  pages.forEach(function(p, i) {
+    var lines = (p.lines || []).filter(function(l) { return String(l).trim(); });
+    if (lines.length < form.pages.lineMin) thinPage = thinPage || (i + 1);
+  });
+  run(!thinPage, 'struct', thinPage ? '第 ' + thinPage + ' 页内容太薄（不足 ' + form.pages.lineMin + ' 行）——单页要能独立被截图传播' : '');
+  // 正文
+  var bodyLen = (script.body || '').replace(/\s/g, '').length;
+  run(bodyLen >= form.bodyWords[0] && bodyLen <= form.bodyWords[1], 'struct',
+    '正文 ' + bodyLen + ' 字，建议 ' + form.bodyWords[0] + '-' + form.bodyWords[1] + ' 字');
+  // 标签
+  var tags = script.tags || [];
+  run(tags.length >= form.tags[0] && tags.length <= form.tags[1], 'struct',
+    '标签 ' + tags.length + ' 个，建议 ' + form.tags[0] + '-' + form.tags[1] + ' 个');
+  // 评论区脚本
+  var cm = script.comments || [];
+  run(cm.length >= 2, 'struct', '评论区脚本 ' + cm.length + ' 条（至少含作者置顶 + 1 条预埋互动）');
+  // 违禁词（封面+内页+正文全扫）
+  var allText = (script.cover || '') + ' ' + pages.map(function(p) { return (p.title || '') + ' ' + (p.lines || []).join(' '); }).join(' ') + ' ' + (script.body || '') + ' ' + cm.join(' ');
+  var risks = checkRisks(allText);
+  run(risks.length === 0, 'limit', risks.length ? '命中违禁风险词：' + risks.join('、') + '——替换为可证伪的主观表达' : '');
+  // 发布策略
+  run(!!script.publish && !!script.publish.best_time, 'struct', '缺少发布策略（建议时间 + 发布后互动动作）');
+  var completeness = checks.total ? Math.round(checks.pass / checks.total * 100) : 0;
+  return { issues: issues, completeness: completeness, checks: checks };
+}
+
+/* ---------- ③ 演示脚本（人工精写：bot 形态） ---------- */
+
+var DEMO = {
+  form: 'bot',
+  script: {
+    cover: '「不许内耗」bot 上线了',
+    pages: [
+      { title: 'P1 · 人设卡', lines: ['我是「不许内耗」bot', '职责：专治深夜 emo 反刍', '语气：毒舌但站在你这边'] },
+      { title: 'P2 · 网友问：同事甩锅给我怎么办', lines: ['「先止损再评理：他甩过来的锅，你现在接了吗？」', '「没接住就说没接住，接了就谈分工——情绪最后处理」'] },
+      { title: 'P3 · 网友问：忍不住想他为什么不回我', lines: ['「你不是在想他，你是在等一个不确定的奖励」', '「把手机扣桌上，这个 bot 替你等」'] },
+      { title: 'P4 · 网友问：觉得自己一无是处', lines: ['「『一无是处』是个结论，不是事实」', '「列三件今天完成的事给我，列不出来说明标准有问题」'] },
+      { title: 'P5 · 网友问：明年会更好吗', lines: ['「不会。但会有所不同」', '「不同的东西多了，就好了」'] }
+    ],
+    body: '最近戒掉了深夜刷手机时胡思乱想的习惯——因为造了一个「不许内耗」bot，把那些绕圈圈的问题丢给它。\n\n它不太温柔，但每次都把我从情绪里捞回事实层面。挑了几条最有共鸣的回复放在内页，看看哪句戳到你。\n\n用法：把你绕不出去的问题发在评论区，我让 bot 来回。不构成心理咨询建议，严重的请找专业人士。',
+    tags: ['#反内耗', '#情绪管理', '#打工人日常', '#自我成长', '#嘴替'],
+    comments: [
+      '【作者置顶】把你绕不出去的问题打在评论区，编号回复，每晚 10 点前清完。',
+      '【预埋】P5 那句「不会。但会有所不同」看到愣了一下，截图了。',
+      '【预埋】求一个「不许拖延」bot，下个版本安排？'
+    ],
+    publish: { best_time: '周日 21:00-22:00（emo 高峰前），发布后 1 小时内自评引导', strategy: '发布后先把置顶评论发出去；前 10 条评论逐条回复拉互动权重' }
+  }
+};
+
+/* ---------- ④ AI 层 ---------- */
+
+var PROVIDERS = {
+  zhipu:    { base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash' },
+  deepseek: { base: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
+  moonshot: { base: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k' },
+  ollama:   { base: 'http://localhost:11434/v1/chat/completions', model: 'qwen2.5:7b' },
+  custom:   { base: '', model: '' }
+};
+function loadApiConfig() { try { return JSON.parse(localStorage.getItem('xs_api') || '{}'); } catch (e) { return {}; } }
+async function callChat(messages, maxTokens) {
+  var cfg = loadApiConfig();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.model || provider.model;
+  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({ model: model, messages: messages, temperature: 0.85, max_tokens: maxTokens || 2500 })
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+    throw new Error('接口返回 ' + res.status + '：' + detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+
+/* ---------- ⑤ 渲染与事件 ---------- */
+
+var currentForm = 'bot';
+var currentScript = null;
+
+function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function status(msg, isErr) {
+  var el = document.getElementById('xs-status');
+  el.textContent = msg || '';
+  el.className = 'statusline' + (isErr ? ' err' : '');
+}
+
+function renderForms() {
+  document.getElementById('forms').innerHTML = Object.keys(FORMS).map(function(k) {
+    var f = FORMS[k];
+    return '<div class="form-card' + (currentForm === k ? ' on' : '') + '" data-f="' + k + '">'
+      + '<div class="fi">' + f.icon + '</div><div class="fn">' + f.name + '</div><div class="fd">' + esc(f.desc) + '</div></div>';
+  }).join('');
+  document.querySelectorAll('.form-card').forEach(function(el) {
+    el.addEventListener('click', function() {
+      currentForm = el.getAttribute('data-f');
+      renderForms();
+      status('已选「' + FORMS[currentForm].name + '」——生成时会按该形态的 schema 来。');
+    });
+  });
+}
+
+function renderEditor() {
+  var mount = document.getElementById('editor');
+  if (!currentScript) {
+    mount.innerHTML = '<div class="note">还没有脚本——选形态、填主题后点「生成全脚本」，或装载示例。</div>';
+    return;
+  }
+  var s = currentScript;
+  mount.innerHTML =
+    '<div class="sec-head"><label style="min-width:70px">封面文案</label><span style="font-size:11.5px;color:var(--muted)" id="cover-hint"></span></div>'
+    + '<textarea id="ed-cover" class="script-title" style="min-height:44px">' + esc(s.cover) + '</textarea>'
+    + '<div style="font-weight:800;font-size:13.5px;margin:14px 0 8px">内页卡片（每页：标题 + 逐行要点，直接改）</div>'
+    + '<div id="pages">' + s.pages.map(function(p, i) {
+        return '<div class="page-block"><div class="ph"><b>' + esc(p.title || ('P' + (i + 1))) + '</b><button class="del" data-delp="' + i + '">删这页</button></div>'
+          + '<textarea data-p="' + i + '">' + esc((p.lines || []).join('\n')) + '</textarea></div>';
+      }).join('') + '</div>'
+    + '<button class="btn b small" id="btn-addpage" style="margin-bottom:14px">➕ 加一页</button>'
+    + '<label>正文</label><textarea id="ed-body">' + esc(s.body) + '</textarea>'
+    + '<label style="margin-top:10px">标签（逗号分隔）</label><input id="ed-tags" value="' + esc((s.tags || []).join(', ')) + '">'
+    + '<div style="font-weight:800;font-size:13.5px;margin:14px 0 8px">评论区运营脚本</div>'
+    + '<div id="cms">' + (s.comments || []).map(function(c, i) { return '<div class="cm"><b>' + (i === 0 ? '置顶' : '预埋 ' + i) + '</b>　' + esc(c) + '</div>'; }).join('') + '</div>'
+    + '<div class="cm" style="background:var(--green-soft)"><b>发布策略</b>　' + esc(s.publish ? (s.publish.best_time + '　｜　' + s.publish.strategy) : '—') + '</div>';
+
+  function sync() {
+    currentScript.cover = document.getElementById('ed-cover').value;
+    currentScript.pages = currentScript.pages.map(function(p, i) {
+      var ta = document.querySelector('[data-p="' + i + '"]');
+      return ta ? { title: p.title, lines: ta.value.split('\n').filter(function(x) { return x.trim(); }) } : p;
+    });
+    currentScript.body = document.getElementById('ed-body').value;
+    currentScript.tags = document.getElementById('ed-tags').value.split(/[,，]/).map(function(x) { return x.trim(); }).filter(Boolean);
+    runCheck();
+  }
+  ['ed-cover', 'ed-body', 'ed-tags'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', sync);
+  });
+  mount.querySelectorAll('[data-p]').forEach(function(ta) { ta.addEventListener('input', sync); });
+  mount.querySelectorAll('[data-delp]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      currentScript.pages.splice(Number(b.getAttribute('data-delp')), 1);
+      renderEditor();
+    });
+  });
+  var add = document.getElementById('btn-addpage');
+  add.addEventListener('click', function() {
+    currentScript.pages.push({ title: 'P' + (currentScript.pages.length + 1), lines: ['要点 1'] });
+    renderEditor();
+  });
+  runCheck();
+}
+
+function runCheck() {
+  var form = FORMS[currentForm];
+  var v = validateScript(currentScript, currentForm);
+  var badgeC = document.getElementById('badge-complete');
+  badgeC.textContent = '完整性 ' + v.completeness + '%（' + v.checks.pass + '/' + v.checks.total + '）';
+  badgeC.className = 'badge ' + (v.completeness >= 90 ? 'ok' : (v.completeness >= 60 ? 'mid' : 'bad'));
+  document.getElementById('complete-bar').style.width = v.completeness + '%';
+  var risks = v.issues.filter(function(x) { return x.level === 'limit'; });
+  var badgeR = document.getElementById('badge-risk');
+  badgeR.textContent = risks.length ? '⚠ 违禁词 ' + risks.length : '✅ 体检通过';
+  badgeR.className = 'badge ' + (risks.length ? 'bad' : 'ok');
+  var levelIcon = { struct: '📐', limit: '🩺' };
+  document.getElementById('check-detail').innerHTML = v.issues.length
+    ? v.issues.map(function(x) { return '<div class="v-item ' + x.level + '">' + (levelIcon[x.level] || '') + ' ' + esc(x.text) + '</div>'; }).join('')
+    : '<div class="v-item" style="background:var(--green-soft)">✅ 结构与违禁词全部通过。</div>';
+  var items = form.checklist.map(function(c, i) {
+    return '<label><input type="checkbox"> ' + esc((i + 1) + '. ' + c) + '</label>';
+  }).join('');
+  document.getElementById('checklist').innerHTML = items
+    + '<label><input type="checkbox"> ' + (form.checklist.length + 1) + '. 内容事实已人工核对（AI 可能编造细节）</label>'
+    + '<label><input type="checkbox"> ' + (form.checklist.length + 2) + '. 封面图/内页图已制作（本工具只产出文案脚本）</label>';
+}
+
+async function generate() {
+  var topic = document.getElementById('xs-topic').value.trim();
+  if (!topic) { status('先填主题。', true); return; }
+  var form = FORMS[currentForm];
+  status('🤖 按「' + form.name + '」形态生成全脚本（免费模型约 30-60 秒）…');
+  try {
+    var text = await callChat([
+      { role: 'system', content: '你是小红书爆款内容策划。只输出 JSON，不输出任何其他文字。' },
+      { role: 'user', content: form.genPrompt(topic, document.getElementById('xs-audience').value.trim(), document.getElementById('xs-persona').value.trim())
+        + ' 严格输出 JSON：{"cover":"封面文案","pages":[{"title":"页标题","lines":["要点"]}],"body":"正文","tags":["#标签"],"comments":["作者置顶","预埋","预埋"],"publish":{"best_time":"建议时间","strategy":"发布后互动策略"}}' }
+    ], 3000);
+    var obj = JSON.parse((text.match(/\{[\s\S]*\}/) || [text])[0]);
+    if (!obj.cover || !obj.pages) throw new Error('返回缺少 cover/pages 字段');
+    currentScript = {
+      cover: obj.cover, pages: obj.pages, body: obj.body || '',
+      tags: obj.tags || [], comments: obj.comments || [],
+      publish: obj.publish || null
+    };
+    renderEditor();
+    status('✅ 已生成并完成体检——AI 生成内容请人工核对事实，发布前逐项过清单。');
+  } catch (e) {
+    status('❌ ' + e.message + ' —— 没有 Key 可装载精写示例。', true);
+  }
+}
+
+function loadDemo() {
+  currentForm = DEMO.form;
+  currentScript = JSON.parse(JSON.stringify(DEMO.script));
+  document.getElementById('xs-topic').value = '互联网嘴替 bot';
+  document.getElementById('xs-audience').value = '打工人';
+  document.getElementById('xs-persona').value = '毒舌但站在你这边';
+  renderForms();
+  renderEditor();
+  status('🧪 已装载人工精写的 bot 帖示例（含评论区脚本与发布策略）——试着改两句看体检变化。');
+}
+
+function exportPack() {
+  if (!currentScript) { status('没有脚本可导出。', true); return; }
+  var s = currentScript;
+  var form = FORMS[currentForm];
+  var L = ['# 小红书发布包 · ' + form.name, '', '主题：' + (document.getElementById('xs-topic').value || '—'), '', '## 封面文案（做图用）', s.cover, '', '## 内页文案（每页一张图）'];
+  s.pages.forEach(function(p, i) {
+    L.push('', '### ' + (p.title || 'P' + (i + 1)));
+    (p.lines || []).forEach(function(l) { L.push('- ' + l); });
+  });
+  L.push('', '## 正文', s.body, '', '## 标签', s.tags.join(' '), '', '## 评论区运营脚本');
+  (s.comments || []).forEach(function(c, i) { L.push((i === 0 ? '- 【置顶】' : '- 【预埋】') + c); });
+  if (s.publish) L.push('', '## 发布策略', '- 时间：' + s.publish.best_time, '- 动作：' + s.publish.strategy);
+  var v = validateScript(s, currentForm);
+  L.push('', '## 体检结果', '- 结构完整性：' + v.completeness + '%', v.issues.length ? '- 待处理：' + v.issues.map(function(x) { return x.text; }).join('；') : '- 无待处理项');
+  L.push('', '## 发布前 checklist');
+  form.checklist.forEach(function(c) { L.push('- [ ] ' + c); });
+  L.push('- [ ] 内容事实已人工核对', '- [ ] 封面图/内页图已制作');
+  L.push('', '---', '发布方式：小红书 App 手动发布（平台禁止自动化发布）。');
+  navigator.clipboard.writeText(L.join('\n'));
+  status('📋 发布包已复制——粘进备忘录/文档即可开做图。');
+}
+
+function init() {
+  renderForms();
+
+  document.getElementById('btn-gen').addEventListener('click', generate);
+  document.getElementById('btn-demo').addEventListener('click', loadDemo);
+  document.getElementById('btn-check-run').addEventListener('click', function() { runCheck(); status('🔍 已重新体检。'); });
+  document.getElementById('btn-export').addEventListener('click', exportPack);
+
+  var drawer = document.getElementById('drawer-api');
+  document.getElementById('btn-settings').addEventListener('click', function() {
+    var cfg = loadApiConfig();
+    document.getElementById('api-provider').value = cfg.provider || 'zhipu';
+    document.getElementById('api-key').value = cfg.key || '';
+    document.getElementById('api-model').value = cfg.model || '';
+    document.getElementById('api-base').value = cfg.base || '';
+    drawer.style.display = 'flex';
+  });
+  document.getElementById('api-cancel').addEventListener('click', function() { drawer.style.display = 'none'; });
+  drawer.addEventListener('click', function(ev) { if (ev.target === drawer) drawer.style.display = 'none'; });
+  document.getElementById('api-save').addEventListener('click', function() {
+    localStorage.setItem('xs_api', JSON.stringify({
+      provider: document.getElementById('api-provider').value,
+      key: document.getElementById('api-key').value.trim(),
+      model: document.getElementById('api-model').value.trim(),
+      base: document.getElementById('api-base').value.trim()
+    }));
+    drawer.style.display = 'none';
+  });
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>内容工作台 · 选题 → 起草 → 发布 → 数据回流</title>
+<meta name="description" content="把选题雷达、笔记工坊串成内容流水线：周计划、发布漏斗、数据回流分析、周简报。统计建议由代码算——样本不足不下结论。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --orange:#ff7a45; --orange-soft:#ffe8dc;
+    --purple:#7c3aed; --purple-soft:#f0e4ff;
+    --blue:#5b7cfa; --blue-soft:#e4e9ff;
+    --green:#12a184; --green-soft:#dcf5ee;
+    --red:#d64545; --red-soft:#fde5e5;
+    --radius:18px; --shadow:0 10px 26px rgba(60,42,20,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--purple-soft),transparent 60%),
+    radial-gradient(800px 420px at 100% 0%,var(--orange-soft),transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 16px 40px}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:50em}
+  .sub b{color:var(--ink)}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#8a5a1f}
+  .topbtn{margin-left:auto;display:flex;gap:8px}
+  button{font-family:inherit;cursor:pointer}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--orange);color:#fff;box-shadow:0 6px 16px rgba(255,122,69,.28)}
+  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
+  section{margin-bottom:26px}
+  h2{font-size:18.5px;margin:0 0 10px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+  input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13.5px;font-family:inherit;background:#fff}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+  .statusline{font-size:13px;color:var(--muted);margin:8px 0;min-height:20px}
+  .statusline.err{color:var(--red);font-weight:600}
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:10px}
+  /* 导入选题 */
+  .pick-list{max-height:260px;overflow:auto;margin-top:10px}
+  .pick{display:flex;align-items:center;gap:10px;background:#faf6ef;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.8px;margin-bottom:6px}
+  .pick button{margin-left:auto;border:1.2px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;font-size:11.8px;font-weight:700}
+  .pick button:hover{border-color:var(--orange)}
+  .tag{display:inline-block;border-radius:999px;padding:1px 9px;font-size:10.8px;font-weight:700;background:var(--orange-soft);color:#b45309}
+  /* 看板 */
+  .kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px}
+  .kcol{min-width:250px;flex:0 0 auto;background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:14px;padding:10px}
+  .kcol h3{font-size:13px;margin:0 0 9px;display:flex;justify-content:space-between}
+  .kcol h3 .cnt{background:#fff;border:1px solid var(--line);border-radius:99px;padding:0 8px;font-size:11px;color:var(--muted)}
+  .kcard{background:#fff;border-radius:12px;padding:10px 11px;box-shadow:0 4px 12px rgba(60,42,20,.08);margin-bottom:8px;font-size:12.3px;line-height:1.6}
+  .kcard .t{font-weight:700;font-size:13px}
+  .kcard .meta{color:var(--muted);font-size:11.3px;margin-top:2px}
+  .kcard .ops{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+  .kcard .ops button{border:1.2px solid var(--line);background:#fff;border-radius:7px;padding:3px 8px;font-size:11px;font-weight:600}
+  .kcard .metrics{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px}
+  .kcard .metrics input{border:1.2px solid var(--line);border-radius:7px;padding:4px 7px;font-size:11.5px;width:100%}
+  .empty-col{color:#bbb;font-size:11.5px;text-align:center;padding:12px 0}
+  /* 简报 */
+  .brief-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .brief{border-radius:12px;padding:12px 15px;font-size:12.9px;line-height:1.85;margin-bottom:9px}
+  .brief.warn{background:#fff3e0;color:#92600a}
+  .brief.good{background:var(--green-soft);color:#0b6b52}
+  .brief.act{background:var(--blue-soft);color:#3b5bdb}
+  .brief b{font-weight:800}
+  .funnel{display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:700;flex-wrap:wrap;margin-top:4px}
+  .funnel .step{border-radius:8px;padding:6px 10px;background:var(--purple-soft);color:#6d28d9}
+  .funnel .step.win{background:var(--green-soft);color:#0b6b52}
+  .funnel .arrow{color:var(--muted);font-weight:400}
+  .hbar{display:grid;grid-template-columns:86px 1fr 90px;gap:8px;align-items:center;font-size:12px;margin-bottom:6px}
+  .bar-track{height:8px;background:#f1e8dc;border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#d8c6f7,var(--purple))}
+  .ai-out{background:#faf6ef;border-radius:10px;padding:12px 14px;font-size:12.8px;line-height:1.9;margin-top:10px;white-space:pre-wrap}
+  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
+  footer a{color:#8a5a1f}
+</style>
+</head>
+<body>
+<div class="pbar"><div class="pbar-in"><a href="../">← 作品集</a><span class="pbar-sp"></span><b>内容工作台</b><span class="pbar-sp"></span><a href="PRD.md">PRD</a></div></div>
+<style>
+.pbar{background:#f7f5f0;border-bottom:1px solid #e7e2d9;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.pbar-in{max-width:1120px;margin:0 auto;padding:9px 20px;display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.4;color:#6c675f}
+.pbar a{color:#6c675f;text-decoration:none;font-weight:600}
+.pbar a:hover{color:#1f4fd8}
+.pbar b{color:#171614;font-weight:700}
+.pbar-sp{flex:1}
+@media(max-width:640px){.pbar-in{padding:8px 14px;font-size:12px}}
+</style>
+
+<div class="wrap">
+
+  <h1>🗞 内容工作台 <span style="font-size:15px;color:var(--muted);font-weight:600">ContentWorkbench</span></h1>
+  <p class="sub">内容线的全流程编排：从<b>选题雷达</b>的选题池挑出本周要发的 → 登记草稿 → 发布后<b>把阅读/点赞数据回流</b> →
+  按「选题类型」聚合看哪类内容真的表现好。周简报由代码生成，<b>样本不足时明确说"不下结论"</b>——数据回流的目的不是好看，是让下周的选题更聪明。</p>
+
+  <div class="topbar">
+    <span class="pill">🔗 自动读取选题雷达的选题池</span>
+    <span class="pill">🔒 数据只存本机</span>
+    <span class="pill">🧪 无数据可演示</span>
+    <span class="topbtn">
+      <button class="btn b" id="btn-export">📋 复制周报</button>
+      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+    </span>
+  </div>
+
+  <section>
+    <div class="card">
+      <h2>① 本周发布计划</h2>
+      <div class="grid" style="margin-bottom:8px">
+        <div><label>周起始日</label><input id="wk-start" type="date"></div>
+        <div><label>周目标（篇）</label><input id="wk-goal" type="number" value="3" min="1" max="14"></div>
+        <div><label>从选题池导入</label>
+          <select id="pick-source"><option value="">加载中…</option></select></div>
+        <div><label>平台</label>
+          <select id="pick-platform"><option>公众号</option><option>小红书</option><option>知乎</option></select></div>
+      </div>
+      <button class="btn a" id="btn-import">➕ 加入本周计划</button>
+      <button class="btn b" id="btn-manual">✏️ 手动添加选题</button>
+      <div class="statusline" id="pick-status"></div>
+      <div class="note">「从选题池导入」直接读取<b>选题雷达</b>的本地数据（先去那边建选题，或点「装载演示数据」体验全流程）；
+      导入过的选题会标记，不会重复进计划。</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>② 流水线：计划 → 草稿 → 已发布（数据回流）</h2>
+    <div class="statusline" id="board-status"></div>
+    <div class="kanban" id="kanban"></div>
+  </section>
+
+  <section>
+    <h2>③ 数据回流：哪类选题真的表现好？</h2>
+    <div class="card" id="angle-perf"></div>
+  </section>
+
+  <section>
+    <h2>④ 周简报（规则引擎生成）</h2>
+    <div class="card" id="brief"></div>
+    <div class="topbar" style="margin-top:10px">
+      <button class="btn a" id="btn-ai-comment">🤖 AI 点评这份简报</button>
+    </div>
+    <div id="ai-box"></div>
+  </section>
+
+  <footer>
+    📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
+    简报与统计由代码计算，<b>样本 &lt;3 不下结论</b> · 需要选题雷达同浏览器数据 ·
+    单文件 HTML 可离线使用 · AI 结对编程产出
+  </footer>
+</div>
+
+<!-- AI 设置 -->
+<div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto">
+    <h3 style="margin:0 0 12px;font-size:16px">⚙️ AI 设置（Key 只存本机）</h3>
+    <label>服务商</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="ollama">本地 Ollama（需已启动）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>API Key（Ollama 可留空）</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn b" id="api-cancel">取消</button>
+      <button class="btn a" id="api-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   内容工作台 ContentWorkbench
+   结构：简报引擎（纯函数，可被 eval 提取）→ 选题池读取 →
+        发布计划/看板 → 数据回流分析 → AI 点评
+   流程编排：选题雷达(tr_pool) → 本工作台(cw_plan) → 笔记工坊起草。
+   ============================================================ */
+
+/* ---------- ① 简报引擎（纯函数，勿加入 DOM 依赖；eval/content-workbench 直接调用） ---------- */
+
+var PLAN_STATES = { planned: '待起草', drafted: '已起草', published: '已发布' };
+var FLOW2 = ['planned', 'drafted', 'published'];
+
+function funnel2(pool, plan) {
+  var ideas = pool.filter(function(x) { return x.state !== 'drop'; }).length;
+  var planned = plan.length;
+  var drafted = plan.filter(function(p) { return p.state !== 'planned'; }).length;
+  var published = plan.filter(function(p) { return p.state === 'published'; }).length;
+  var withData = plan.filter(function(p) { return p.state === 'published' && p.metrics && (p.metrics.views > 0); }).length;
+  return { ideas: ideas, planned: planned, drafted: drafted, published: published, withData: withData };
+}
+
+function anglePerf(plan) {
+  // 已发布且有数据的，按选题类型聚合平均阅读量
+  var by = {};
+  plan.forEach(function(p) {
+    if (p.state !== 'published' || !p.metrics || !(p.metrics.views > 0)) return;
+    var a = p.angle || '未分类';
+    if (!by[a]) by[a] = { n: 0, views: 0, likes: 0 };
+    by[a].n += 1;
+    by[a].views += p.metrics.views;
+    by[a].likes += p.metrics.likes || 0;
+  });
+  Object.keys(by).forEach(function(k) {
+    by[k].avgViews = Math.round(by[k].views / by[k].n);
+    by[k].avgLikes = Math.round(by[k].likes / by[k].n);
+  });
+  return by;
+}
+
+function angleAdvice(by) {
+  // 统计素养：样本 >=3 才对均值下结论；<3 明确说不够
+  var keys = Object.keys(by);
+  if (!keys.length) return { level: 'empty', text: '还没有带数据的发布记录——发出去、把阅读量填回来，这里才开始学东西。' };
+  var enough = keys.filter(function(k) { return by[k].n >= 3; });
+  if (!enough.length) {
+    return { level: 'nodata', text: '每类选题的有效样本都 <3，均值会被单篇运气主导——先按类型各发 3 篇再来谈「哪类表现好」。' };
+  }
+  var best = enough.sort(function(a, b) { return by[b].avgViews - by[a].avgViews; })[0];
+  var weakPool = keys.filter(function(k) { return by[k].n < 3; });
+  var t = '样本 ≥3 的类型里，「' + best + '」平均阅读最高（' + by[best].avgViews + ' / 篇，n=' + by[best].n + '）——下周值得多排；';
+  t += weakPool.length ? weakPool.join('、') + ' 样本还不足 3 篇，先补样本再评价。' : '其余类型样本充足，可对照调整。';
+  return { level: 'ok', best: best, text: t };
+}
+
+function generateBriefing(pool, plan, todayStr) {
+  var f = funnel2(pool, plan);
+  var warnings = [];
+  if (!pool.length) warnings.push({ level: 'warn', text: '选题雷达的选题池是空的（或未在本浏览器打开过）——先去选题雷达生成选题，或点「装载演示数据」看流程。' });
+  var noDraft = plan.filter(function(p) { return p.state === 'planned'; });
+  if (noDraft.length) warnings.push({ level: 'warn', text: '本周还有 ' + noDraft.length + ' 条只在了计划里没起草：' + noDraft.slice(0, 2).map(function(p) { return '「' + p.title.slice(0, 14) + '」'; }).join('') + (noDraft.length > 2 ? '…' : '') + '——去笔记工坊起草，别让计划变愿望。' });
+  var noMetric = plan.filter(function(p) { return p.state === 'published' && (!p.metrics || !(p.metrics.views > 0)); });
+  if (noMetric.length) warnings.push({ level: 'warn', text: noMetric.length + ' 条已发布但没填数据——数据回流断了，分析就断了，花 30 秒补上。' });
+  var dead = pool.filter(function(x) { return x.state === 'drop'; }).length;
+  if (dead > 0) warnings.push({ level: 'good', text: '选题池里已果断弃掉 ' + dead + ' 条——敢于弃题是好事，别回收它们。' });
+  if (!warnings.length) warnings.push({ level: 'good', text: '计划、草稿、数据三层都齐——本周内容机器运转正常。' });
+
+  var perf = angleAdvice(anglePerf(plan));
+  var actions = [];
+  if (f.planned < 1) actions.push('从选题池导入至少 1 条本周选题（分数最高的优先）。');
+  if (noDraft.length) actions.push('把「待起草」的推进到草稿（建议先做分数最高的）。');
+  if (noMetric.length) actions.push('补填 ' + noMetric.length + ' 条发布数据。');
+  if (f.published >= 1 && f.withData === f.published) actions.push('数据齐全——看「数据回流」区，把赢家类型多排进下周。');
+  if (!actions.length) actions.push('本周无欠账：挑下周选题、或对已发内容做一次「数据 → 选题」复盘。');
+
+  return { funnel: f, warnings: warnings, perf: perf, actions: actions };
+}
+
+/* ---------- ② 数据层 ---------- */
+
+var PLAN_KEY = 'cw_plan';
+
+function loadPool() {
+  // 选题雷达的选题池（同浏览器同源共享，模式与求职工作台相同）
+  try { return JSON.parse(localStorage.getItem('tr_pool') || '[]'); } catch (e) { return []; }
+}
+function loadPlan() { try { return JSON.parse(localStorage.getItem(PLAN_KEY) || '[]'); } catch (e) { return []; } }
+function savePlan(p) { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); }
+
+var DEMO_POOL = [
+  { title: '我扒了 30 个 10 万粉的知识博主，发现他们只做这 3 种选题', angle: '数字清单', state: 'todo', scores: { _total: 68 }, logic: '调研背书' },
+  { title: '普通女生搞钱最大的误区：只会卖时间，不会买时间', angle: '身份代入', state: 'todo', scores: { _total: 48 }, logic: '误区钩子' },
+  { title: '月薪 8 千和月薪 3 万的运营，做周报的差别在哪', angle: '反差冲突', state: 'done', scores: { _total: 65 }, logic: '薪资对比' },
+  { title: '副业半年亏了 2 万，我总结出 5 条血泪教训', angle: '数字清单', state: 'done', scores: { _total: 61 }, logic: '自曝损失' },
+  { title: '为什么 2026 年了，还有人劝你做公众号？', angle: '热点借势', state: 'drop', scores: { _total: 69 }, logic: '反唱衰' }
+];
+var DEMO_PLAN = [
+  { uid: 'demo1', title: '我扒了 30 个 10 万粉的知识博主，发现他们只做这 3 种选题', angle: '数字清单', platform: '公众号', state: 'published', metrics: { views: 4200, likes: 86, collects: 210, fans: 32 } },
+  { uid: 'demo2', title: '副业半年亏了 2 万，我总结出 5 条血泪教训', angle: '数字清单', platform: '小红书', state: 'published', metrics: { views: 6800, likes: 130, collects: 340, fans: 51 } },
+  { uid: 'demo5', title: '面试官问「你的数据哪来的」，我掏出了评测报告', angle: '数字清单', platform: '公众号', state: 'published', metrics: { views: 5600, likes: 102, collects: 260, fans: 40 } },
+  { uid: 'demo3', title: '普通人都能用的 AI 工具清单（2026 版）', angle: '资源盘点', platform: '公众号', state: 'drafted', metrics: null },
+  { uid: 'demo4', title: '被面试官问「你的数据哪来的」怎么办', angle: '反差冲突', platform: '小红书', state: 'planned', metrics: null }
+];
+
+/* ---------- ③ AI 层 ---------- */
+
+var PROVIDERS = {
+  zhipu:    { base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash' },
+  deepseek: { base: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
+  moonshot: { base: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k' },
+  ollama:   { base: 'http://localhost:11434/v1/chat/completions', model: 'qwen2.5:7b' },
+  custom:   { base: '', model: '' }
+};
+function loadApiConfig() { try { return JSON.parse(localStorage.getItem('cw_api') || '{}'); } catch (e) { return {}; } }
+async function callChat(messages, maxTokens) {
+  var cfg = loadApiConfig();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.model || provider.model;
+  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({ model: model, messages: messages, temperature: 0.6, max_tokens: maxTokens || 600 })
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+    throw new Error('接口返回 ' + res.status + '：' + detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+
+/* ---------- ④ 渲染与事件 ---------- */
+
+var pool = loadPool();
+var plan = loadPlan();
+
+function status(msg, isErr) {
+  var el = document.getElementById('pick-status');
+  el.textContent = msg || '';
+  el.className = 'statusline' + (isErr ? ' err' : '');
+}
+function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function renderPicker() {
+  var sel = document.getElementById('pick-source');
+  var used = {};
+  plan.forEach(function(p) { used[p.uid] = true; });
+  var candidates = pool.filter(function(x) { return x.state !== 'drop' && !used['tr:' + x.title]; });
+  sel.innerHTML = candidates.length
+    ? candidates.map(function(x, i) {
+        return '<option value="' + esc(x.title) + '">' + esc(x.title.slice(0, 34)) + '（' + esc(x.angle) + ' · ' + (x.scores ? x.scores._total : '?') + ' 分）</option>';
+      }).join('')
+    : '<option value="">（选题池没有可用选题）</option>';
+}
+
+function renderKanban() {
+  var cols = [
+    { key: 'planned', label: '📋 待起草' },
+    { key: 'drafted', label: '✍️ 已起草' },
+    { key: 'published', label: '🚀 已发布（填数据）' }
+  ];
+  document.getElementById('kanban').innerHTML = cols.map(function(col) {
+    var items = plan.filter(function(p) { return p.state === col.key; });
+    var cards = items.length ? items.map(function(p) {
+      var ops = '';
+      if (p.state === 'planned') ops += '<button data-act="draft" data-uid="' + p.uid + '">→ 已起草</button>';
+      if (p.state === 'drafted') ops += '<button data-act="publish" data-uid="' + p.uid + '">→ 已发布</button>';
+      ops += '<button data-act="del" data-uid="' + p.uid + '">🗑</button>';
+      var metrics = p.state === 'published'
+        ? '<div class="metrics">'
+          + '<input data-m="views" data-uid="' + p.uid + '" type="number" placeholder="阅读 ' + (p.metrics ? p.metrics.views || '' : '') + '">'
+          + '<input data-m="likes" data-uid="' + p.uid + '" type="number" placeholder="赞 ' + (p.metrics ? p.metrics.likes || '' : '') + '">'
+          + '<input data-m="collects" data-uid="' + p.uid + '" type="number" placeholder="藏 ' + (p.metrics ? p.metrics.collects || '' : '') + '">'
+          + '<input data-m="fans" data-uid="' + p.uid + '" type="number" placeholder="涨粉 ' + (p.metrics ? p.metrics.fans || '' : '') + '">'
+          + '</div>'
+        : '';
+      return '<div class="kcard"><div class="t">' + esc(p.title.slice(0, 30)) + (p.title.length > 30 ? '…' : '') + '</div>'
+        + '<div class="meta"><span class="tag">' + esc(p.angle || '未分类') + '</span> ' + esc(p.platform || '') + '</div>'
+        + '<div class="ops">' + ops + '</div>' + metrics + '</div>';
+    }).join('') : '<div class="empty-col">—</div>';
+    return '<div class="kcol"><h3>' + col.label + ' <span class="cnt">' + items.length + '</span></h3>' + cards + '</div>';
+  }).join('');
+}
+
+function renderPerf() {
+  var by = anglePerf(plan);
+  var keys = Object.keys(by).sort(function(a, b) { return by[b].avgViews - by[a].avgViews; });
+  var maxV = Math.max(1, keys.length ? by[keys[0]].avgViews : 1);
+  var advice = angleAdvice(by);
+  var funnel = funnel2(pool, plan);
+  var barHtml = keys.length
+    ? keys.map(function(k) {
+        return '<div class="hbar"><span>' + esc(k) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + Math.round(by[k].avgViews / maxV * 100) + '%"></div></div><span>' + by[k].avgViews + '/篇 · n=' + by[k].n + '</span></div>';
+      }).join('')
+    : '<span style="color:#bbb;font-size:12.5px">还没有带数据的发布记录</span>';
+  document.getElementById('angle-perf').innerHTML =
+    '<div class="funnel">选题 ' + funnel.ideas + ' <span class="arrow">→</span> <span class="step">计划 ' + funnel.planned + '</span> <span class="arrow">→</span> <span class="step">草稿 ' + funnel.drafted + '</span> <span class="arrow">→</span> <span class="step win">发布 ' + funnel.published + '</span> <span class="arrow">→</span> <span class="step win">数据回流 ' + funnel.withData + '</span></div>'
+    + '<div style="margin-top:12px">' + barHtml + '</div>'
+    + '<div class="note" style="margin-top:10px"><b>结论（' + (advice.level === 'ok' ? '样本已足够' : '暂不下结论') + '）：</b>' + esc(advice.text) + '</div>';
+}
+
+function renderBrief() {
+  var b = generateBriefing(pool, plan, new Date().toISOString().slice(0, 10));
+  var icon = { warn: '⚠️', good: '✅', act: '👉' };
+  document.getElementById('brief').innerHTML =
+    '<div class="brief-grid">'
+    + '<div>' + b.warnings.map(function(w) { return '<div class="brief ' + w.level + '">' + (icon[w.level] || '') + ' ' + esc(w.text) + '</div>'; }).join('') + '</div>'
+    + '<div><div class="brief act"><b>本周行动清单</b><br>' + b.actions.map(function(a) { return '· ' + esc(a); }).join('<br>') + '</div></div>'
+    + '</div>';
+}
+
+function renderAll() { renderPicker(); renderKanban(); renderPerf(); renderBrief(); }
+
+function exportBrief() {
+  var b = generateBriefing(pool, plan, new Date().toISOString().slice(0, 10));
+  var lines = ['# 内容周报（' + new Date().toLocaleDateString('zh-CN') + '）', ''];
+  lines.push('流水线：选题 ' + b.funnel.ideas + ' → 计划 ' + b.funnel.planned + ' → 草稿 ' + b.funnel.drafted + ' → 发布 ' + b.funnel.published + '（数据回流 ' + b.funnel.withData + '）', '');
+  lines.push('## 行动清单');
+  b.actions.forEach(function(a) { lines.push('- ' + a); });
+  lines.push('', '## 状态');
+  b.warnings.forEach(function(w) { lines.push('- ' + w.text); });
+  lines.push('', '## 类型表现');
+  lines.push('- ' + b.perf.text);
+  lines.push('', '| 已发布 | 平台 | 类型 | 阅读 | 赞 | 藏 | 涨粉 |', '|---|---|---|---|---|---|---|');
+  plan.filter(function(p) { return p.state === 'published'; }).forEach(function(p) {
+    var m = p.metrics || {};
+    lines.push('| ' + p.title.slice(0, 24) + ' | ' + (p.platform || '') + ' | ' + (p.angle || '') + ' | ' + (m.views || '—') + ' | ' + (m.likes || '—') + ' | ' + (m.collects || '—') + ' | ' + (m.fans || '—') + ' |');
+  });
+  return lines.join('\n');
+}
+
+function init() {
+  renderAll();
+
+  document.getElementById('btn-import').addEventListener('click', function() {
+    var title = document.getElementById('pick-source').value;
+    if (!title) { status('选题池没有可用选题——去选题雷达生成，或点右上角看演示。', true); return; }
+    var src = pool.filter(function(x) { return x.title === title; })[0] || {};
+    plan.push({
+      uid: 'tr:' + title,
+      title: title,
+      angle: src.angle || '未分类',
+      platform: document.getElementById('pick-platform').value,
+      state: 'planned', metrics: null
+    });
+    savePlan(plan);
+    renderAll();
+    status('✅ 已加入本周计划（同一篇不会重复导入）。');
+  });
+
+  document.getElementById('btn-manual').addEventListener('click', function() {
+    var title = prompt('选题标题：');
+    if (!title || !title.trim()) return;
+    plan.push({ uid: 'manual:' + Date.now(), title: title.trim(), angle: '未分类', platform: document.getElementById('pick-platform').value, state: 'planned', metrics: null });
+    savePlan(plan); renderAll();
+  });
+
+  // 演示按钮（动态加入顶栏）
+  var demoBtn = document.createElement('button');
+  demoBtn.className = 'btn b';
+  demoBtn.id = 'btn-demo-top';
+  demoBtn.textContent = '🧪 装载演示数据';
+  demoBtn.addEventListener('click', function() {
+    pool = JSON.parse(JSON.stringify(DEMO_POOL));
+    plan = JSON.parse(JSON.stringify(DEMO_PLAN));
+    localStorage.setItem('tr_pool', JSON.stringify(pool));
+    savePlan(plan);
+    renderAll();
+    status('🧪 已装载演示（选题池 + 发布计划，含数据回流样本）——注意周简报的样本量结论。');
+  });
+  document.querySelector('.topbtn').insertBefore(demoBtn, document.getElementById('btn-export'));
+
+  document.getElementById('kanban').addEventListener('click', function(ev) {
+    var act = ev.target.getAttribute && ev.target.getAttribute('data-act');
+    var uid = ev.target.getAttribute && ev.target.getAttribute('data-uid');
+    if (!act || !uid) return;
+    var rec = plan.filter(function(p) { return p.uid === uid; })[0];
+    if (!rec) return;
+    if (act === 'draft') rec.state = 'drafted';
+    else if (act === 'publish') rec.state = 'published';
+    else if (act === 'del') { if (!confirm('删除这条计划？')) return; plan = plan.filter(function(p) { return p.uid !== uid; }); }
+    savePlan(plan); renderAll();
+  });
+
+  document.getElementById('kanban').addEventListener('change', function(ev) {
+    var m = ev.target.getAttribute && ev.target.getAttribute('data-m');
+    var uid = ev.target.getAttribute && ev.target.getAttribute('data-uid');
+    if (!m || !uid) return;
+    var rec = plan.filter(function(p) { return p.uid === uid; })[0];
+    if (!rec) return;
+    if (!rec.metrics) rec.metrics = { views: 0, likes: 0, collects: 0, fans: 0 };
+    rec.metrics[m] = Number(ev.target.value) || 0;
+    savePlan(plan); renderPerf(); renderBrief();
+  });
+
+  document.getElementById('btn-ai-comment').addEventListener('click', async function() {
+    var box = document.getElementById('ai-box');
+    box.innerHTML = '<div class="ai-out">🤖 正在点评…</div>';
+    try {
+      var b = generateBriefing(pool, plan, new Date().toISOString().slice(0, 10));
+      var text = await callChat([
+        { role: 'system', content: '你是内容运营教练。基于给定的客观数据做点评，不编造数据。只输出 JSON。' },
+        { role: 'user', content: '内容周报数据：' + JSON.stringify({ funnel: b.funnel, perf: anglePerf(plan), advice: b.perf.text, actions: b.actions }) + '。请用 120 字内给博主一段点评（先说做得好的，再说最该改的一件事，语气像教练不像 AI）。严格输出 JSON：{"comment":"..."}' }
+      ]);
+      var obj = JSON.parse((text.match(/\{[\s\S]*\}/) || [text])[0]);
+      box.innerHTML = '<div class="ai-out">🤖 ' + esc(obj.comment || text) + '</div>';
+    } catch (e) {
+      box.innerHTML = '<div class="ai-out">❌ ' + esc(e.message) + '</div>';
+    }
+  });
+
+  document.getElementById('btn-export').addEventListener('click', function() {
+    navigator.clipboard.writeText(exportBrief());
+    status('📋 周报已复制。');
+  });
+
+  var drawer = document.getElementById('drawer-api');
+  document.getElementById('btn-settings').addEventListener('click', function() {
+    var cfg = loadApiConfig();
+    document.getElementById('api-provider').value = cfg.provider || 'zhipu';
+    document.getElementById('api-key').value = cfg.key || '';
+    document.getElementById('api-model').value = cfg.model || '';
+    document.getElementById('api-base').value = cfg.base || '';
+    drawer.style.display = 'flex';
+  });
+  document.getElementById('api-cancel').addEventListener('click', function() { drawer.style.display = 'none'; });
+  drawer.addEventListener('click', function(ev) { if (ev.target === drawer) drawer.style.display = 'none'; });
+  document.getElementById('api-save').addEventListener('click', function() {
+    localStorage.setItem('cw_api', JSON.stringify({
+      provider: document.getElementById('api-provider').value,
+      key: document.getElementById('api-key').value.trim(),
+      model: document.getElementById('api-model').value.trim(),
+      base: document.getElementById('api-base').value.trim()
+    }));
+    drawer.style.display = 'none';
+  });
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}
+</script>
+</body>
+</html>

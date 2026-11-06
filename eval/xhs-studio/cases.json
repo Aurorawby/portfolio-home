@@ -1,0 +1,27 @@
+{
+  "note": "确定性回归用例：脚本校验引擎（结构完整性 7 项 + 违禁词扫描）与手工判定一致。基线 = 精写示例（bot 形态，必须 100% 过自家体检）。",
+  "baseline": {
+    "form": "bot",
+    "script": {
+      "cover": "「不许内耗」bot 上线了",
+      "pages": [
+        { "title": "P1 · 人设卡", "lines": ["我是「不许内耗」bot", "职责：专治深夜 emo 反刍", "语气：毒舌但站在你这边"] },
+        { "title": "P2", "lines": ["「先止损再评理：他甩过来的锅，你现在接了吗？」", "「没接住就说没接住，接了就谈分工——情绪最后处理」"] },
+        { "title": "P3", "lines": ["「你不是在想他，你是在等一个不确定的奖励」", "「把手机扣桌上，这个 bot 替你等」"] },
+        { "title": "P4", "lines": ["「一无是处是个结论，不是事实」", "「列三件今天完成的事给我」"] },
+        { "title": "P5", "lines": ["「不会。但会有所不同」", "「不同的东西多了，就好了」"] }
+      ],
+      "body": "最近戒掉了深夜胡思乱想的习惯——造了一个「不许内耗」bot，把绕圈圈的问题丢给它。它不太温柔，但每次都把我从情绪里捞回事实层面。挑了几条最有共鸣的回复放在内页。不构成心理咨询建议。",
+      "tags": ["#反内耗", "#情绪管理", "#打工人日常", "#自我成长", "#嘴替"],
+      "comments": ["【置顶】把问题打在评论区，编号回复。", "【预埋】P5 那句截图了。", "【预埋】求拖延 bot。"],
+      "publish": { "best_time": "周日 21:00", "strategy": "发布后 1 小时内自评引导" }
+    },
+    "expect": { "completeness": 100, "issueCount": 0 }
+  },
+  "mutants": [
+    { "id": "m1", "note": "内页删到 3 页（低于 min 5）", "mutate": "pages_to_3", "expectContains": "内页 3 页", "expectLevel": "struct" },
+    { "id": "m2", "note": "封面拉长到 20+ 字", "mutate": "cover_long", "expectContains": "封面", "expectLevel": "struct" },
+    { "id": "m3", "note": "正文插入违禁词「全网最强」", "mutate": "body_risk", "expectContains": "全网最", "expectLevel": "limit" },
+    { "id": "m4", "note": "删除 publish 策略", "mutate": "publish_null", "expectContains": "缺少发布策略", "expectLevel": "struct" }
+  ]
+}

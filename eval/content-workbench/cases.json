@@ -1,0 +1,160 @@
+{
+  "note": "确定性回归用例：简报引擎的漏斗、类型聚合、建议触发与手工计算一致（回归测试）。",
+  "pool_empty": [],
+  "pool_demo": [
+    {
+      "title": "选题A",
+      "angle": "数字清单",
+      "state": "todo",
+      "scores": {
+        "_total": 68
+      }
+    },
+    {
+      "title": "选题B",
+      "angle": "身份代入",
+      "state": "done",
+      "scores": {
+        "_total": 50
+      }
+    },
+    {
+      "title": "选题C",
+      "angle": "反差冲突",
+      "state": "drop",
+      "scores": {
+        "_total": 70
+      }
+    }
+  ],
+  "plan_demo": [
+    {
+      "uid": "1",
+      "title": "文一",
+      "angle": "数字清单",
+      "state": "published",
+      "metrics": {
+        "views": 4200,
+        "likes": 86,
+        "collects": 210,
+        "fans": 32
+      }
+    },
+    {
+      "uid": "2",
+      "title": "文二",
+      "angle": "数字清单",
+      "state": "published",
+      "metrics": {
+        "views": 6800,
+        "likes": 130,
+        "collects": 340,
+        "fans": 51
+      }
+    },
+    {
+      "uid": "3",
+      "title": "文三",
+      "angle": "数字清单",
+      "state": "published",
+      "metrics": {
+        "views": 5000,
+        "likes": 90,
+        "collects": 0,
+        "fans": 0
+      }
+    },
+    {
+      "uid": "4",
+      "title": "文四",
+      "angle": "身份代入",
+      "state": "published",
+      "metrics": {
+        "views": 900,
+        "likes": 10,
+        "collects": 0,
+        "fans": 0
+      }
+    },
+    {
+      "uid": "5",
+      "title": "文五",
+      "angle": "身份代入",
+      "state": "drafted",
+      "metrics": null
+    },
+    {
+      "uid": "6",
+      "title": "文六",
+      "angle": "反差冲突",
+      "state": "published",
+      "metrics": {
+        "views": 0,
+        "likes": 0,
+        "collects": 0,
+        "fans": 0
+      }
+    },
+    {
+      "uid": "7",
+      "title": "文七（本周新增，还没起草）",
+      "angle": "资源盘点",
+      "state": "planned",
+      "metrics": null
+    }
+  ],
+  "expected": {
+    "funnel": {
+      "ideas": 2,
+      "planned": 7,
+      "drafted": 6,
+      "published": 5,
+      "withData": 4
+    },
+    "anglePerf": {
+      "数字清单": {
+        "n": 3,
+        "avgViews": 5333,
+        "avgLikes": 102
+      },
+      "身份代入": {
+        "n": 1,
+        "avgViews": 900,
+        "avgLikes": 10
+      }
+    },
+    "advice_nodata": "每类选题的有效样本都 <3",
+    "advice_ok_contains": [
+      "数字清单",
+      "5333",
+      "下周值得多排",
+      "身份代入"
+    ]
+  },
+  "brief_cases": [
+    {
+      "id": "b1",
+      "pool": [],
+      "plan": [],
+      "expectContains": "选题雷达的选题池是空的"
+    },
+    {
+      "id": "b2",
+      "pool": "pool_demo",
+      "plan": "plan_demo",
+      "expectContains": "还有 1 条只在了计划里没起草"
+    },
+    {
+      "id": "b3",
+      "pool": "pool_demo",
+      "plan": "plan_demo",
+      "expectContains": "没填数据"
+    },
+    {
+      "id": "b4",
+      "pool": "pool_demo",
+      "plan": "plan_demo",
+      "expectContains": "已果断弃掉 1 条"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "note": "确定性回归用例：Markdown 解析、内联样式渲染、违禁词命中与手工判定一致（回归测试）。",
+  "parse": [
+    {
+      "id": "m1",
+      "md": "# 大标题\n\n正文 **加粗** 结束\n- 项目一\n- 项目二\n> 引用一句\n---",
+      "expectTypes": [
+        "h1",
+        "p",
+        "ul",
+        "quote",
+        "hr"
+      ],
+      "expectTexts": {
+        "h1": "大标题",
+        "p": "正文 **加粗** 结束",
+        "ul_len": 2,
+        "quote": "引用一句"
+      }
+    },
+    {
+      "id": "m2",
+      "md": "## 二级\n1. 第一步\n2. 第二步",
+      "expectTypes": [
+        "h2",
+        "ol"
+      ],
+      "expectTexts": {
+        "h2": "二级",
+        "ol_len": 2
+      }
+    },
+    {
+      "id": "m3",
+      "md": "普通段落没有格式",
+      "expectTypes": [
+        "p"
+      ],
+      "expectTexts": {
+        "p": "普通段落没有格式"
+      }
+    }
+  ],
+  "words": [
+    {
+      "id": "w1",
+      "md": "# 标题\n\n正文两行内容\n第二行",
+      "expect": 9
+    }
+  ],
+  "risks": [
+    {
+      "id": "r1",
+      "text": "全网最好的面霜，绝对值得买",
+      "expect": [
+        "全网最",
+        "绝对"
+      ]
+    },
+    {
+      "id": "r2",
+      "text": "私信我领取完整清单",
+      "expect": [
+        "私信我"
+      ]
+    },
+    {
+      "id": "r3",
+      "text": "第一次去迪士尼的攻略",
+      "expect": []
+    }
+  ],
+  "render": [
+    {
+      "id": "v1",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "hello **世界**"
+        }
+      ],
+      "theme": "warm",
+      "expectContains": [
+        "font-size:15px",
+        "<strong",
+        "#ff7a45"
+      ]
+    },
+    {
+      "id": "v2",
+      "blocks": [
+        {
+          "type": "h2",
+          "text": "小节"
+        }
+      ],
+      "theme": "mono",
+      "expectContains": [
+        "border-left:4px solid #1f1b16"
+      ]
+    },
+    {
+      "id": "v3",
+      "blocks": [
+        {
+          "type": "p",
+          "text": "x"
+        }
+      ],
+      "theme": "tech",
+      "expectContains": [
+        "font-size:15px"
+      ]
+    }
+  ]
+}

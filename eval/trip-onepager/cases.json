@@ -1,0 +1,52 @@
+{
+  "note": "确定性回归用例：攻略解析（天数/条目/类型/花费）与诊断触发与手工标注一致（回归测试）。手算对照：Day1=故宫(60)+王府井+烤鸭(150)+汉庭(400)=610 元；Day2=颐和园(30)+南锣鼓巷+炸酱面(30)+天坛(15)+什刹海(other)+烟袋斜街=75 元。",
+  "parse": [
+    {
+      "id": "p1",
+      "note": "标准双日攻略：Day1 4 条（2 景点+1 餐+1 住，610 元）；Day2 6 条（4 景点+1 餐+1 other，75 元）",
+      "md": "Day 1\n📍 故宫博物院\n门票 60 元，提前 7 天预约\n📍 王府井步行街\n晚餐：四季民福烤鸭 人均 150 元\n住宿：王府井附近汉庭 400 元\nDay 2\n📍 颐和园\n门票 30 元\n📍 南锣鼓巷\n午餐：方砖厂 69 号炸酱面 人均 30 元\n📍 天坛公园\n门票 15 元\n📍 什刹海\n📍 烟袋斜街",
+      "days": 2,
+      "expect": {
+        "dayCount": 2,
+        "day1": { "n": 4, "attraction": 2, "meal": 1, "stay": 1, "cost": 610, "firstNote": "门票 60 元，提前 7 天预约" },
+        "day2": { "n": 6, "attraction": 4, "meal": 1, "other": 1, "cost": 75 },
+        "totalCost": 685,
+        "diagCount": 1,
+        "diagContains": "排了 4 个景点"
+      }
+    },
+    {
+      "id": "p2",
+      "note": "无 Day 标记：全部进 Day 1",
+      "md": "📍 A 景点\n📍 B 公园",
+      "days": 3,
+      "expect": { "dayCount": 1, "day1n": 2 }
+    }
+  ],
+  "diagnose": [
+    {
+      "id": "d1",
+      "note": "5 个景点无餐：触发偏满 warn + 漏吃饭 bad（大栅栏会进 other，故用词根确定的景点名）",
+      "md": "Day 1\n📍 故宫\n📍 长城\n📍 北海公园\n📍 天安门广场\n📍 颐和园",
+      "days": 1,
+      "expect": [
+        { "level": "warn", "contains": "排了 5 个景点" },
+        { "level": "bad", "contains": "一顿饭都没排" }
+      ]
+    },
+    {
+      "id": "d2",
+      "note": "Day 2 超出设定天数 1",
+      "md": "Day 1\n📍 故宫\nDay 2\n📍 长城",
+      "days": 1,
+      "expect": [{ "level": "warn", "contains": "超出了设定的 1 天" }]
+    },
+    {
+      "id": "d3",
+      "note": "单日 1 景点 1 餐：全部通过",
+      "md": "Day 1\n📍 故宫博物院\n门票 60 元\n午餐：全聚德 人均 120 元",
+      "days": 1,
+      "expect": [{ "level": "ok", "contains": "结构体检通过" }]
+    }
+  ]
+}

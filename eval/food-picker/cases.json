@@ -1,0 +1,26 @@
+{
+  "note": "确定性回归用例：硬约束过滤、加权排序、tie-break 与手工计算一致（回归测试）。手算对照：权重 {taste:3,dist:2,budget:2,queue:1} 归一化后 sum=8；巷子口=34/8=4.25、沙县=31/8=3.875→round 3.88、食堂=33/8=4.125→round 4.13。",
+  "candidates": [
+    { "name": "巷子口重庆小面", "price": 28, "taste": 4, "dist": 5, "budget": 5, "queue": 2, "tags": ["辣"] },
+    { "name": "三里屯日料放题", "price": 180, "taste": 5, "dist": 2, "budget": 2, "queue": 2, "tags": [] },
+    { "name": "楼下沙县小吃", "price": 20, "taste": 2, "dist": 5, "budget": 5, "queue": 5, "tags": [] },
+    { "name": "老王家常菜", "price": 65, "taste": 4, "dist": 4, "budget": 4, "queue": 4, "tags": ["香菜"] },
+    { "name": "新开的泰式火锅", "price": 120, "taste": 4, "dist": 3, "budget": 3, "queue": 1, "tags": ["辣"] },
+    { "name": "学校食堂二楼", "price": 15, "taste": 3, "dist": 5, "budget": 5, "queue": 4, "tags": [] }
+  ],
+  "constraints": { "budgetMax": 80, "avoidTags": ["香菜"], "distMin": 0 },
+  "weights": { "taste": 3, "dist": 2, "budget": 2, "queue": 1 },
+  "expected": {
+    "passNames": ["巷子口重庆小面", "楼下沙县小吃", "学校食堂二楼"],
+    "rejectedNames": ["三里屯日料放题", "老王家常菜", "新开的泰式火锅"],
+    "rejectedReasonContains": { "三里屯日料放题": "人均超预算", "老王家常菜": "含忌口「香菜」", "新开的泰式火锅": "人均超预算" },
+    "rankedNames": ["巷子口重庆小面", "学校食堂二楼", "楼下沙县小吃"],
+    "rankedTotals": [4.25, 4.13, 3.88],
+    "winnerName": "巷子口重庆小面",
+    "whyContains": ["顺路", "不排队"]
+  },
+  "edge": {
+    "all_rejected_budget": 10,
+    "zero_weights": { "taste": 0, "dist": 0, "budget": 0, "queue": 0 }
+  }
+}

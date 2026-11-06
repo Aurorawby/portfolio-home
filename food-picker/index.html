@@ -1,0 +1,489 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>吃什么决策器 · 多准则决策，终结选择困难</title>
+<meta name="description" content="把候选餐厅按「想吃度 / 顺路 / 预算 / 排队」打分，调权重、加硬约束（忌口/预算），加权排序直接出结果——PM 的多准则决策矩阵，每天都能用。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --orange:#ff7a45; --orange-soft:#ffe8dc;
+    --red:#d64545; --red-soft:#fde5e5;
+    --green:#12a184; --green-soft:#dcf5ee;
+    --blue:#5b7cfa; --blue-soft:#e4e9ff;
+    --radius:18px; --shadow:0 10px 26px rgba(60,42,20,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--orange-soft),transparent 60%),
+    radial-gradient(800px 420px at 100% 0%,var(--blue-soft),transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 16px 40px}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:50em}
+  .sub b{color:var(--ink)}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#8a5a1f}
+  .topbtn{margin-left:auto;display:flex;gap:8px}
+  button{font-family:inherit;cursor:pointer}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--orange);color:#fff;box-shadow:0 6px 16px rgba(255,122,69,.28)}
+  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
+  section{margin-bottom:26px}
+  h2{font-size:18.5px;margin:0 0 10px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+  input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13.5px;font-family:inherit;background:#fff}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+  .statusline{font-size:13px;color:var(--muted);margin:8px 0;min-height:20px}
+  .statusline.err{color:var(--red);font-weight:600}
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:10px}
+  /* 候选表 */
+  .cand{display:grid;grid-template-columns:1.4fr 60px repeat(4,52px) 1fr 34px;gap:7px;align-items:center;background:#faf6ef;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:12.3px}
+  .cand input{padding:5px 7px;font-size:12.3px;text-align:center}
+  .cand .nm{grid-column:1;text-align:left;font-size:12.8px}
+  .cand .tags{grid-column:8;font-size:11px;color:var(--muted)}
+  .cand .del{border:1.2px solid var(--line);background:#fff;border-radius:7px;padding:4px;font-size:11px}
+  .cand-head{font-size:11px;color:var(--faint);font-weight:700;margin-bottom:4px;display:grid;grid-template-columns:1.4fr 60px repeat(4,52px) 1fr 34px;gap:7px}
+  .weights{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:10px 0}
+  .weights label{margin-bottom:2px}
+  .weights input[type=range]{width:100%;accent-color:var(--orange);padding:0}
+  .wval{font-size:11.5px;color:var(--orange);font-weight:800}
+  /* 结果 */
+  .winner{background:linear-gradient(135deg,var(--orange-soft),#fff);border:2px solid var(--orange);border-radius:16px;padding:20px 22px;text-align:center}
+  .winner .name{font-size:26px;font-weight:800;color:var(--orange)}
+  .winner .why{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.8}
+  .top3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:12px}
+  .t3{background:#faf6ef;border-radius:12px;padding:12px 14px;font-size:12.8px;line-height:1.8}
+  .t3 .rank{font-weight:800;color:var(--orange)}
+  .dbars{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px 16px;margin-top:12px}
+  .dbar{display:grid;grid-template-columns:58px 1fr 26px;gap:6px;align-items:center;font-size:11.5px}
+  .btrack{height:7px;background:#f1e8dc;border-radius:99px;overflow:hidden}
+  .bfill{height:100%;border-radius:99px;background:linear-gradient(90deg,#ffb38a,var(--orange))}
+  .filtered-note{font-size:12.3px;color:var(--red);background:var(--red-soft);border-radius:10px;padding:8px 12px;margin-top:8px}
+  .ai-out{background:#faf6ef;border-radius:10px;padding:12px 14px;font-size:12.8px;line-height:1.9;margin-top:10px;white-space:pre-wrap}
+  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
+  footer a{color:#8a5a1f}
+@media(max-width:640px){
+  .cand-head{display:none}
+  .cand{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:'name name name del' 'price taste dist queue' 'budget tags tags tags';gap:6px}
+  .cand>*{min-width:0}
+  .cand>*:nth-child(1){grid-area:name}
+  .cand>*:nth-child(2){grid-area:price}
+  .cand>*:nth-child(3){grid-area:taste}
+  .cand>*:nth-child(4){grid-area:dist}
+  .cand>*:nth-child(5){grid-area:budget}
+  .cand>*:nth-child(6){grid-area:queue}
+  .cand>*:nth-child(7){grid-area:tags}
+  .cand>*:nth-child(8){grid-area:del}
+}
+</style>
+</head>
+<body>
+<div class="pbar"><div class="pbar-in"><a href="../">← 作品集</a><span class="pbar-sp"></span><b>吃什么决策器</b><span class="pbar-sp"></span><a href="PRD.md">PRD</a></div></div>
+<style>
+.pbar{background:#f7f5f0;border-bottom:1px solid #e7e2d9;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.pbar-in{max-width:1120px;margin:0 auto;padding:9px 20px;display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.4;color:#6c675f}
+.pbar a{color:#6c675f;text-decoration:none;font-weight:600}
+.pbar a:hover{color:#1f4fd8}
+.pbar b{color:#171614;font-weight:700}
+.pbar-sp{flex:1}
+@media(max-width:640px){.pbar-in{padding:8px 14px;font-size:12px}}
+@media(max-width:640px){
+  .cand-head{display:none}
+  .cand{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:'name name name del' 'price taste dist queue' 'budget tags tags tags';gap:6px}
+  .cand>*{min-width:0}
+  .cand>*:nth-child(1){grid-area:name}
+  .cand>*:nth-child(2){grid-area:price}
+  .cand>*:nth-child(3){grid-area:taste}
+  .cand>*:nth-child(4){grid-area:dist}
+  .cand>*:nth-child(5){grid-area:budget}
+  .cand>*:nth-child(6){grid-area:queue}
+  .cand>*:nth-child(7){grid-area:tags}
+  .cand>*:nth-child(8){grid-area:del}
+}
+</style>
+
+<div class="wrap">
+
+  <h1>🍜 吃什么决策器 <span style="font-size:15px;color:var(--muted);font-weight:600">FoodPicker</span></h1>
+  <p class="sub">「今天吃什么」是全世界最高频的决策难题。解法不是推荐算法，是<b>产品经理的多准则决策矩阵</b>：
+  候选打分（想吃 / 顺路 / 预算 / 排队）→ 加硬约束（忌口 / 预算上限）→ 调权重 → <b>加权排序直接出结果</b>。
+  纠结到最后？把权重拉平，交给🎲天意。</p>
+
+  <div class="topbar">
+    <span class="pill">🔒 数据只存本机</span>
+    <span class="pill">🎲 天意模式终结纠结</span>
+    <span class="pill">🧪 内置演示候选</span>
+    <span class="topbtn">
+      <button class="btn b" id="btn-demo">🧪 装载演示候选</button>
+      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+    </span>
+  </div>
+
+  <section>
+    <div class="card">
+      <h2>① 候选清单（1-5 分，5 最好）</h2>
+      <div class="cand-head"><span>餐厅名</span><span>人均</span><span>想吃</span><span>顺路</span><span>预算合</span><span>不排队</span><span>标签（忌口相关，逗号分隔）</span><span></span></div>
+      <div id="cand-list"></div>
+      <button class="btn b small" id="btn-add">➕ 加一家</button>
+      <div class="statusline" id="cand-status"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>② 今晚的约束与权重</h2>
+      <div class="grid" style="margin-bottom:10px">
+        <div><label>人均预算上限（元，0=不限）</label><input id="f-budget" type="number" min="0" placeholder="100"></div>
+        <div><label>忌口标签（逗号分隔，如：香菜,辣）</label><input id="f-avoid" placeholder="香菜"></div>
+        <div><label>几人</label><input id="f-people" type="number" min="1" value="2"></div>
+        <div><label>顺路度下限（1-5，0=不限）</label><input id="f-distmin" type="number" min="0" max="5" placeholder="0"></div>
+      </div>
+      <div class="weights">
+        <div><label>想吃度权重 <span class="wval" id="w-taste-v">3</span></label><input id="w-taste" type="range" min="0" max="5" value="3"></div>
+        <div><label>顺路权重 <span class="wval" id="w-dist-v">2</span></label><input id="w-dist" type="range" min="0" max="5" value="2"></div>
+        <div><label>预算权重 <span class="wval" id="w-budget-v">2</span></label><input id="w-budget" type="range" min="0" max="5" value="2"></div>
+        <div><label>不排队权重 <span class="wval" id="w-queue-v">1</span></label><input id="w-queue" type="range" min="0" max="5" value="1"></div>
+      </div>
+      <div class="topbar" style="margin:12px 0 0">
+        <button class="btn a" id="btn-decide">🍽 决策！</button>
+        <button class="btn b" id="btn-roulette">🎲 交给天意（等权随机）</button>
+      </div>
+      <div class="statusline" id="decide-status"></div>
+      <div id="result"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>🤖 AI 点菜建议（可选）</h2>
+      <div class="topbar" style="margin:0 0 8px">
+        <button class="btn a" id="btn-order">📝 帮我点菜</button>
+      </div>
+      <div id="ai-box"><div class="note">决策出结果后，可以让 AI 按「人数 + 预算 + 候选类型」生成一版点菜清单——建议仅供参考，口味你说了算。</div></div>
+    </div>
+  </section>
+
+  <footer>
+    📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
+    排序与过滤是确定性计算（可复现评测）· 评分是你的主观输入，垃圾进垃圾出 ·
+    单文件 HTML 可离线使用 · AI 结对编程产出
+  </footer>
+</div>
+
+<!-- AI 设置 -->
+<div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto">
+    <h3 style="margin:0 0 12px;font-size:16px">⚙️ AI 设置（Key 只存本机）</h3>
+    <label>服务商</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="ollama">本地 Ollama（需已启动）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>API Key（Ollama 可留空）</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn b" id="api-cancel">取消</button>
+      <button class="btn a" id="api-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   吃什么决策器 FoodPicker
+   结构：决策引擎（纯函数，可被 eval 提取）→ 候选管理 → 渲染 → AI 点菜
+   过滤与加权排序是确定性计算（多准则决策矩阵），AI 只写点菜建议。
+   ============================================================ */
+
+/* ---------- ① 决策引擎（纯函数，勿加入 DOM 依赖；eval/food-picker 直接调用） ---------- */
+
+var DIMS = ['taste', 'dist', 'budget', 'queue'];
+var DIM_NAMES = { taste: '想吃', dist: '顺路', budget: '预算合', queue: '不排队' };
+
+function filterByConstraints(candidates, constraints) {
+  // constraints: {budgetMax, avoidTags:[], distMin}
+  var filtered = [], rejected = [];
+  candidates.forEach(function(c) {
+    var reasons = [];
+    if (constraints.budgetMax > 0 && (c.price || 0) > constraints.budgetMax) reasons.push('人均超预算');
+    var tags = (c.tags || []).map(function(t) { return String(t).trim(); });
+    (constraints.avoidTags || []).forEach(function(a) {
+      if (a && tags.some(function(t) { return t.indexOf(a) !== -1; })) reasons.push('含忌口「' + a + '」');
+    });
+    if (constraints.distMin > 0 && (c.dist || 0) < constraints.distMin) reasons.push('顺路度低于下限');
+    if (reasons.length) rejected.push({ name: c.name, reason: reasons.join('、') });
+    else filtered.push(c);
+  });
+  return { pass: filtered, rejected: rejected };
+}
+
+function scoreAll(candidates, weights) {
+  // weights: {taste, dist, budget, queue}，0-5 任意值，内部归一
+  var sum = DIMS.reduce(function(s, d) { return s + (weights[d] || 0); }, 0);
+  var w = {};
+  DIMS.forEach(function(d) { w[d] = sum > 0 ? (weights[d] || 0) / sum : 1 / DIMS.length; });
+  return candidates.map(function(c) {
+    var parts = {};
+    var total = 0;
+    DIMS.forEach(function(d) {
+      var v = Number(c[d]) || 0;
+      parts[d] = v;
+      total += v * w[d];
+    });
+    return { name: c.name, price: c.price || 0, tags: c.tags || [], parts: parts, total: Math.round(total * 100) / 100 };
+  }).sort(function(a, b) {
+    if (b.total !== a.total) return b.total - a.total;
+    return (b.parts.queue || 0) - (a.parts.queue || 0); // 并列时：不用排队的优先（tie-break 固定，保证可复现）
+  });
+}
+
+function decide(candidates, constraints, weights) {
+  var f = filterByConstraints(candidates, constraints);
+  var ranked = scoreAll(f.pass, weights);
+  return { pass: f.pass, rejected: f.rejected, ranked: ranked,
+    winner: ranked[0] || null, top3: ranked.slice(0, 3) };
+}
+
+function whyText(winner, weights) {
+  if (!winner) return '';
+  var dimsSorted = DIMS.slice().sort(function(a, b) { return (winner.parts[b] || 0) - (winner.parts[a] || 0); });
+  var best = dimsSorted[0];
+  var worst = dimsSorted[DIMS.length - 1];
+  return '它的「' + DIM_NAMES[best] + '」得分最高（' + winner.parts[best] + '/5），相对短板是「' + DIM_NAMES[worst] + '」（' + winner.parts[worst] + '/5）——权重是你自己拉的，选它不亏。';
+}
+
+function rouletteText(pick) {
+  return '天意选中：' + pick + '。规则是——不许再刷，就去这家。选择困难的治疗方案不是更好的算法，是关闭选项。';
+}
+
+/* ---------- ② 数据 ---------- */
+
+var CAND_KEY = 'fp_cands';
+var DEMO_CANDS = [
+  { name: '巷子口重庆小面', price: 28, taste: 4, dist: 5, budget: 5, queue: 2, tags: ['辣'] },
+  { name: '三里屯日料放题', price: 180, taste: 5, dist: 2, budget: 2, queue: 2, tags: [] },
+  { name: '楼下沙县小吃', price: 20, taste: 2, dist: 5, budget: 5, queue: 5, tags: [] },
+  { name: '老王家常菜', price: 65, taste: 4, dist: 4, budget: 4, queue: 4, tags: ['香菜'] },
+  { name: '新开的泰式火锅', price: 120, taste: 4, dist: 3, budget: 3, queue: 1, tags: ['辣'] },
+  { name: '学校食堂二楼', price: 15, taste: 3, dist: 5, budget: 5, queue: 4, tags: [] }
+];
+
+function loadCands() {
+  try { return JSON.parse(localStorage.getItem(CAND_KEY) || 'null') || JSON.parse(JSON.stringify(DEMO_CANDS)); }
+  catch (e) { return JSON.parse(JSON.stringify(DEMO_CANDS)); }
+}
+function saveCands(c) { localStorage.setItem(CAND_KEY, JSON.stringify(c)); }
+
+var cands = loadCands();
+
+/* ---------- ③ AI 层 ---------- */
+
+var PROVIDERS = {
+  zhipu:    { base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash' },
+  deepseek: { base: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
+  moonshot: { base: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k' },
+  ollama:   { base: 'http://localhost:11434/v1/chat/completions', model: 'qwen2.5:7b' },
+  custom:   { base: '', model: '' }
+};
+function loadApiConfig() { try { return JSON.parse(localStorage.getItem('fp_api') || '{}'); } catch (e) { return {}; } }
+async function callChat(messages, maxTokens) {
+  var cfg = loadApiConfig();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.model || provider.model;
+  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({ model: model, messages: messages, temperature: 0.7, max_tokens: maxTokens || 700 })
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+    throw new Error('接口返回 ' + res.status + '：' + detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+
+/* ---------- ④ 渲染 ---------- */
+
+function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function renderCands() {
+  document.getElementById('cand-list').innerHTML = cands.map(function(c, i) {
+    return '<div class="cand">'
+      + '<input class="nm" data-i="' + i + '" data-f="name" value="' + esc(c.name) + '">'
+      + '<input data-i="' + i + '" data-f="price" type="number" value="' + (c.price || '') + '" placeholder="人均">'
+      + '<input data-i="' + i + '" data-f="taste" type="number" min="1" max="5" value="' + (c.taste || 3) + '">'
+      + '<input data-i="' + i + '" data-f="dist" type="number" min="1" max="5" value="' + (c.dist || 3) + '">'
+      + '<input data-i="' + i + '" data-f="budget" type="number" min="1" max="5" value="' + (c.budget || 3) + '">'
+      + '<input data-i="' + i + '" data-f="queue" type="number" min="1" max="5" value="' + (c.queue || 3) + '">'
+      + '<input data-i="' + i + '" data-f="tags" value="' + esc((c.tags || []).join(',')) + '" placeholder="辣,香菜">'
+      + '<button class="del" data-del="' + i + '">🗑</button></div>';
+  }).join('');
+}
+
+function renderResult(dec) {
+  var mount = document.getElementById('result');
+  if (!dec.winner) {
+    mount.innerHTML = (dec.rejected.length
+      ? '<div class="filtered-note">候选全被硬约束筛掉了：' + dec.rejected.map(function(r) { return esc(r.name) + '（' + esc(r.reason) + '）'; }).join('；') + '——放宽预算或忌口再来。</div>'
+      : '<div class="filtered-note">没有候选——先加几家。</div>');
+    return;
+  }
+  var w = dec.winner;
+  var rejectedHtml = dec.rejected.length
+    ? '<div class="filtered-note">已按硬约束过滤 ' + dec.rejected.length + ' 家：' + dec.rejected.map(function(r) { return esc(r.name) + '（' + esc(r.reason) + '）'; }).join('；') + '</div>'
+    : '';
+  mount.innerHTML =
+    '<div class="winner"><div style="font-size:13px;color:var(--muted);font-weight:700">今晚就吃</div>'
+    + '<div class="name">' + esc(w.name) + '</div>'
+    + '<div class="why">' + esc(whyText(w)) + '</div></div>'
+    + (rejectedHtml)
+    + '<div class="dbars">' + DIMS.map(function(d) {
+        return '<div class="dbar"><span>' + DIM_NAMES[d] + '</span><div class="btrack"><div class="bfill" style="width:' + (w.parts[d] / 5 * 100) + '%"></div></div><span>' + w.parts[d] + '</span></div>';
+      }).join('') + '</div>'
+    + (dec.top3.length > 1 ? '<div class="top3">' + dec.top3.slice(1).map(function(t, i) {
+        return '<div class="t3"><span class="rank">备选 ' + (i + 1) + '</span><br>' + esc(t.name) + '（综合 ' + t.total + '）</div>';
+      }).join('') + '</div>' : '');
+}
+
+/* ---------- ⑤ 事件 ---------- */
+
+function getConstraints() {
+  return {
+    budgetMax: Number(document.getElementById('f-budget').value) || 0,
+    avoidTags: document.getElementById('f-avoid').value.split(/[,，]/).map(function(s) { return s.trim(); }).filter(Boolean),
+    distMin: Number(document.getElementById('f-distmin').value) || 0
+  };
+}
+
+function getWeights() {
+  return {
+    taste: Number(document.getElementById('w-taste').value),
+    dist: Number(document.getElementById('w-dist').value),
+    budget: Number(document.getElementById('w-budget').value),
+    queue: Number(document.getElementById('w-queue').value)
+  };
+}
+
+function init() {
+  renderCands();
+
+  document.getElementById('cand-list').addEventListener('input', function(ev) {
+    var i = Number(ev.target.getAttribute && ev.target.getAttribute('data-i'));
+    var f = ev.target.getAttribute && ev.target.getAttribute('data-f');
+    if (isNaN(i) || !f) return;
+    if (f === 'name') cands[i].name = ev.target.value;
+    else if (f === 'tags') cands[i].tags = ev.target.value.split(/[,，]/).map(function(s) { return s.trim(); }).filter(Boolean);
+    else cands[i][f] = Number(ev.target.value) || 0;
+    saveCands(cands);
+  });
+  document.getElementById('cand-list').addEventListener('click', function(ev) {
+    var del = ev.target.getAttribute && ev.target.getAttribute('data-del');
+    if (del === null || del === undefined || del === '') return;
+    cands.splice(Number(del), 1);
+    saveCands(cands); renderCands();
+  });
+
+  document.getElementById('btn-add').addEventListener('click', function() {
+    cands.push({ name: '新候选 ' + (cands.length + 1), price: 50, taste: 3, dist: 3, budget: 3, queue: 3, tags: [] });
+    saveCands(cands); renderCands();
+    document.getElementById('cand-status').textContent = '已添加，填好分数再决策。';
+  });
+
+  DIMS.forEach(function(d, idx) {
+    document.getElementById('w-' + d).addEventListener('input', function(ev) {
+      document.getElementById('w-' + d + '-v').textContent = ev.target.value;
+    });
+  });
+
+  document.getElementById('btn-decide').addEventListener('click', function() {
+    if (!cands.length) { document.getElementById('decide-status').textContent = '先加候选。'; return; }
+    var dec = decide(cands, getConstraints(), getWeights());
+    renderResult(dec);
+    document.getElementById('decide-status').textContent = dec.winner
+      ? '🍽 决策完成：' + dec.winner.name + '（综合 ' + dec.winner.total + '）。排序是确定性计算，权重改了结论就会变——这正是它的用途。'
+      : '';
+  });
+
+  document.getElementById('btn-roulette').addEventListener('click', function() {
+    var f = filterByConstraints(cands, getConstraints()).pass;
+    if (!f.length) { document.getElementById('decide-status').textContent = '候选全被约束筛掉了。'; document.getElementById('decide-status').className = 'statusline err'; return; }
+    document.getElementById('decide-status').className = 'statusline';
+    var pick = f[Math.floor(Math.random() * f.length)].name;
+    renderResult({ pass: f, rejected: [], ranked: [], winner: { name: pick, parts: { taste: 0, dist: 0, budget: 0, queue: 0 }, total: 0 }, top3: [] });
+    document.getElementById('result').querySelector('.winner .why').textContent = rouletteText(pick);
+  });
+
+  document.getElementById('btn-demo').addEventListener('click', function() {
+    cands = JSON.parse(JSON.stringify(DEMO_CANDS));
+    saveCands(cands); renderCands();
+    document.getElementById('f-budget').value = 80;
+    document.getElementById('f-avoid').value = '香菜';
+    document.getElementById('decide-status').textContent = '🧪 已装载 6 家演示候选（预算 80 上限 + 忌口香菜已填）。';
+  });
+
+  document.getElementById('btn-order').addEventListener('click', async function() {
+    var box = document.getElementById('ai-box');
+    box.innerHTML = '<div class="ai-out">📝 正在点菜…</div>';
+    try {
+      var people = Number(document.getElementById('f-people').value) || 2;
+      var budgetMax = Number(document.getElementById('f-budget').value) || 0;
+      var dec = decide(cands, getConstraints(), getWeights());
+      var text = await callChat([
+        { role: 'system', content: '你是点菜助手。只输出 JSON，不输出任何其他文字。' },
+        { role: 'user', content: people + ' 人吃饭' + (budgetMax ? '，总人均控制在 ' + budgetMax + ' 元内' : '') + '，忌口：' + (getConstraints().avoidTags.join('、') || '无') + '。推荐餐厅：' + (dec.winner ? dec.winner.name : '未定') + '。请给一版点菜清单（4-6 道，标注大致价格），严格输出 JSON：{"dishes":[{"name":"","price":0}],"note":"一句话"}' }
+      ]);
+      var obj = JSON.parse((text.match(/\{[\s\S]*\}/) || [text])[0]);
+      box.innerHTML = '<div class="ai-out">📝 点菜建议：\n' + (obj.dishes || []).map(function(d) { return '· ' + d.name + '（约 ' + d.price + ' 元）'; }).join('\n') + '\n' + (obj.note || '') + '\n——建议仅供参考，口味你说了算。</div>';
+    } catch (e) {
+      box.innerHTML = '<div class="ai-out">❌ ' + esc(e.message) + '</div>';
+    }
+  });
+
+  var drawer = document.getElementById('drawer-api');
+  document.getElementById('btn-settings').addEventListener('click', function() {
+    var cfg = loadApiConfig();
+    document.getElementById('api-provider').value = cfg.provider || 'zhipu';
+    document.getElementById('api-key').value = cfg.key || '';
+    document.getElementById('api-model').value = cfg.model || '';
+    document.getElementById('api-base').value = cfg.base || '';
+    drawer.style.display = 'flex';
+  });
+  document.getElementById('api-cancel').addEventListener('click', function() { drawer.style.display = 'none'; });
+  drawer.addEventListener('click', function(ev) { if (ev.target === drawer) drawer.style.display = 'none'; });
+  document.getElementById('api-save').addEventListener('click', function() {
+    localStorage.setItem('fp_api', JSON.stringify({
+      provider: document.getElementById('api-provider').value,
+      key: document.getElementById('api-key').value.trim(),
+      model: document.getElementById('api-model').value.trim(),
+      base: document.getElementById('api-base').value.trim()
+    }));
+    drawer.style.display = 'none';
+  });
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}
+</script>
+</body>
+</html>
+

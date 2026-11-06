@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公众号排版器 · Markdown 一键成稿</title>
+<meta name="description" content="Markdown 转公众号可直接粘贴的内联样式 HTML，自带违禁词体检与字数提醒。解析与体检由代码完成，可复现。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --orange:#ff7a45; --orange-soft:#ffe8dc;
+    --purple:#7c3aed; --purple-soft:#f0e4ff;
+    --blue:#5b7cfa; --blue-soft:#e4e9ff;
+    --green:#12a184; --green-soft:#dcf5ee;
+    --red:#d64545; --red-soft:#fde5e5;
+    --radius:18px; --shadow:0 10px 26px rgba(60,42,20,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--blue-soft),transparent 60%),
+    radial-gradient(800px 420px at 100% 0%,var(--orange-soft),transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 16px 40px}
+  .wrap{max-width:1100px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:50em}
+  .sub b{color:var(--ink)}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#8a5a1f}
+  .topbtn{margin-left:auto;display:flex;gap:8px}
+  button{font-family:inherit;cursor:pointer}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--orange);color:#fff;box-shadow:0 6px 16px rgba(255,122,69,.28)}
+  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
+  section{margin-bottom:26px}
+  h2{font-size:18.5px;margin:0 0 10px}
+  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+  textarea,select,input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;background:#fff}
+  textarea{min-height:340px;resize:vertical;line-height:1.9;font-size:13.5px;font-family:Consolas,"Microsoft YaHei",monospace}
+  .statusline{font-size:13px;color:var(--muted);margin:8px 0;min-height:20px}
+  .statusline.err{color:var(--red);font-weight:600}
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:10px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:900px){.cols{grid-template-columns:1fr}}
+  /* 体检 */
+  .risk{border-radius:10px;padding:9px 12px;font-size:12.8px;margin-bottom:7px;line-height:1.75}
+  .risk.limit{background:var(--red-soft);color:#b03030}
+  .risk.efficacy{background:#fff3e0;color:#92600a}
+  .risk.spam{background:var(--blue-soft);color:#3b5bdb}
+  .risk.shadow{background:#f1e8dc;color:var(--muted)}
+  .risk b{font-weight:800}
+  .stats-row{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin:8px 0}
+  .stats-row b{color:var(--ink)}
+  .ok-badge{background:var(--green-soft);color:#0b6b52;border-radius:999px;padding:2px 11px;font-size:12px;font-weight:700}
+  .bad-badge{background:var(--red-soft);color:#b03030;border-radius:999px;padding:2px 11px;font-size:12px;font-weight:700}
+  /* 预览 */
+  .preview{background:#fff;border-radius:12px;border:1.5px solid var(--line);padding:26px 28px;max-height:560px;overflow:auto}
+  .ai-out{background:#faf6ef;border-radius:10px;padding:12px 14px;font-size:12.8px;line-height:1.9;margin-top:10px;white-space:pre-wrap}
+  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
+  footer a{color:#8a5a1f}
+</style>
+</head>
+<body>
+<div class="pbar"><div class="pbar-in"><a href="../">← 作品集</a><span class="pbar-sp"></span><b>公众号排版器</b><span class="pbar-sp"></span><a href="PRD.md">PRD</a></div></div>
+<style>
+.pbar{background:#f7f5f0;border-bottom:1px solid #e7e2d9;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.pbar-in{max-width:1120px;margin:0 auto;padding:9px 20px;display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.4;color:#6c675f}
+.pbar a{color:#6c675f;text-decoration:none;font-weight:600}
+.pbar a:hover{color:#1f4fd8}
+.pbar b{color:#171614;font-weight:700}
+.pbar-sp{flex:1}
+@media(max-width:640px){.pbar-in{padding:8px 14px;font-size:12px}}
+</style>
+
+<div class="wrap">
+
+  <h1>📰 公众号排版器 <span style="font-size:15px;color:var(--muted);font-weight:600">MpFormatter</span></h1>
+  <p class="sub">公众号链路的最后一公里：左边写 <b>Markdown</b>，右边实时变成<b>公众号后台可直接粘贴的内联样式 HTML</b>——
+  解析、主题、违禁词体检、字数提醒全部由代码完成（可复现），AI 只写导语和备选标题。</p>
+
+  <div class="topbar">
+    <span class="pill">🩺 违禁词体检离线可用</span>
+    <span class="pill">📋 富文本一键复制</span>
+    <span class="pill">🧪 内置演示文章</span>
+    <span class="topbtn">
+      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+    </span>
+  </div>
+
+  <section>
+    <div class="cols">
+      <div>
+        <h2>✍️ Markdown 原稿</h2>
+        <div class="topbar" style="margin:0 0 8px">
+          <label style="margin:0 8px 0 0">主题</label>
+          <select id="fmt-theme" style="width:150px">
+            <option value="warm">暖橙（默认）</option>
+            <option value="mono">黑白极简</option>
+            <option value="tech">蓝色科技</option>
+          </select>
+        </div>
+        <textarea id="md-in" placeholder="# 标题&#10;&#10;正文 **加粗**、*斜体*、`代码`&#10;&#10;- 列表项&#10;> 引用&#10;---"></textarea>
+        <div class="topbar" style="margin:10px 0 0">
+          <button class="btn a" id="btn-render">🔄 渲染 + 体检</button>
+          <button class="btn b" id="btn-demo">🧪 装载演示文章</button>
+          <button class="btn b" id="btn-titles">🅰 AI 备选标题</button>
+        </div>
+        <div class="statusline" id="fmt-status"></div>
+        <div id="risk-box"></div>
+      </div>
+      <div>
+        <h2>👀 公众号预览（所见即所粘）</h2>
+        <div class="preview" id="preview"><p style="color:#bbb;font-size:13px">左侧输入后自动渲染。</p></div>
+        <div class="topbar" style="margin-top:10px">
+          <button class="btn a" id="btn-copy-rich">📋 复制到公众号（富文本）</button>
+          <button class="btn b" id="btn-copy-html">复制 HTML 源码</button>
+          <button class="btn b" id="btn-lede">🧾 AI 写导语</button>
+        </div>
+        <div id="ai-box"></div>
+        <div class="note">复制后到公众号后台编辑器直接 <b>Ctrl+V</b>，样式随粘贴保留（图片请用公众号后台上传——外链图会被微信拦截，本文不做假承诺）。</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
+    解析器是手写确定性实现（不依赖外部库，可复现评测）· 违禁词覆盖常见风险词，<b>不替代平台审核</b> ·
+    单文件 HTML 可离线使用 · AI 结对编程产出
+  </footer>
+</div>
+
+<!-- AI 设置 -->
+<div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto">
+    <h3 style="margin:0 0 12px;font-size:16px">⚙️ AI 设置（Key 只存本机）</h3>
+    <label>服务商</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="ollama">本地 Ollama（需已启动）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>API Key（Ollama 可留空）</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn b" id="api-cancel">取消</button>
+      <button class="btn a" id="api-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   公众号排版器 MpFormatter
+   结构：Markdown 解析器（纯函数，可被 eval 提取）→ 内联样式渲染 →
+        违禁词体检（与笔记工坊同源词典）→ AI（导语/标题）
+   解析与体检全部由代码完成，可复现、可评测。
+   ============================================================ */
+
+/* ---------- ① Markdown 解析器（纯函数，勿加入 DOM 依赖；eval/mp-formatter 直接调用） ---------- */
+
+function inlineSpans(text) {
+  // 处理 **粗体** / *斜体* / `代码`，返回 [{t:'text'|'bold'|'italic'|'code', s}]
+  var out = [];
+  var re = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
+  var parts = String(text || '').split(re);
+  parts.forEach(function(part) {
+    if (!part) return;
+    if (part.indexOf('**') === 0 && part.lastIndexOf('**') === part.length - 2 && part.length > 4) out.push({ t: 'bold', s: part.slice(2, -2) });
+    else if (part.indexOf('*') === 0 && part.lastIndexOf('*') === part.length - 1 && part.length > 2) out.push({ t: 'italic', s: part.slice(1, -1) });
+    else if (part.indexOf('`') === 0 && part.lastIndexOf('`') === part.length - 1 && part.length > 2) out.push({ t: 'code', s: part.slice(1, -1) });
+    else out.push({ t: 'text', s: part });
+  });
+  return out;
+}
+
+function parseMd(md) {
+  // 逐行状态机 → blocks
+  var lines = String(md || '').replace(/\r\n/g, '\n').split('\n');
+  var blocks = [];
+  var para = [], list = null; // list: {type:'ul'|'ol', items:[]}
+  function flushPara() {
+    if (para.length) { blocks.push({ type: 'p', text: para.join(' ') }); para = []; }
+  }
+  function flushList() {
+    if (list) { blocks.push(list); list = null; }
+  }
+  lines.forEach(function(raw) {
+    var line = raw.trim();
+    if (!line) { flushPara(); flushList(); return; }
+    var h = line.match(/^(#{1,4})\s+(.+)$/);
+    if (h) { flushPara(); flushList(); blocks.push({ type: 'h' + Math.min(4, h[1].length), text: h[2].trim() }); return; }
+    if (/^(---+|\*\*\*+)$/.test(line)) { flushPara(); flushList(); blocks.push({ type: 'hr' }); return; }
+    if (line.indexOf('> ') === 0 || line === '>') { flushPara(); flushList(); blocks.push({ type: 'quote', text: line.replace(/^>\s?/, '') }); return; }
+    var ul = line.match(/^[-*+]\s+(.+)$/);
+    if (ul) { flushPara(); if (!list || list.type !== 'ul') { flushList(); list = { type: 'ul', items: [] }; } list.items.push(ul[1]); return; }
+    var ol = line.match(/^\d+[.、)]\s+(.+)$/);
+    if (ol) { flushPara(); if (!list || list.type !== 'ol') { flushList(); list = { type: 'ol', items: [] }; } list.items.push(ol[1]); return; }
+    flushList();
+    para.push(line);
+  });
+  flushPara(); flushList();
+  return blocks;
+}
+
+function countWords(blocks) {
+  var n = 0;
+  blocks.forEach(function(b) {
+    if (b.type === 'p' || b.type === 'quote') n += b.text.replace(/\s/g, '').length;
+    if (b.type === 'ul' || b.type === 'ol') b.items.forEach(function(x) { n += x.replace(/\s/g, '').length; });
+  });
+  return n;
+}
+
+/* ---------- ② 违禁词体检（与笔记工坊同源词典，供长文自检） ---------- */
+
+var RISK_CATS = [
+  { cat: 'limit', catName: '极限词（广告法风险）', advice: '改成主观、可证伪的表达，或注明「个人体验，仅供参考」。',
+    words: ['最好用', '最佳', '最优', '最强', '最有效', '最便宜', '最划算', '全网最', '排名第一', '销量第一', '行业第一', '全网第一', '第一名', '顶级', '顶尖', '极致', '绝无仅有', '史上', '国家级', '世界级', '冠军', '首个', '首款', '首选', '万能', '100%', '百分百', '绝对'] },
+  { cat: 'efficacy', catName: '功效 / 医疗宣称', advice: '删掉功效词只讲使用感受，或注明「官方宣称，未做个人验证」。',
+    words: ['治疗', '治好', '根治', '治愈', '消炎', '杀菌', '抗衰', '抗老', '抗皱', '祛疤', '祛痘', '祛斑', '生发', '防脱', '瘦身', '减肥', '美白', '药用', '医用', '医美级'] },
+  { cat: 'spam', catName: '诱导互动 / 站外引流', advice: '换成平台允许的说法（「评论区聊聊」），不放微信 / 二维码 / 外链。',
+    words: ['私信我', '私信领取', '加微信', '加V', '加v', '+V', '+v', '扫码', '点击链接', '点链接', '关注领取', '关注后领', '点赞过千', '评论区留邮箱', '评论区留vx', '代购', '刷单', '假一赔十'] }
+];
+
+function checkRisks(text) {
+  var violations = [];
+  RISK_CATS.forEach(function(group) {
+    group.words.forEach(function(word) {
+      if (String(text).indexOf(word) !== -1) violations.push({ word: word, cat: group.cat, catName: group.catName, advice: group.advice });
+    });
+  });
+  return violations;
+}
+
+/* ---------- ③ 渲染（内联样式，公众号可粘贴） ---------- */
+
+var THEMES = {
+  warm:  { accent: '#ff7a45', text: '#3f3f3f', quoteBg: '#fff7f2' },
+  mono:  { accent: '#1f1b16', text: '#3f3f3f', quoteBg: '#f5f5f5' },
+  tech:  { accent: '#5b7cfa', text: '#3f3f3f', quoteBg: '#f2f5ff' }
+};
+
+function spansToHtml(spans, theme) {
+  return spans.map(function(sp) {
+    if (sp.t === 'bold') return '<strong style="color:' + theme.accent + ';font-weight:bold">' + esc(sp.s) + '</strong>';
+    if (sp.t === 'italic') return '<em style="font-style:italic">' + esc(sp.s) + '</em>';
+    if (sp.t === 'code') return '<code style="background:#f2f2f2;padding:2px 6px;border-radius:3px;font-size:14px;color:#c7254e">' + esc(sp.s) + '</code>';
+    return esc(sp.s);
+  }).join('');
+}
+
+function renderHtml(blocks, themeName) {
+  var theme = THEMES[themeName] || THEMES.warm;
+  var out = [];
+  blocks.forEach(function(b) {
+    if (b.type === 'h1') out.push('<h1 style="font-size:21px;font-weight:bold;text-align:center;margin:30px 0 18px;color:' + theme.text + '">' + esc(b.text) + '</h1>');
+    else if (b.type === 'h2') out.push('<h2 style="font-size:17.5px;font-weight:bold;margin:28px 0 14px;padding-left:10px;border-left:4px solid ' + theme.accent + ';color:' + theme.text + '">' + esc(b.text) + '</h2>');
+    else if (b.type === 'h3' || b.type === 'h4') out.push('<h3 style="font-size:16px;font-weight:bold;margin:22px 0 12px;color:' + theme.text + '">' + esc(b.text) + '</h3>');
+    else if (b.type === 'hr') out.push('<hr style="border:none;border-top:1px dashed #ddd;margin:26px 0">');
+    else if (b.type === 'quote') out.push('<blockquote style="border-left:3px solid ' + theme.accent + ';background:' + theme.quoteBg + ';padding:10px 14px;margin:0 0 16px;font-size:14px;color:#7a7268;line-height:1.9">' + spansToHtml(inlineSpans(b.text), theme) + '</blockquote>');
+    else if (b.type === 'ul' || b.type === 'ol') {
+      var tag = b.type;
+      out.push('<' + tag + ' style="margin:0 0 16px;padding-left:22px;font-size:15px;line-height:2;color:' + theme.text + '">'
+        + b.items.map(function(x) { return '<li style="margin-bottom:6px">' + spansToHtml(inlineSpans(x), theme) + '</li>'; }).join('')
+        + '</' + tag + '>');
+    }
+    else out.push('<p style="font-size:15px;line-height:2;color:' + theme.text + ';margin:0 0 16px;letter-spacing:.5px">' + spansToHtml(inlineSpans(b.text), theme) + '</p>');
+  });
+  return out.join('');
+}
+
+function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+/* ---------- ④ 演示文章 ---------- */
+
+var DEMO_MD = `# 做了 13 个 AI 小产品之后，我学到的事
+
+用 AI 结对编程做了 13 个小产品之后，我最大的收获不是代码，是**对评测的敬畏**。
+我一度以为自己做出了「全网最强」的个人评测体系，结果被自己的数据打了脸。
+
+## 数字会说谎，三种方式
+
+- 噪声：同一主题重跑两次，精度能差 14 个百分点，`+6%` 可能纯属运气
+- 自证：用"是否命中词表"打分，又用词表筛选——指标在测自己
+- 基数：从 2% 涨到 4%，说翻倍没错，但绝对值只涨了 2 个点
+
+> 我把这些负面结果全部写进了开源仓库——能解释自己的失败，比只展示成功更可信。
+
+## 我的解法：三层评测
+
+1. 规则层做回归测试，快但会偏
+2. 模型打分做粗筛，可复现但不能替代人
+3. 人工盲标做金标准——我标了 201 篇
+
+结果？我的真实精度比指标显示的更好。**诚实的代价是数字变难看，回报是数字终于可信。**
+
+---
+
+如果你也在做 AI 产品，欢迎评论区聊聊你的评测方法。`
+
+/* ---------- ⑤ AI 层 ---------- */
+
+var PROVIDERS = {
+  zhipu:    { base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash' },
+  deepseek: { base: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
+  moonshot: { base: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k' },
+  ollama:   { base: 'http://localhost:11434/v1/chat/completions', model: 'qwen2.5:7b' },
+  custom:   { base: '', model: '' }
+};
+function loadApiConfig() { try { return JSON.parse(localStorage.getItem('mf_api') || '{}'); } catch (e) { return {}; } }
+async function callChat(messages, maxTokens) {
+  var cfg = loadApiConfig();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.model || provider.model;
+  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({ model: model, messages: messages, temperature: 0.7, max_tokens: maxTokens || 500 })
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+    throw new Error('接口返回 ' + res.status + '：' + detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+
+/* ---------- ⑥ 事件 ---------- */
+
+var lastBlocks = [], lastHtml = '';
+
+function status(msg, isErr) {
+  var el = document.getElementById('fmt-status');
+  el.textContent = msg || '';
+  el.className = 'statusline' + (isErr ? ' err' : '');
+}
+
+function renderAll() {
+  var md = document.getElementById('md-in').value;
+  var theme = document.getElementById('fmt-theme').value;
+  lastBlocks = parseMd(md);
+  lastHtml = renderHtml(lastBlocks, theme);
+  document.getElementById('preview').innerHTML = lastHtml || '<p style="color:#bbb;font-size:13px">输入为空。</p>';
+
+  var words = countWords(lastBlocks);
+  var wordBadge = (words >= 800 && words <= 3000)
+    ? '<span class="ok-badge">长度健康</span>' : '<span class="bad-badge">偏离 800–3000 常见完读区间</span>';
+  var risks = checkRisks(md);
+  var riskBadge = risks.length ? '<span class="bad-badge">⚠ 违禁词 ' + risks.length + '</span>' : '<span class="ok-badge">✅ 体检通过</span>';
+  document.getElementById('fmt-status').innerHTML =
+    '正文 <b>' + words + '</b> 字 ' + wordBadge + '　' + riskBadge;
+
+  document.getElementById('risk-box').innerHTML = risks.length
+    ? '<div style="margin-top:10px">' + ['limit', 'efficacy', 'spam'].map(function(cat) {
+        var list = risks.filter(function(r) { return r.cat === cat; });
+        if (!list.length) return '';
+        var g = RISK_CATS.filter(function(x) { return x.cat === cat; })[0];
+        return '<div class="risk ' + cat + '"><b>【' + g.catName + '】</b>' + list.map(function(r) { return '<b>' + esc(r.word) + '</b>'; }).join('、')
+          + '<br><span style="opacity:.75">💡 ' + esc(g.advice) + '</span></div>';
+      }).join('') + '</div>'
+    : '';
+}
+
+function init() {
+  renderAll();
+
+  document.getElementById('md-in').addEventListener('input', renderAll);
+  document.getElementById('fmt-theme').addEventListener('change', renderAll);
+
+  document.getElementById('btn-render').addEventListener('click', renderAll);
+  document.getElementById('btn-demo').addEventListener('click', function() {
+    document.getElementById('md-in').value = DEMO_MD;
+    renderAll();
+    status('🧪 已装载演示文章（故意含「最」类极限词，看体检区）。');
+  });
+
+  document.getElementById('btn-copy-rich').addEventListener('click', function() {
+    if (!lastHtml) { status('没有可复制的内容。', true); return; }
+    if (window.ClipboardItem && navigator.clipboard.write) {
+      navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([lastHtml], { type: 'text/html' }),
+        'text/plain': new Blob([document.getElementById('preview').innerText], { type: 'text/plain' })
+      })]).then(function() { status('✅ 富文本已复制——去公众号后台 Ctrl+V。'); },
+                function() { status('复制失败，试试「复制 HTML 源码」。', true); });
+    } else {
+      status('当前浏览器不支持富文本复制，用「复制 HTML 源码」。', true);
+    }
+  });
+  document.getElementById('btn-copy-html').addEventListener('click', function() {
+    navigator.clipboard.writeText(lastHtml);
+    status('📋 HTML 源码已复制。');
+  });
+
+  document.getElementById('btn-lede').addEventListener('click', async function() {
+    var box = document.getElementById('ai-box');
+    box.innerHTML = '<div class="ai-out">🧾 正在写导语…</div>';
+    try {
+      var plain = document.getElementById('preview').innerText.slice(0, 1200);
+      var text = await callChat([
+        { role: 'system', content: '你是公众号主编。只输出 JSON，不输出任何其他文字。' },
+        { role: 'user', content: '为下面这篇文章写 60 字内的导语（放进开头引导读完，结尾留一个钩子），严格输出 JSON：{"lede":"..."}。文章：' + plain }
+      ]);
+      var obj = JSON.parse((text.match(/\{[\s\S]*\}/) || [text])[0]);
+      box.innerHTML = '<div class="ai-out">🧾 导语（粘到正文开头）：\n' + esc(obj.lede || text) + '</div>';
+    } catch (e) {
+      box.innerHTML = '<div class="ai-out">❌ ' + esc(e.message) + '</div>';
+    }
+  });
+
+  document.getElementById('btn-titles').addEventListener('click', async function() {
+    var box = document.getElementById('ai-box');
+    box.innerHTML = '<div class="ai-out">🅰 正在想标题…</div>';
+    try {
+      var plain = document.getElementById('preview').innerText.slice(0, 800);
+      var text = await callChat([
+        { role: 'system', content: '你是公众号标题高手。只输出 JSON，不输出任何其他文字。' },
+        { role: 'user', content: '为这篇文章出 3 个备选标题（每个 ≤20 字，不夸大、不做标题党），严格输出 JSON：{"titles":["","",""]}。文章：' + plain }
+      ]);
+      var obj = JSON.parse((text.match(/\{[\s\S]*\}/) || [text])[0]);
+      box.innerHTML = '<div class="ai-out">🅰 备选标题：\n' + (obj.titles || []).map(function(t, i) { return (i + 1) + '. ' + t; }).join('\n') + '</div>';
+    } catch (e) {
+      box.innerHTML = '<div class="ai-out">❌ ' + esc(e.message) + '</div>';
+    }
+  });
+
+  var drawer = document.getElementById('drawer-api');
+  document.getElementById('btn-settings').addEventListener('click', function() {
+    var cfg = loadApiConfig();
+    document.getElementById('api-provider').value = cfg.provider || 'zhipu';
+    document.getElementById('api-key').value = cfg.key || '';
+    document.getElementById('api-model').value = cfg.model || '';
+    document.getElementById('api-base').value = cfg.base || '';
+    drawer.style.display = 'flex';
+  });
+  document.getElementById('api-cancel').addEventListener('click', function() { drawer.style.display = 'none'; });
+  drawer.addEventListener('click', function(ev) { if (ev.target === drawer) drawer.style.display = 'none'; });
+  document.getElementById('api-save').addEventListener('click', function() {
+    localStorage.setItem('mf_api', JSON.stringify({
+      provider: document.getElementById('api-provider').value,
+      key: document.getElementById('api-key').value.trim(),
+      model: document.getElementById('api-model').value.trim(),
+      base: document.getElementById('api-base').value.trim()
+    }));
+    drawer.style.display = 'none';
+  });
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}
+</script>
+</body>
+</html>

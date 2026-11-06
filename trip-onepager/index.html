@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行程一页纸 · 攻略变可执行行程</title>
+<meta name="description" content="把收藏夹里乱糟糟的旅行攻略粘贴进来：解析出景点/餐厅/住宿/交通，诊断排太满、漏吃饭，渲染成可打印带走的一页行程。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --orange:#ff7a45; --orange-soft:#ffe8dc;
+    --teal:#12a184; --teal-soft:#dcf5ee;
+    --blue:#2f9e8f; --blue-soft:#e2f4f0;
+    --red:#d64545; --red-soft:#fde5e5;
+    --radius:18px; --shadow:0 10px 26px rgba(20,60,50,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--teal-soft),transparent 60%),
+    radial-gradient(800px 420px at 100% 0%,var(--orange-soft),transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:36px 16px 40px}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
+  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:50em}
+  .sub b{color:var(--ink)}
+  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#0b6b52}
+  .topbtn{margin-left:auto;display:flex;gap:8px}
+  button{font-family:inherit;cursor:pointer}
+  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
+  .btn.a{background:var(--teal);color:#fff;box-shadow:0 6px 16px rgba(18,161,132,.26)}
+  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
+  section{margin-bottom:26px}
+  h2{font-size:18.5px;margin:0 0 10px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
+  input,textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13.5px;font-family:inherit;background:#fff}
+  textarea{min-height:220px;resize:vertical;line-height:1.85;font-size:13.5px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px}
+  .statusline{font-size:13px;color:var(--muted);margin:8px 0;min-height:20px}
+  .statusline.err{color:var(--red);font-weight:600}
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:10px}
+  .diag{border-radius:10px;padding:9px 13px;font-size:12.8px;margin-bottom:7px;line-height:1.7}
+  .diag.warn{background:#fff3e0;color:#92600a}
+  .diag.bad{background:var(--red-soft);color:#b03030}
+  .diag.ok{background:var(--teal-soft);color:#0b6b52}
+  /* 一页行程：A4 比例 */
+  .paper-wrap{background:#e4ece9;border-radius:14px;padding:22px;display:flex;justify-content:center;overflow-x:auto}
+  .onepager{background:#fff;width:100%;max-width:760px;min-height:980px;padding:42px 46px;box-shadow:0 8px 30px rgba(0,0,0,.16);box-sizing:border-box;
+    font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#1f2d2a}
+  .op-head{border-bottom:3px solid var(--teal);padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+  .op-title{font-size:25px;font-weight:800;letter-spacing:1px}
+  .op-meta{font-size:12px;color:#7a7268;margin-top:5px}
+  .op-budget{font-size:13px;font-weight:800;color:var(--teal)}
+  .op-day{margin-bottom:16px}
+  .op-day-title{font-size:15.5px;font-weight:800;margin-bottom:8px;background:var(--teal-soft);border-radius:8px;padding:7px 12px;display:flex;justify-content:space-between;align-items:center}
+  .op-day-title .cost{font-size:12px;color:#0b6b52}
+  .op-item{display:flex;gap:10px;padding:7px 0 7px 8px;border-bottom:1px dashed #e4ece9;align-items:flex-start}
+  .op-item:last-child{border-bottom:0}
+  .op-ico{flex:0 0 26px;text-align:center;font-size:16px}
+  .op-name{font-size:13.8px;font-weight:700}
+  .op-note{font-size:11.8px;color:var(--muted);line-height:1.6;margin-top:2px}
+  .op-cost{font-size:11.8px;color:var(--teal);font-weight:700;white-space:nowrap}
+  .op-empty{color:#bbb;font-size:12px;text-align:center;padding:14px 0}
+  .ai-out{background:#faf6ef;border-radius:10px;padding:12px 14px;font-size:12.8px;line-height:1.9;margin-top:10px;white-space:pre-wrap}
+  @media print{
+    body{background:#fff;padding:0}
+    body *{visibility:hidden}
+    .onepager, .onepager *{visibility:visible}
+    .onepager{box-shadow:none;position:absolute;left:0;top:0;width:100%;max-width:none;min-height:auto;padding:28px 36px}
+  }
+  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
+  footer a{color:#0b6b52}
+</style>
+</head>
+<body>
+<div class="pbar"><div class="pbar-in"><a href="../">← 作品集</a><span class="pbar-sp"></span><b>行程一页纸</b><span class="pbar-sp"></span><a href="PRD.md">PRD</a></div></div>
+<style>
+.pbar{background:#f7f5f0;border-bottom:1px solid #e7e2d9;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+.pbar-in{max-width:1120px;margin:0 auto;padding:9px 20px;display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.4;color:#6c675f}
+.pbar a{color:#6c675f;text-decoration:none;font-weight:600}
+.pbar a:hover{color:#1f4fd8}
+.pbar b{color:#171614;font-weight:700}
+.pbar-sp{flex:1}
+@media(max-width:640px){.pbar-in{padding:8px 14px;font-size:12px}}
+</style>
+
+<div class="wrap">
+
+  <h1>🧭 行程一页纸 <span style="font-size:15px;color:var(--muted);font-weight:600">TripOnePager</span></h1>
+  <p class="sub">旅行前最乱的环节：收藏了 8 篇攻略，出发那天还是手忙脚乱。把攻略粘进来——
+  <b>代码解析出景点 / 餐厅 / 住宿 / 交通，诊断「排太满、漏吃饭」，渲染成可打印带走的一页</b>。
+  自由文本交给 AI 抽取，结构判断由代码做（和文献综述同一套「解析 → 诊断 → 渲染」方法）。</p>
+
+  <div class="topbar">
+    <span class="pill">🔒 数据只存本机</span>
+    <span class="pill">🖨 打印带走</span>
+    <span class="pill">🧪 内置演示攻略</span>
+    <span class="topbtn">
+      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+    </span>
+  </div>
+
+  <section>
+    <div class="card">
+      <h2>① 行程设定与攻略文本</h2>
+      <div class="grid">
+        <div><label>目的地 *（如：北京 2 日）</label><input id="tp-dest" placeholder="北京 2 日"></div>
+        <div><label>出行人</label><input id="tp-who" placeholder="2 人"></div>
+        <div><label>天数 *</label><input id="tp-days" type="number" min="1" max="9" value="2"></div>
+        <div><label>日期</label><input id="tp-date" type="date"></div>
+      </div>
+      <label>攻略文本（收藏的攻略直接全选复制粘进来，乱一点没关系）</label>
+      <textarea id="tp-guide" placeholder="Day 1&#10;📍 故宫博物院&#10;门票 60 元，提前 7 天预约&#10;📍 王府井&#10;晚餐：四季民福烤鸭 人均 150&#10;住宿：王府井附近汉庭&#10;Day 2&#10;📍 颐和园&#10;门票 30 元&#10;📍 南锣鼓巷&#10;午餐：方砖厂 69 号炸酱面 人均 30"></textarea>
+      <div class="topbar" style="margin:12px 0 0">
+        <button class="btn a" id="btn-build">🔨 生成一页行程</button>
+        <button class="btn b" id="btn-demo">🧪 装载演示攻略</button>
+        <button class="btn b" id="btn-ai-extract">🤖 AI 从乱文本抽行程</button>
+      </div>
+      <div class="statusline" id="tp-status"></div>
+      <div id="tp-diag"></div>
+      <div class="note">规则解析认得：Day/第N天 分隔、📍/序号开头的条目、「门票 / 人均 / 营业 / 住宿」等副信息；
+      AI 抽取用于更乱的自由文本（无固定格式的长攻略），抽取后仍由代码做结构诊断。</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <h2>② 一页行程（打印时只打印这一页）</h2>
+      <div class="paper-wrap"><div class="onepager" id="paper"></div></div>
+      <div class="topbar" style="margin-top:14px">
+        <button class="btn a" id="btn-print">🖨 打印 / 存为 PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
+    解析与诊断是启发式规则（攻略写法千奇百怪，认不全的行会进「待确认」）·
+    AI 抽取可能漏抽错抽，出发前请核对门票与营业时间 · 单文件 HTML 可离线使用 · AI 结对编程产出
+  </footer>
+</div>
+
+<!-- AI 设置 -->
+<div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto">
+    <h3 style="margin:0 0 12px;font-size:16px">⚙️ AI 设置（Key 只存本机）</h3>
+    <label>服务商</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="ollama">本地 Ollama（需已启动）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>API Key（Ollama 可留空）</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn b" id="api-cancel">取消</button>
+      <button class="btn a" id="api-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   行程一页纸 TripOnePager
+   结构：攻略解析引擎（纯函数，可被 eval 提取）→ 诊断 → 渲染 →
+        AI 层（自由文本 POI 抽取）
+   解析 / 分配 / 诊断由代码完成，AI 只做自由文本抽取。
+   ============================================================ */
+
+/* ---------- ① 解析引擎（纯函数，勿加入 DOM 依赖；eval/trip-onepager 直接调用） ---------- */
+
+var TYPE_META = {
+  attraction: { name: '景点', ico: '📍' },
+  meal:       { name: '餐',    ico: '🍜' },
+  stay:       { name: '住宿',  ico: '🏨' },
+  transport:  { name: '交通',  ico: '🚇' },
+  other:      { name: '其他',  ico: '📌' }
+};
+
+function classifyType(text) {
+  var t = String(text);
+  if (/住宿|酒店|民宿|宾馆|汉庭|如家/.test(t)) return 'stay';
+  if (/早餐|午餐|晚餐|午饭|晚饭|早饭|烤鸭|火锅|面馆|小吃|餐厅|美食|人均/.test(t)) return 'meal';
+  if (/机场|高铁|火车站|地铁|公交|航班|打车|自驾/.test(t)) return 'transport';
+  if (/园|博物馆|故宫|长城|湖|寺|街|巷|广场|塔|展/.test(t)) return 'attraction';
+  return 'other';
+}
+
+function extractCost(text) {
+  var m = String(text).match(/(?:门票|人均|约|花费)?\s*([0-9]+(?:\.[0-9]+)?)\s*元/) || String(text).match(/人均\s*([0-9]+)/);
+  return m ? Number(m[1]) : 0;
+}
+
+function parseGuide(md, days) {
+  var lines = String(md || '').replace(/\r\n/g, '\n').split('\n');
+  var out = [];
+  var day = null;
+  var current = null; // 待挂副信息的上一个条目
+  function ensureDay(n) {
+    if (!day || day.day !== n) {
+      day = { day: n, items: [] };
+      out.push(day);
+    }
+  }
+  ensureDay(1);
+  lines.forEach(function(raw) {
+    var line = raw.trim();
+    if (!line) { current = null; return; }
+    var dm = line.match(/^(?:Day\s*|DAY\s*|day\s*|第)([0-9一二三四五六七八九]+)\s*(?:天|日|：|:|$)/i);
+    if (dm) {
+      var numMap = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9 };
+      var dn = Number(dm[1]) || numMap[dm[1]] || (out.length + 1);
+      ensureDay(dn);
+      current = null;
+      return;
+    }
+    var item = line.replace(/^(?:📍|🏨|🍜|🚇|📌|[0-9]+[.、)]|[·•\-–]\s?)\s*/, '').trim();
+    if (!item) { current = null; return; }
+    // 副信息行：含关键词且较短，挂到上一条
+    if (/^(?:门票|人均|营业|地址|开放|预约|地铁|交通|花费|备注|时间)/.test(item) || (/[:：]/.test(item) && item.length <= 24 && classifyType(item) === 'other' && current)) {
+      if (current) {
+        var cost = extractCost(item);
+        if (cost > 0 && !current.cost) current.cost = cost;
+        current.notes.push(item);
+        return;
+      }
+    }
+    var type = classifyType(item);
+    current = { name: item, type: type, cost: extractCost(item), notes: [] };
+    day.items.push(current);
+  });
+  // 约束：天数不超过给定值时保留全部；超出给定值也保留（诊断里提示）
+  return { days: out, totalDaysDeclared: days };
+}
+
+function organizeAndDiagnose(parsed, days) {
+  var diags = [];
+  var dayStats = [];
+  parsed.days.forEach(function(d) {
+    var counts = { attraction: 0, meal: 0, stay: 0, transport: 0, other: 0 };
+    var cost = 0;
+    d.items.forEach(function(it) {
+      counts[it.type] += 1;
+      cost += it.cost || 0;
+    });
+    dayStats.push({ day: d.day, counts: counts, cost: cost, n: d.items.length });
+    if (counts.attraction >= 4) diags.push({ level: 'warn', text: 'Day ' + d.day + ' 排了 ' + counts.attraction + ' 个景点——按门票+交通+排队，一天 3 个是舒适上限，建议砍掉 1 个或挪到下一天。' });
+    if (counts.meal === 0) diags.push({ level: 'bad', text: 'Day ' + d.day + ' 一顿饭都没排——「漏吃饭」是行程崩坏的第一原因，至少补一餐。' });
+    if (counts.attraction + counts.other >= 6) diags.push({ level: 'warn', text: 'Day ' + d.day + ' 共 ' + (counts.attraction + counts.other) + ' 个条目，节奏偏赶。' });
+  });
+  var hasStay = parsed.days.some(function(d) { return d.items.some(function(it) { return it.type === 'stay'; }); });
+  if (parsed.days.length >= 2 && !hasStay) diags.push({ level: 'warn', text: '多日行程但没有看到住宿安排——住宿决定每天从哪出发，建议固定一个。' });
+  var overDays = parsed.days.filter(function(d) { return d.day > days; });
+  if (overDays.length) diags.push({ level: 'warn', text: '攻略里有 Day ' + overDays.map(function(d) { return d.day; }).join('、') + '，超出了设定的 ' + days + ' 天——确认天数或把超出的挪出。' });
+  if (!diags.length) diags.push({ level: 'ok', text: '结构体检通过：每顿饭都排上了，景点密度合理——可以出发。' });
+  var totalCost = dayStats.reduce(function(s, d) { return s + d.cost; }, 0);
+  return { diags: diags, dayStats: dayStats, totalCost: totalCost };
+}
+
+/* ---------- ② 渲染（内联样式，可打印） ---------- */
+
+function esc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function renderPaper(dest, who, dateStr, parsed, stats) {
+  var head = '<div class="op-head"><div><div class="op-title">' + esc(dest) + '</div>'
+    + '<div class="op-meta">' + esc(who) + (who ? ' ｜ ' : '') + esc(dateStr || '') + ' ｜ 共 ' + parsed.days.length + ' 天</div></div>'
+    + '<div class="op-budget">门票/餐费合计 ≈ ' + stats.totalCost + ' 元/人</div></div>';
+  var body = parsed.days.map(function(d) {
+    var st = stats.dayStats.filter(function(x) { return x.day === d.day; })[0] || { cost: 0 };
+    var items = d.items.length
+      ? d.items.map(function(it) {
+          var meta = TYPE_META[it.type] || TYPE_META.other;
+          return '<div class="op-item"><div class="op-ico">' + meta.ico + '</div><div style="flex:1"><div class="op-name">' + esc(it.name) + '</div>'
+            + (it.notes.length ? '<div class="op-note">' + it.notes.map(function(n) { return esc(n); }).join(' · ') + '</div>' : '')
+            + '</div>' + (it.cost ? '<div class="op-cost">' + it.cost + ' 元</div>' : '') + '</div>';
+        }).join('')
+      : '<div class="op-empty">（这一天还没有安排）</div>';
+    return '<div class="op-day"><div class="op-day-title"><span>Day ' + d.day + '</span><span class="cost">' + st.cost + ' 元</span></div>' + items + '</div>';
+  }).join('');
+  document.getElementById('paper').innerHTML = head + body;
+}
+
+/* ---------- ③ 演示数据 ---------- */
+
+var DEMO = {
+  dest: '北京 2 日', who: '2 人', days: 2,
+  guide: `Day 1
+📍 故宫博物院
+门票 60 元，提前 7 天预约
+📍 王府井步行街
+晚餐：四季民福烤鸭 人均 150 元
+住宿：王府井附近汉庭 400 元
+Day 2
+📍 颐和园
+门票 30 元
+📍 南锣鼓巷
+午餐：方砖厂 69 号炸酱面 人均 30 元
+📍 天坛公园
+门票 15 元
+📍 什刹海
+📍 烟袋斜街`
+
+/* ---------- ④ AI 层（自由文本 POI 抽取，BYOK） ---------- */
+};
+
+var PROVIDERS = {
+  zhipu:    { base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash' },
+  deepseek: { base: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
+  moonshot: { base: 'https://api.moonshot.cn/v1/chat/completions', model: 'moonshot-v1-8k' },
+  ollama:   { base: 'http://localhost:11434/v1/chat/completions', model: 'qwen2.5:7b' },
+  custom:   { base: '', model: '' }
+};
+function loadApiConfig() { try { return JSON.parse(localStorage.getItem('tp_api') || '{}'); } catch (e) { return {}; } }
+async function callChat(messages, maxTokens) {
+  var cfg = loadApiConfig();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.model || provider.model;
+  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method: 'POST', headers: headers,
+    body: JSON.stringify({ model: model, messages: messages, temperature: 0.3, max_tokens: maxTokens || 1600 })
+  });
+  if (!res.ok) {
+    var detail = '';
+    try { detail = (await res.text()).slice(0, 200); } catch (e) {}
+    throw new Error('接口返回 ' + res.status + '：' + detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+
+async function aiExtract() {
+  var raw = document.getElementById('tp-guide').value.trim();
+  if (!raw) { status('先粘贴攻略文本。', true); return; }
+  status('🤖 正在从自由文本抽取行程（免费模型约 20-60 秒）…');
+  try {
+    var text = await callChat([
+      { role: 'system', content: '你是行程结构化助手。只输出 JSON，不要输出任何其他文字。' },
+      { role: 'user', content: '从下面这段乱糟糟的旅行攻略里抽取行程条目。规则：保留原文的景点名/餐厅名/住宿名；每天用 day 字段（数字）；每条含 name（名称）、type（attraction=景点/meal=餐/stay=住宿/transport=交通）、cost（数字，无价格则 0）、notes（字符串数组，放门票/人均/营业/预约等副信息）。严格输出 JSON：{"days":[{"day":1,"items":[{"name":"...","type":"attraction","cost":60,"notes":["门票 60 元，提前预约"]}]}]}。攻略：\n' + raw }
+    ]);
+    var obj = JSON.parse((text.match(/\{[\s\S]*\}/) || [text])[0]);
+    if (!obj.days || !obj.days.length) throw new Error('模型没有返回 days');
+    var norm = obj.days.map(function(d) {
+      return {
+        day: Number(d.day) || 1,
+        items: (d.items || []).map(function(it) {
+          return { name: String(it.name || '').slice(0, 60), type: ['attraction', 'meal', 'stay', 'transport', 'other'].indexOf(it.type) >= 0 ? it.type : 'other', cost: Number(it.cost) || 0, notes: (it.notes || []).map(String).slice(0, 3) };
+        })
+      };
+    });
+    applyParsed({ days: norm, totalDaysDeclared: Number(document.getElementById('tp-days').value) || norm.length });
+    status('🤖 AI 抽取完成并已体检——模型可能漏抽错抽，出发前请对照原文核对门票与营业时间。');
+  } catch (e) {
+    status('❌ ' + e.message, true);
+  }
+}
+
+/* ---------- ⑤ 事件 ---------- */
+
+var lastParsed = null, lastStats = null;
+
+function status(msg, isErr) {
+  var el = document.getElementById('tp-status');
+  el.textContent = msg || '';
+  el.className = 'statusline' + (isErr ? ' err' : '');
+}
+
+function build() {
+  var dest = document.getElementById('tp-dest').value.trim();
+  var days = Number(document.getElementById('tp-days').value) || 1;
+  var md = document.getElementById('tp-guide').value;
+  if (!dest) { status('目的地必填（如：北京 2 日）。', true); return; }
+  if (!md.trim()) { status('攻略文本为空——粘贴攻略或点「装载演示攻略」。', true); return; }
+  lastParsed = parseGuide(md, days);
+  lastStats = organizeAndDiagnose(lastParsed, days);
+  var icon = { ok: '✅', warn: '⚠️', bad: '⛔' };
+  document.getElementById('tp-diag').innerHTML = lastStats.diags.map(function(d) {
+    return '<div class="diag ' + d.level + '">' + icon[d.level] + ' ' + esc(d.text) + '</div>';
+  }).join('');
+  renderPaper(dest, document.getElementById('tp-who').value.trim(), document.getElementById('tp-date').value, lastParsed, lastStats);
+  status('🧭 已生成（' + lastParsed.days.length + ' 天 · ' + lastStats.dayStats.reduce(function(s, d) { return s + d.n; }, 0) + ' 个条目 · 诊断 ' + lastStats.diags.length + ' 条）。');
+}
+
+function applyParsed(parsed) {
+  var dest = document.getElementById('tp-dest').value.trim() || '我的行程';
+  lastParsed = parsed;
+  lastStats = organizeAndDiagnose(parsed, Number(document.getElementById('tp-days').value) || parsed.days.length);
+  var icon = { ok: '✅', warn: '⚠️', bad: '⛔' };
+  document.getElementById('tp-diag').innerHTML = lastStats.diags.map(function(d) {
+    return '<div class="diag ' + d.level + '">' + icon[d.level] + ' ' + esc(d.text) + '</div>';
+  }).join('');
+  renderPaper(dest, document.getElementById('tp-who').value.trim(), document.getElementById('tp-date').value, lastParsed, lastStats);
+}
+
+function init() {
+  document.getElementById('btn-build').addEventListener('click', build);
+  document.getElementById('btn-demo').addEventListener('click', function() {
+    document.getElementById('tp-dest').value = DEMO.dest;
+    document.getElementById('tp-who').value = DEMO.who;
+    document.getElementById('tp-days').value = DEMO.days;
+    document.getElementById('tp-guide').value = DEMO.guide;
+    build();
+    status('🧭 已装载演示攻略——注意诊断区：Day 2 排了 4 个景点（偏满）。');
+  });
+  document.getElementById('btn-ai-extract').addEventListener('click', aiExtract);
+  document.getElementById('btn-print').addEventListener('click', function() { window.print(); });
+
+  var drawer = document.getElementById('drawer-api');
+  document.getElementById('btn-settings').addEventListener('click', function() {
+    var cfg = loadApiConfig();
+    document.getElementById('api-provider').value = cfg.provider || 'zhipu';
+    document.getElementById('api-key').value = cfg.key || '';
+    document.getElementById('api-model').value = cfg.model || '';
+    document.getElementById('api-base').value = cfg.base || '';
+    drawer.style.display = 'flex';
+  });
+  document.getElementById('api-cancel').addEventListener('click', function() { drawer.style.display = 'none'; });
+  drawer.addEventListener('click', function(ev) { if (ev.target === drawer) drawer.style.display = 'none'; });
+  document.getElementById('api-save').addEventListener('click', function() {
+    localStorage.setItem('tp_api', JSON.stringify({
+      provider: document.getElementById('api-provider').value,
+      key: document.getElementById('api-key').value.trim(),
+      model: document.getElementById('api-model').value.trim(),
+      base: document.getElementById('api-base').value.trim()
+    }));
+    drawer.style.display = 'none';
+  });
+
+  // 首次打开：装载演示攻略并渲染，避免右侧空白
+  if (!document.getElementById('tp-guide').value.trim()) {
+    document.getElementById('tp-dest').value = DEMO.dest;
+    document.getElementById('tp-who').value = DEMO.who;
+    document.getElementById('tp-days').value = DEMO.days;
+    document.getElementById('tp-guide').value = DEMO.guide;
+    build();
+  }
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}
+</script>
+</body>
+</html>
