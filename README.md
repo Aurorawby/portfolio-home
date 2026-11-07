@@ -72,6 +72,10 @@ node eval/job-workbench/run.mjs
 `user-test-3/` 是 3 人小规模试用的执行包：主试话术、任务卡、计时表、记录模板、汇总脚本。
 跑完把真实数据填进 `timing_sheet.csv`，`node user-test-3/analyze.mjs` 生成 `RESULTS.md`。
 
+`user-test-job/` 是求职副驾驶的 5 人测试包：T1 工作台输入 → T2 JD 雷达 → T3 经历深挖 → T4 模拟面试（可选）；
+含主试逐字稿、任务卡、计时表、SUS + 付费意愿、汇总脚本。
+跑完填 `timing_sheet.csv` / `survey.csv`，`node user-test-job/analyze.mjs` 生成 `RESULTS.md`（没有数据会写“待采集”，不编）。
+
 ## 发布
 
 Push 到 main 分支即自动部署（GitHub Pages → main / root）。
