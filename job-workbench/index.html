@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>求职工作台 · 从 JD 到面试复盘的一条线</title>
-<meta name="description" content="把 JD 雷达、模拟面试官、面试复盘器串成一条流程：扫描 JD → 生成面试题 → 面完复盘 → 输出一份求职档案。数据全在本地。">
+<meta name="description" content="把 JD 雷达、经历深挖、模拟面试官、面试复盘器串成一条流程：扫描 JD → 深挖经历 → 生成面试题 → 面完复盘 → 输出一份求职档案。数据全在本地。">
 <style>
   :root{
     --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
@@ -73,7 +73,7 @@
 <div class="wrap">
   <h1>🧭 求职工作台</h1>
   <p class="sub">一条线走完求职准备：<b>扫描 JD 看市场要什么 → 用 JD+简历生成面试题 → 面完复盘 → 输出一份求职档案</b>。<br>
-  三个工具已经做好，这里负责把它们串起来、共享数据、并把结果汇总成你能带走的东西。<b>数据全部存在本机浏览器</b>，不上传。</p>
+  四个工具已经做好，这里负责把它们串起来、共享数据、并把结果汇总成你能带走的东西。<b>数据全部存在本机浏览器</b>，不上传。</p>
 
   <section class="card">
     <h2>三步进度</h2>
@@ -101,6 +101,24 @@
         <span class="badge" id="badge-3">未开始</span>
         <a class="btn" href="../interview-review/index.html" id="go-review">去复盘 →</a>
         <button class="btn ghost small" id="carry-questions">把预测题带入复盘</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="experience-entry">
+    <h2>🕳 经历深挖（面试前最值钱的一步）</h2>
+    <p class="sect-sub">简历里只有一行“负责公众号运营”，面试官一追问就卡住。用 5 个问题把实习聊成 STAR 故事：背景、动作、难点、结果、反思。</p>
+    <div class="two">
+      <div>
+        <ul style="margin:0;padding-left:18px">
+          <li>不是替你编经历：没有的数字会标成「待补」，不自动补。</li>
+          <li>产出 30 秒 / 90 秒版本 + 可能追问 + 要补的证据。</li>
+          <li>会读取上面保存的简历和 JD；数据只在本机。</li>
+        </ul>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap">
+        <a class="btn" href="experience.html">开始深挖经历 →</a>
+        <span class="hint">约 10–15 分钟</span>
       </div>
     </div>
   </section>

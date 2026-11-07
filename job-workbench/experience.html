@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>经历深挖官 · 把实习聊成面试故事</title>
+<meta name="description" content="用 5 个问题把简历里的一行实习深挖成 STAR 故事：背景、动作、冲突、结果、反思；给出 30/90 秒版本、可能追问和要补的证据。不编数字，数据只存本机。">
+<style>
+  :root{
+    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
+    --accent:#ff7a45; --accent-soft:#ffe8dc; --ok:#0e6b58; --ok-soft:#e4f7ef;
+    --warn:#9a4b00; --warn-soft:#fff4e2; --blue:#1f4fd8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(900px 500px at 0% -10%,#ffe8dc,transparent 60%),radial-gradient(700px 400px at 110% 0%,#ffe9c9,transparent 55%),var(--bg);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    min-height:100vh;padding:0 0 calc(40px + env(safe-area-inset-bottom))}
+  .wrap{max-width:1080px;margin:0 auto;padding:30px 18px 0}
+  .hero{padding:18px 0 20px}
+  .eyebrow{font-size:12.5px;font-weight:800;letter-spacing:.08em;color:#b4541f;text-transform:uppercase;margin:0 0 10px}
+  h1{font-size:clamp(28px,4.4vw,42px);line-height:1.16;margin:0 0 12px;letter-spacing:-.02em}
+  .lede{color:var(--muted);font-size:15px;line-height:1.85;max-width:48em;margin:0 0 16px}
+  .banner{background:var(--warn-soft);border:1px solid #f0d6ad;color:#6b4300;border-radius:14px;padding:12px 15px;font-size:13px;line-height:1.75;margin:14px 0 20px}
+  .banner b{color:#5a3600}
+  .card{background:var(--card);border-radius:20px;padding:22px;box-shadow:0 10px 28px rgba(60,42,20,.09);margin-bottom:18px}
+  h2{font-size:19px;margin:0 0 5px}
+  .sect-sub{color:var(--muted);font-size:13px;line-height:1.7;margin:0 0 14px}
+  label.fl{display:block;font-size:13px;font-weight:700;margin:0 0 6px;color:#5d554b}
+  input,textarea{width:100%;border:1.5px solid var(--line);border-radius:13px;padding:11px 12px;font-size:13.5px;line-height:1.7;
+    font-family:inherit;background:#fffdfa;color:var(--ink)}
+  textarea{min-height:105px;resize:vertical}
+  input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+  .row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:13px}
+  .btn{display:inline-block;text-align:center;border:0;border-radius:999px;padding:10px 17px;font-size:13.5px;font-weight:700;cursor:pointer;
+    background:var(--accent);color:#fff;text-decoration:none;box-shadow:0 8px 18px rgba(255,122,69,.2)}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  .btn.small{padding:7px 12px;font-size:12.5px}
+  .btn:active{transform:scale(.985)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .hint{color:var(--muted);font-size:12.5px;line-height:1.7}
+  .layout{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start}
+  @media(max-width:900px){.layout{grid-template-columns:1fr}}
+  .progress{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 14px}
+  .pstep{border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:11.5px;color:var(--muted);background:#fffdfa}
+  .pstep.done{border-color:#bfe6d8;background:var(--ok-soft);color:var(--ok)}
+  .pstep.now{border-color:#ffc7ae;background:var(--accent-soft);color:#9a4b00;font-weight:700}
+  .chat{min-height:310px;max-height:520px;overflow:auto;background:#fffdfa;border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .msg{max-width:88%;padding:10px 12px;border-radius:14px;font-size:13.2px;line-height:1.75;white-space:pre-wrap;word-break:break-word}
+  .msg.coach{background:#fff;border:1px solid var(--line);align-self:flex-start;border-top-left-radius:4px}
+  .msg.me{background:var(--accent);color:#fff;align-self:flex-end;border-top-right-radius:4px}
+  .msg .meta{display:block;font-size:10.5px;opacity:.7;margin-bottom:2px;font-weight:700}
+  .chat-empty{color:var(--muted);font-size:13px;line-height:1.8;padding:8px}
+  .send-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-top:12px}
+  .send-row textarea{min-height:82px}
+  .send-actions{display:flex;flex-direction:column;gap:7px}
+  .send-actions .btn{white-space:nowrap}
+  .mini{font-size:12px;color:var(--muted);line-height:1.7}
+  .story{display:none}
+  .story.show{display:block}
+  .story-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .tag{display:inline-block;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;background:var(--accent-soft);color:#9a4b00}
+  .tag.ok{background:var(--ok-soft);color:var(--ok)}
+  .tag.warn{background:var(--warn-soft);color:var(--warn)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0 14px}
+  th,td{border:1px solid var(--line);padding:9px 10px;vertical-align:top;text-align:left;line-height:1.7}
+  th{background:#f7f5f0;white-space:nowrap}
+  td:first-child{white-space:nowrap;font-weight:700;color:#5d554b}
+  .block{background:#fffdfa;border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin:10px 0;font-size:13.2px;line-height:1.85;white-space:pre-wrap}
+  .gaps li{color:#9a4b00}
+  ul{padding-left:18px;margin:6px 0}
+  li{font-size:13px;line-height:1.8}
+  details.api{background:#fffdfa;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0}
+  details.api summary{cursor:pointer;font-weight:700;font-size:13px}
+  .api-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  @media(max-width:640px){.api-grid{grid-template-columns:1fr}}
+  footer{text-align:center;color:#a89b8a;font-size:12px;margin-top:26px;line-height:1.9;padding:0 16px}
+  footer a{color:#8a5a1f}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:#1f1b16;color:#fff;padding:10px 18px;border-radius:999px;
+    font-size:13.5px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:99}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .pbar{background:#f7f5f0;border-bottom:1px solid #e7e2d9;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+  .pbar-in{max-width:1120px;margin:0 auto;padding:9px 20px;display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.4;color:#6c675f}
+  .pbar a{color:#6c675f;text-decoration:none;font-weight:600}
+  .pbar a:hover{color:var(--blue)}
+  .pbar b{color:#171614;font-weight:700}
+  .pbar-sp{flex:1}
+  @media(max-width:640px){.pbar-in{padding:8px 14px;font-size:12px}.wrap{padding:20px 13px 0}.card{padding:17px}}
+</style>
+</head>
+<body>
+<div class="pbar"><div class="pbar-in"><a href="../">← 作品集</a><span class="pbar-sp"></span><a href="index.html">求职工作台</a><span class="pbar-sp"></span><b>经历深挖</b><span class="pbar-sp"></span><a href="PRD.md">PRD</a></div></div>
+
+<div class="wrap">
+  <div class="hero">
+    <p class="eyebrow">求职副驾驶 · 把经历聊出来</p>
+    <h1>把一段实习，<br>聊成面试能讲的故事</h1>
+    <p class="lede">简历里只有一行“负责公众号运营”，面试官一追问就卡住。这里用 5 个问题，把背景、你做的事、难点、结果和反思挖出来，生成 <b>STAR 结构 + 30/90 秒版本 + 可能追问 + 要补的证据</b>。</p>
+    <div class="banner"><b>先说清楚：</b>这个工具不替你编数字、不替你写没发生过的事。没有的数字会标成“待补”，最终事实必须你本人核对。数据只存在本机浏览器；AI 润色是可选项。</div>
+  </div>
+
+  <section class="card" id="intake">
+    <h2>① 先把这段经历放进来</h2>
+    <p class="sect-sub">不用写得好，把简历里的那一行、或者你记得的碎片贴进来就行。</p>
+    <div class="grid3">
+      <div><label class="fl" for="exp-title">经历名称 *</label><input id="exp-title" placeholder="例：内容运营实习 / 校园二手平台项目"></div>
+      <div><label class="fl" for="exp-role">你的角色</label><input id="exp-role" placeholder="例：内容运营实习生 / 产品负责人"></div>
+      <div><label class="fl" for="exp-period">时间</label><input id="exp-period" placeholder="例：2025.06–2025.09"></div>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div><label class="fl" for="exp-raw">简历原文 / 碎片记录</label><textarea id="exp-raw" placeholder="例：负责公众号和小红书选题、排版、发布；做了竞品拆解；阅读从 800 涨到 1500。"></textarea></div>
+      <div><label class="fl" for="exp-jd">目标岗位 JD（可选）</label><textarea id="exp-jd" placeholder="粘贴目标 JD，生成的追问会往岗位能力上靠。"></textarea></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="btn-start">开始深挖 →</button>
+      <button class="btn ghost small" id="btn-carry">从求职工作台带入简历/JD</button>
+      <button class="btn ghost small" id="btn-demo">载入示例</button>
+      <button class="btn ghost small" id="btn-reset">清空</button>
+      <span class="hint" id="intake-hint">5 个问题，约 10–15 分钟；可以随时跳过。</span>
+    </div>
+  </section>
+
+  <div class="layout">
+    <section class="card" id="chat-card" style="display:none">
+      <h2>② 对话深挖</h2>
+      <p class="sect-sub">一次只问一个；回答不用完美，先说出来。</p>
+      <div class="progress" id="progress"></div>
+      <div class="chat" id="chat">
+        <div class="chat-empty">点「开始深挖」后，我会先问第一个问题。</div>
+      </div>
+      <div class="send-row">
+        <textarea id="answer" placeholder="在这里回答……（Ctrl+Enter 发送）"></textarea>
+        <div class="send-actions">
+          <button class="btn" id="btn-send">发送</button>
+          <button class="btn ghost small" id="btn-skip">跳过这题</button>
+          <button class="btn ghost small" id="btn-generate" disabled>生成故事</button>
+        </div>
+      </div>
+      <p class="mini" id="chat-hint">没有数字也没关系，先写范围/频率；不要编。</p>
+    </section>
+
+    <section class="card" id="side-card" style="display:none">
+      <h2>深挖小抄</h2>
+      <p class="sect-sub">回答卡住时看这里。</p>
+      <ul>
+        <li><b>背景</b>：团队多大、你负责哪块、目标是什么。</li>
+        <li><b>动作</b>：用动词，不用“负责/参与”。</li>
+        <li><b>难点</b>：资源/时间/意见冲突，选一个具体的。</li>
+        <li><b>结果</b>：数字、前后对比、覆盖范围；没有就写定性。</li>
+        <li><b>反思</b>：下次会改的一个判断。</li>
+      </ul>
+      <p class="mini">生成后，右侧小抄会变成故事结果；可下载 Markdown。</p>
+    </section>
+  </div>
+
+  <section class="card story" id="story-card">
+    <div class="story-head">
+      <h2 style="margin:0">③ 你的面试故事</h2>
+      <span class="tag" id="story-status">STAR 初稿</span>
+      <span class="hint" id="story-meta"></span>
+    </div>
+    <p class="sect-sub">先看 30 秒版；面试时按 90 秒版展开。所有「待补」都要你自己补。</p>
+    <div id="story-body"></div>
+    <div class="row">
+      <button class="btn" id="btn-download">下载 Markdown</button>
+      <button class="btn ghost small" id="btn-copy">复制全文</button>
+      <button class="btn ghost small" id="btn-again">再深挖一段</button>
+    </div>
+    <details class="api">
+      <summary>可选：AI 润色（BYOK，只在本机保存 Key）</summary>
+      <p class="hint">让模型把已生成的 STAR 改得更顺，但**不允许改事实/加数字**；生成后仍需你核对。</p>
+      <div class="api-grid">
+        <div><label class="fl" for="api-base">Base URL</label><input id="api-base" placeholder="https://api.deepseek.com/chat/completions"></div>
+        <div><label class="fl" for="api-model">模型</label><input id="api-model" placeholder="deepseek-chat"></div>
+      </div>
+      <label class="fl" for="api-key" style="margin-top:10px">API Key（只存 localStorage）</label>
+      <input id="api-key" type="password" placeholder="sk-...">
+      <div class="row"><button class="btn small" id="btn-ai">AI 润色</button><span class="hint" id="ai-hint"></span></div>
+    </details>
+  </section>
+
+  <footer>
+    不自动投递 · 不编造数字 · 数据只存本机 · <a href="index.html">回求职工作台</a> · <a href="PRD.md">PRD</a>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="experience-core.js"></script>
+<script>
+(function () {
+  'use strict';
+  var CORE = window.ExperienceCore;
+  var K_STATE = 'em_state_v1', K_API = 'em_api_v1', K_JWB = 'jwb_state';
+  var session = null, story = null, messages = [], aiText = '';
+  var $ = function (id) { return document.getElementById(id); };
+
+  function loadJSON(key) { try { var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
+  function saveJSON(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; } }
+  function escapeHtml(text) {
+    return String(text == null ? '' : text).replace(/[&<>"']/g, function (c) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function toast(text) {
+    var el = $('toast'); el.textContent = text; el.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(function () { el.classList.remove('show'); }, 2200);
+  }
+  function saveState() {
+    saveJSON(K_STATE, { session: session, story: story, messages: messages, aiText: aiText });
+  }
+  function restoreState() {
+    var data = loadJSON(K_STATE);
+    if (!data || !data.session || !data.session.title) return false;
+    session = data.session; story = data.story || null; messages = data.messages || []; aiText = data.aiText || '';
+    $('exp-title').value = session.title || '';
+    $('exp-role').value = session.role || '';
+    $('exp-period').value = session.period || '';
+    $('exp-raw').value = session.raw || '';
+    $('exp-jd').value = session.jd || '';
+    $('chat-card').style.display = ''; $('side-card').style.display = '';
+    renderChat(); renderProgress(); renderStory();
+    return true;
+  }
+
+  function getInput() {
+    return {
+      title: $('exp-title').value.trim(),
+      role: $('exp-role').value.trim(),
+      period: $('exp-period').value.trim(),
+      raw: $('exp-raw').value.trim(),
+      jd: $('exp-jd').value.trim()
+    };
+  }
+
+  function start() {
+    var input = getInput();
+    if (!input.title) { toast('先给这段经历一个名字'); $('exp-title').focus(); return; }
+    if (!input.raw && !session) { toast('先贴一点简历原文/碎片记录'); $('exp-raw').focus(); return; }
+    session = CORE.emptySession(input);
+    messages = [{ who: 'coach', text: '好，我们从背景开始。\n\n' + CORE.firstQuestion() }];
+    story = null; aiText = '';
+    $('chat-card').style.display = ''; $('side-card').style.display = '';
+    $('story-card').classList.remove('show');
+    $('answer').value = ''; $('btn-generate').disabled = false;
+    renderChat(); renderProgress(); saveState();
+    $('chat-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderChat() {
+    var box = $('chat');
+    if (!messages.length) {
+      box.innerHTML = '<div class="chat-empty">点「开始深挖」后，我会先问第一个问题。</div>';
+      return;
+    }
+    box.innerHTML = messages.map(function (m) {
+      return '<div class="msg ' + (m.who === 'me' ? 'me' : 'coach') + '"><span class="meta">' +
+        (m.who === 'me' ? '你' : '深挖官') + '</span>' + escapeHtml(m.text) + '</div>';
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function renderProgress() {
+    var current = session ? session.step : 0;
+    $('progress').innerHTML = CORE.STEPS.map(function (step, i) {
+      var cls = i < current ? 'done' : (i === current ? 'now' : '');
+      return '<span class="pstep ' + cls + '">' + (i < current ? '✓ ' : (i + 1) + '. ') + escapeHtml(step.label) + '</span>';
+    }).join('');
+    $('btn-generate').disabled = !session || (!session.done && current < CORE.STEPS.length && current < 1);
+    $('chat-hint').textContent = session && session.done
+      ? '5 个问题够了，点「生成故事」；也可以继续补。'
+      : '没有数字也没关系，先写范围/频率；不要编。';
+  }
+
+  function send() {
+    if (!session) { start(); return; }
+    var text = $('answer').value.trim();
+    if (!text) { toast('先写一句你的回答'); return; }
+    messages.push({ who: 'me', text: text });
+    var result = CORE.answer(session, text);
+    session = result.session;
+    messages.push({ who: 'coach', text: result.reply });
+    $('answer').value = '';
+    renderChat(); renderProgress(); saveState();
+    if (result.done) toast('五个问题够了，可以生成故事了');
+  }
+
+  function skip() {
+    if (!session) { toast('先开始深挖'); return; }
+    var result = CORE.skip(session);
+    session = result.session;
+    messages.push({ who: 'coach', text: result.reply });
+    $('answer').value = '';
+    renderChat(); renderProgress(); saveState();
+  }
+
+  function generate() {
+    if (!session) { toast('先开始深挖'); return; }
+    story = CORE.buildStory(session);
+    aiText = '';
+    renderStory(); saveState();
+    $('story-card').classList.add('show');
+    $('story-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderStory() {
+    if (!story) { $('story-card').classList.remove('show'); return; }
+    $('story-card').classList.add('show');
+    var gaps = story.gaps || [];
+    var status = gaps.length ? '有 ' + gaps.length + ' 项待补' : '结构完整';
+    $('story-status').textContent = status;
+    $('story-status').className = 'tag ' + (gaps.length ? 'warn' : 'ok');
+    $('story-meta').textContent = story.title + (story.role ? ' · ' + story.role : '');
+    var star = story.star;
+    var html = '';
+    html += '<h3 style="font-size:15px;margin:16px 0 6px">STAR 结构</h3>';
+    html += '<table><thead><tr><th>结构</th><th>内容</th></tr></thead><tbody>' +
+      '<tr><td>S 情境</td><td>' + escapeHtml(star.S) + '</td></tr>' +
+      '<tr><td>T 任务</td><td>' + escapeHtml(star.T) + '</td></tr>' +
+      '<tr><td>A 行动</td><td>' + escapeHtml(star.A) + '</td></tr>' +
+      '<tr><td>R 结果</td><td>' + escapeHtml(star.R) + '</td></tr>' +
+      '</tbody></table>';
+    html += '<h3 style="font-size:15px;margin:16px 0 6px">30 秒版本</h3><div class="block">' + escapeHtml(story.versions.short) + '</div>';
+    html += '<h3 style="font-size:15px;margin:16px 0 6px">90 秒版本</h3><div class="block">' + escapeHtml(story.versions.long) + '</div>';
+    html += '<h3 style="font-size:15px;margin:16px 0 6px">面试官可能追问</h3><ul>' + story.probes.map(function (q) { return '<li>' + escapeHtml(q) + '</li>'; }).join('') + '</ul>';
+    html += '<h3 style="font-size:15px;margin:16px 0 6px">需要补的证据（不要编）</h3>';
+    html += gaps.length ? '<ul class="gaps">' + gaps.map(function (g) { return '<li>' + escapeHtml(g) + '</li>'; }).join('') + '</ul>' : '<p class="hint">暂时没发现明显缺口；仍建议补一个可核验数字。</p>';
+    html += '<h3 style="font-size:15px;margin:16px 0 6px">改写建议</h3><ul>' + story.rewrites.map(function (r) { return '<li>' + escapeHtml(r) + '</li>'; }).join('') + '</ul>';
+    if (aiText) html += '<h3 style="font-size:15px;margin:16px 0 6px">AI 润色版（仍需核对）</h3><div class="block">' + escapeHtml(aiText) + '</div>';
+    $('story-body').innerHTML = html;
+    $('btn-generate').disabled = false;
+  }
+
+  function markdown() {
+    if (!story) return '';
+    return story.markdown + (aiText ? '\n\n## 八、AI 润色版（需人工核对）\n\n' + aiText + '\n' : '');
+  }
+
+  function download() {
+    if (!story) { toast('先生成故事'); return; }
+    var blob = new Blob([markdown()], { type: 'text/markdown;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (story.title || '经历深挖') + '-面试故事.md';
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  function copy() {
+    if (!story) { toast('先生成故事'); return; }
+    var text = markdown();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast('已复制全文'); }, function () { fallbackCopy(text); });
+    } else fallbackCopy(text);
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('已复制全文'); } catch (e) { toast('复制失败，请手动选择'); }
+    ta.remove();
+  }
+
+  function loadApi() {
+    var cfg = loadJSON(K_API) || {};
+    $('api-base').value = cfg.base || '';
+    $('api-model').value = cfg.model || '';
+    $('api-key').value = cfg.key || '';
+  }
+  function saveApi() {
+    saveJSON(K_API, { base: $('api-base').value.trim(), model: $('api-model').value.trim(), key: $('api-key').value.trim() });
+  }
+
+  function aiPolish() {
+    if (!story) { toast('先生成故事'); return; }
+    var cfg = { base: $('api-base').value.trim(), model: $('api-model').value.trim(), key: $('api-key').value.trim() };
+    if (!cfg.base || !cfg.model) { $('ai-hint').textContent = '填 Base URL 和模型名'; return; }
+    saveApi();
+    $('ai-hint').textContent = '润色中…';
+    $('btn-ai').disabled = true;
+    var system = '你是面试教练。只改写表达、不改变事实、不添加任何用户没提供的数字或经历；保留所有“待补”标记。';
+    var user = '下面是一段 STAR 故事，请把 30 秒/90 秒版本改得更口语、更有结构，但不要编造事实或数字：\n\n' + markdown();
+    fetch(cfg.base, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
+      body: JSON.stringify({ model: cfg.model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }], temperature: 0.3 })
+    }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (data) {
+        var text = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+        if (!text) throw new Error('没有返回内容');
+        aiText = String(text).trim();
+        renderStory(); saveState(); $('ai-hint').textContent = '完成；请核对没有新增事实。';
+      })
+      .catch(function (err) { $('ai-hint').textContent = '失败：' + err.message; })
+      .then(function () { $('btn-ai').disabled = false; });
+  }
+
+  function demo() {
+    $('exp-title').value = '内容运营实习';
+    $('exp-role').value = '内容运营实习生';
+    $('exp-period').value = '2025.06–2025.09';
+    $('exp-raw').value = '负责公众号和小红书选题、排版、发布；做了竞品拆解；阅读从 800 涨到 1500。';
+    $('exp-jd').value = 'AI 产品经理（内容方向）：需要内容 sense、数据分析、跨团队沟通。';
+    start();
+    toast('已载入示例：直接回答第一个问题，或一路“跳过”看结构');
+  }
+
+  function carry() {
+    var jwb = loadJSON(K_JWB) || {};
+    if (!jwb.resume && !jwb.jd) { toast('工作台里还没有保存简历/JD'); return; }
+    if (jwb.resume) $('exp-raw').value = jwb.resume;
+    if (jwb.jd) $('exp-jd').value = jwb.jd;
+    toast('已从求职工作台带入');
+  }
+
+  function reset() {
+    if (!confirm('清空这段经历和生成的故事？')) return;
+    session = null; story = null; messages = []; aiText = '';
+    localStorage.removeItem(K_STATE);
+    ['exp-title','exp-role','exp-period','exp-raw','exp-jd','answer'].forEach(function (id) { $(id).value = ''; });
+    $('chat-card').style.display = 'none'; $('side-card').style.display = 'none';
+    $('story-card').classList.remove('show'); $('story-body').innerHTML = '';
+    renderChat(); renderProgress();
+  }
+
+  $('btn-start').addEventListener('click', start);
+  $('btn-send').addEventListener('click', send);
+  $('btn-skip').addEventListener('click', skip);
+  $('btn-generate').addEventListener('click', generate);
+  $('btn-download').addEventListener('click', download);
+  $('btn-copy').addEventListener('click', copy);
+  $('btn-again').addEventListener('click', function () { $('intake').scrollIntoView({ behavior: 'smooth' }); $('exp-title').focus(); });
+  $('btn-demo').addEventListener('click', demo);
+  $('btn-carry').addEventListener('click', carry);
+  $('btn-reset').addEventListener('click', reset);
+  $('btn-ai').addEventListener('click', aiPolish);
+  $('answer').addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); send(); }
+  });
+  $('api-base').addEventListener('change', saveApi);
+  $('api-model').addEventListener('change', saveApi);
+  $('api-key').addEventListener('change', saveApi);
+
+  loadApi();
+  if (!restoreState()) { renderProgress(); }
+})();
+</script>
+</body>
+</html>

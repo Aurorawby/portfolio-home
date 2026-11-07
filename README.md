@@ -1,4 +1,4 @@
-﻿# portfolio-home · 我的作品集主页
+# portfolio-home · 我的作品集主页
 
 **线上版**：https://aurorawby.github.io/portfolio-home/
 
@@ -6,7 +6,7 @@
 
 | 主线 | 项目 |
 |---|---|
-| 🎯 求职工具箱 | **求职工作台**（工作流入口）、JD 雷达、模拟面试官、面试复盘器、投递看板 |
+| 🎯 求职工具箱 | **求职工作台**（工作流入口）、JD 雷达、经历深挖、模拟面试官、面试复盘器、投递看板 |
 | 🎨 内容工具 | **内容工作台**（全流程工作流入口）、**图文工作室**（5 种爆款形态 schema 化）、选题雷达、笔记工坊、公众号排版器、汇报一页纸、Quiz Factory 测试库 / AI 生成器 / 测试工厂·数据版 |
 | 📚 研究工具 | 图表解读器、长文档阅读卡、本地文献 Agent |
 | 🧭 生活场景 | 行程一页纸、吃什么决策器（方法论迁移实验：检验「解析→诊断→渲染」与「多准则决策」两套方法的可迁移性） |
@@ -17,7 +17,7 @@
 
 | 卡片 | 说明 |
 |---|---|
-| 求职工作台 / JD 雷达 / 模拟面试官 | 本仓库内，点开即用（纯前端；模拟面试官可选 AI 增强） |
+| 求职工作台 / JD 雷达 / 经历深挖 / 模拟面试官 | 本仓库内，点开即用（纯前端；模拟面试官可选 AI 增强） |
 | 面试复盘器 / 长文档阅读卡 / 选题雷达 / 投递看板 / 笔记工坊 / 汇报一页纸 / 公众号排版器 / 内容工作台 / 图文工作室 / 行程一页纸 / 吃什么决策器 | 本仓库内，点开即用（纯前端；带 AI 的可选 BYOK，无 Key 用演示模式） |
 | 图表解读器 | 本仓库内，点开即用（数字解读与看图清单完全离线；图片解读需视觉模型 Key，如智谱 glm-4v-flash 免费） |
 | Quiz Factory 测试库 / AI 生成器 | 在 [quiz-factory 仓库](https://github.com/Aurorawby/quiz-factory)的 Pages 上 |
@@ -44,7 +44,7 @@
 | [`eval/trip-onepager/REPORT.md`](eval/trip-onepager/REPORT.md) | 行程一页纸：攻略解析与结构诊断回归 5/5 一致 |
 | [`eval/food-picker/REPORT.md`](eval/food-picker/REPORT.md) | 吃什么决策器：过滤与加权排序（含 tie-break）回归 9/9 一致 |
 | [`eval/xhs-studio/REPORT.md`](eval/xhs-studio/REPORT.md) | 图文工作室：脚本校验引擎 7/7 一致（基线满分 + 4 变异体 + 形态区分度 + 红线声明） |
-| [`eval/job-workbench/REPORT.md`](eval/job-workbench/REPORT.md) | 求职工作台：跨三工具的数据流集成测试（6 项断言全部通过） |
+| [`eval/job-workbench/REPORT.md`](eval/job-workbench/REPORT.md) | 求职工作台：跨工具数据流 6 项 + 经历深挖 4 项断言全部通过 |
 
 **复现**（不需要浏览器、不调用模型，只依赖 Node）：
 
