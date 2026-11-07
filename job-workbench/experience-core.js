@@ -23,7 +23,7 @@
       id: 'action',
       label: '你做了什么',
       q: '你具体做了哪 2–3 件事？其中哪些是你亲手做的，而不是“参与/配合”？',
-      hint: '用动词：调研、拆需求、写方案、跑数据、推上线。'
+      hint: '用动词：调研、拆需求、写方案、跑数据、推上线；有没有预算/资源/决策权？'
     },
     {
       id: 'challenge',
@@ -46,6 +46,7 @@
   ];
 
   var WEAK_VERBS = ['负责', '参与', '协助', '帮忙', '配合', '支持'];
+  var OWNERSHIP_WORDS = ['独立', '主导', '负责', '决策', '预算', '资源', '统筹', '推动', '牵头', '拍板'];
   var RESULT_WORDS = ['提升', '降低', '增长', '节省', '缩短', '覆盖', '上线', '交付', '通过', '转化', '产出', '完成', '改善', '减少'];
 
   function clean(value) {
@@ -69,6 +70,7 @@
       numbers: numbers.slice(0, 6),
       weak: weak,
       results: results,
+      ownership: OWNERSHIP_WORDS.filter(function (word) { return text.indexOf(word) >= 0; }),
       iCount: (text.match(/我/g) || []).length,
       weCount: (text.match(/我们/g) || []).length
     };
@@ -102,6 +104,7 @@
     } else if (step.id === 'action') {
       if (analysis.weak.length) notes.push('这里有“' + analysis.weak.join('、') + '”——把它换成你亲自做的动作。');
       if (analysis.length < 50) notes.push('再拆细一点：先做什么、后做什么、你改了哪一版。');
+      if (!analysis.ownership.length) notes.push('你手里有没有预算/资源/决策权？这能体现 ownership。');
     } else if (step.id === 'challenge') {
       if (!/(冲突|不同意|卡|难|缺|来不及|拿不到|失败|返工|资源)/.test(text)) {
         notes.push('有没有一个具体的卡点？比如资源不够、时间紧、和同事意见不一致。');
@@ -180,6 +183,7 @@
     if (analysis.weCount > analysis.iCount) gaps.push('“我们”多于“我”：要讲清个人贡献。');
     if (!s.jd) gaps.push('没有关联目标岗位：面试官会问“这段经历和岗位有什么关系”。');
     if (!a.reflection) gaps.push('没有反思：补一个“如果重来会改什么”。');
+    if (!analysis.ownership.length) gaps.push('没有写清 ownership：预算/资源/决策权/独立负责的范围。');
 
     var star = {
       S: a.background || s.raw || '（待补：这段经历发生的场景）',
