@@ -237,7 +237,6 @@
   function start() {
     var input = getInput();
     if (!input.title) { toast('先给这段经历一个名字'); $('exp-title').focus(); return; }
-    if (!input.raw && !session) { toast('先贴一点简历原文/碎片记录'); $('exp-raw').focus(); return; }
     session = CORE.emptySession(input);
     messages = [{ who: 'coach', text: '好，我们从背景开始。\n\n' + CORE.firstQuestion() }];
     story = null; aiText = '';
