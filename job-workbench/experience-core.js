@@ -285,6 +285,103 @@
     return lines.join('\n');
   }
 
+
+  var TAG_RULES = {
+    '用户研究': ['用户研究', '访谈', '调研', '问卷', '用户需求'],
+    '产品定义': ['产品定义', 'PRD', '需求分析', '优先级', 'MVP', '从0到1', '0→1'],
+    '数据分析': ['数据', '指标', 'A/B', 'SQL', '转化', '漏斗', '复盘', 'ROI'],
+    '内容增长': ['内容', '选题', '涨粉', '阅读', '投放', 'KOL', '账号', '私域', '爆款'],
+    'AI/评测': ['AI', '模型', '评测', 'RAG', 'Agent', 'Prompt', '文献', '引用', 'κ', 'P@10'],
+    '项目推进': ['推进', '协调', '跨团队', '上线', '交付', '排期', '统筹', '联动']
+  };
+
+  function classifyStory(story) {
+    var text = [
+      story && story.title, story && story.role,
+      story && story.star && story.star.S, story && story.star && story.star.T,
+      story && story.star && story.star.A, story && story.star && story.star.R,
+      story && story.versions && story.versions.short,
+      story && story.versions && story.versions.long
+    ].filter(Boolean).join(' ');
+    var tags = [];
+    Object.keys(TAG_RULES).forEach(function (tag) {
+      var count = 0;
+      TAG_RULES[tag].forEach(function (word) {
+        var idx = 0;
+        while (text.indexOf(word, idx) >= 0) { count += 1; idx += word.length; }
+      });
+      if (count > 0) tags.push({ tag: tag, count: count });
+    });
+    tags.sort(function (a, b) { return b.count - a.count; });
+    return tags;
+  }
+
+  function jdCoverage(stories, jd) {
+    var jdText = clean(jd);
+    var expected = Object.keys(TAG_RULES).filter(function (tag) {
+      return TAG_RULES[tag].some(function (word) { return jdText.indexOf(word) >= 0; });
+    });
+    var present = {};
+    (stories || []).forEach(function (story) {
+      classifyStory(story).forEach(function (x) { present[x.tag] = true; });
+    });
+    return {
+      expected: expected,
+      covered: expected.filter(function (tag) { return present[tag]; }),
+      gaps: expected.filter(function (tag) { return !present[tag]; })
+    };
+  }
+
+  function buildLibraryMarkdown(stories, jd) {
+    var list = (stories || []).slice();
+    var lines = [];
+    lines.push('# 经历库 / 面试故事库');
+    lines.push('');
+    lines.push('> 由「经历深挖」保存的故事自动汇总；所有事实与数字需本人核对。');
+    lines.push('');
+    lines.push('- 故事数：' + list.length);
+    if (jd) lines.push('- 目标 JD：' + trimSentence(jd, 140));
+    lines.push('');
+    if (jd) {
+      var cover = jdCoverage(list, jd);
+      lines.push('## JD 关键词覆盖（规则匹配，仅作提示）');
+      lines.push('');
+      lines.push('- 已覆盖：' + (cover.covered.length ? cover.covered.join('、') : '无'));
+      lines.push('- 缺口：' + (cover.gaps.length ? cover.gaps.join('、') : '无明显缺口'));
+      lines.push('');
+    }
+    list.forEach(function (story, i) {
+      lines.push('## ' + (i + 1) + '. ' + (story.title || '未命名经历'));
+      lines.push('');
+      if (story.role || story.period) {
+        lines.push('> ' + [story.role, story.period].filter(Boolean).join(' ｜ '));
+        lines.push('');
+      }
+      var tags = classifyStory(story).map(function (x) { return x.tag; });
+      if (tags.length) lines.push('**能力标签**：' + tags.join(' / '));
+      if (story.versions && story.versions.short) {
+        lines.push('');
+        lines.push('**30 秒版**：' + story.versions.short);
+      }
+      if (story.versions && story.versions.long) {
+        lines.push('');
+        lines.push('**90 秒版**：' + story.versions.long);
+      }
+      if (story.probes && story.probes.length) {
+        lines.push('');
+        lines.push('**可能追问**：');
+        story.probes.forEach(function (q) { lines.push('- ' + q); });
+      }
+      if (story.gaps && story.gaps.length) {
+        lines.push('');
+        lines.push('**待补**：');
+        story.gaps.forEach(function (g) { lines.push('- [ ] ' + g); });
+      }
+      lines.push('');
+    });
+    return lines.join('\n').trim() + '\n';
+  }
+
   return {
     STEPS: STEPS,
     analyze: analyze,
@@ -293,6 +390,9 @@
     answer: answer,
     skip: skip,
     buildStory: buildStory,
-    renderMarkdown: renderMarkdown
+    renderMarkdown: renderMarkdown,
+    classifyStory: classifyStory,
+    jdCoverage: jdCoverage,
+    buildLibraryMarkdown: buildLibraryMarkdown
   };
 });

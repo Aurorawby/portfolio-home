@@ -92,6 +92,15 @@ if (!expStory.markdown.includes('## 一、STAR 结构')) problems.push('经历�
 if (!expStory.gaps.some((g) => /数字/.test(g))) problems.push('经历深挖：没提示“结果缺数字”');
 if (!CORE.analyze('负责公众号').weak.includes('负责')) problems.push('经历深挖：没识别弱动词“负责”');
 
+// 经历库：能力标签 / JD 覆盖 / 导出
+const expTags = CORE.classifyStory(expStory);
+if (!expTags.length) problems.push('经历库：没有生成能力标签');
+const libMd = CORE.buildLibraryMarkdown([expStory], 'AI 产品经理：用户研究、数据分析、AI 评测');
+if (!libMd.includes('经历库') || !libMd.includes('30 秒版')) problems.push('经历库：导出 Markdown 缺内容');
+const cover = CORE.jdCoverage([expStory], 'AI 产品经理：用户研究、数据分析、AI 评测');
+if (!cover.expected.length) problems.push('经历库：JD 覆盖没有识别能力词');
+if (!cover.gaps.includes('用户研究')) problems.push('经历库：JD 缺口识别不正确');
+
 console.log('档案长度：' + dossier.length + ' 字');
 console.log('复盘题数：带入前 2 → 带入后 ' + after.items.length);
 console.log('经历深挖：' + expStory.markdown.length + ' 字，' + expStory.gaps.length + ' 项待补');
@@ -100,4 +109,4 @@ if (problems.length) {
   problems.forEach((problem) => console.log('  - ' + problem));
   process.exit(1);
 }
-console.log('✓ 工作台测试通过：数据流 6 项 + 经历深挖 4 项');
+console.log('✓ 工作台测试通过：数据流 6 项 + 经历深挖 4 项 + 经历库 3 项');

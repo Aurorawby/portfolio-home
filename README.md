@@ -17,7 +17,7 @@
 
 | 卡片 | 说明 |
 |---|---|
-| 求职工作台 / JD 雷达 / 经历深挖 / 模拟面试官 | 本仓库内，点开即用（纯前端；模拟面试官可选 AI 增强） |
+| 求职工作台 / JD 雷达 / 经历深挖 / 经历库 / 模拟面试官 | 本仓库内，点开即用（纯前端；模拟面试官可选 AI 增强） |
 | 面试复盘器 / 长文档阅读卡 / 选题雷达 / 投递看板 / 笔记工坊 / 汇报一页纸 / 公众号排版器 / 内容工作台 / 图文工作室 / 行程一页纸 / 吃什么决策器 | 本仓库内，点开即用（纯前端；带 AI 的可选 BYOK，无 Key 用演示模式） |
 | 图表解读器 | 本仓库内，点开即用（数字解读与看图清单完全离线；图片解读需视觉模型 Key，如智谱 glm-4v-flash 免费） |
 | Quiz Factory 测试库 / AI 生成器 | 在 [quiz-factory 仓库](https://github.com/Aurorawby/quiz-factory)的 Pages 上 |
@@ -44,7 +44,7 @@
 | [`eval/trip-onepager/REPORT.md`](eval/trip-onepager/REPORT.md) | 行程一页纸：攻略解析与结构诊断回归 5/5 一致 |
 | [`eval/food-picker/REPORT.md`](eval/food-picker/REPORT.md) | 吃什么决策器：过滤与加权排序（含 tie-break）回归 9/9 一致 |
 | [`eval/xhs-studio/REPORT.md`](eval/xhs-studio/REPORT.md) | 图文工作室：脚本校验引擎 7/7 一致（基线满分 + 4 变异体 + 形态区分度 + 红线声明） |
-| [`eval/job-workbench/REPORT.md`](eval/job-workbench/REPORT.md) | 求职工作台：跨工具数据流 6 项 + 经历深挖 4 项断言全部通过 |
+| [`eval/job-workbench/REPORT.md`](eval/job-workbench/REPORT.md) | 求职工作台：数据流 6 项 + 经历深挖 4 项 + 经历库 3 项断言全部通过 |
 
 **复现**（不需要浏览器、不调用模型，只依赖 Node）：
 

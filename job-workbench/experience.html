@@ -166,6 +166,8 @@
     <div class="row">
       <button class="btn" id="btn-download">下载 Markdown</button>
       <button class="btn ghost small" id="btn-copy">复制全文</button>
+      <button class="btn ghost small" id="btn-save">保存到经历库</button>
+      <a class="btn ghost small" href="experience-bank.html">打开经历库</a>
       <button class="btn ghost small" id="btn-again">再深挖一段</button>
     </div>
     <details class="api">
@@ -192,7 +194,7 @@
 (function () {
   'use strict';
   var CORE = window.ExperienceCore;
-  var K_STATE = 'em_state_v1', K_API = 'em_api_v1', K_JWB = 'jwb_state';
+  var K_STATE = 'em_state_v1', K_API = 'em_api_v1', K_JWB = 'jwb_state', K_LIB = 'em_library_v1';
   var session = null, story = null, messages = [], aiText = '';
   var $ = function (id) { return document.getElementById(id); };
 
@@ -209,6 +211,19 @@
   }
   function saveState() {
     saveJSON(K_STATE, { session: session, story: story, messages: messages, aiText: aiText });
+  }
+  function saveToLibrary() {
+    if (!story) { toast('先生成故事'); return; }
+    var lib = loadJSON(K_LIB) || [];
+    var id = (story.title || '') + '|' + (story.period || '');
+    var item = JSON.parse(JSON.stringify(story));
+    item.id = id;
+    item.savedAt = new Date().toISOString();
+    var idx = -1;
+    for (var i = 0; i < lib.length; i++) { if (lib[i].id === id) { idx = i; break; } }
+    if (idx >= 0) lib[idx] = item; else lib.unshift(item);
+    saveJSON(K_LIB, lib);
+    toast('已保存到经历库（' + lib.length + ' 段经历）');
   }
   function restoreState() {
     var data = loadJSON(K_STATE);
@@ -428,6 +443,7 @@
   $('btn-generate').addEventListener('click', generate);
   $('btn-download').addEventListener('click', download);
   $('btn-copy').addEventListener('click', copy);
+  $('btn-save').addEventListener('click', saveToLibrary);
   $('btn-again').addEventListener('click', function () { $('intake').scrollIntoView({ behavior: 'smooth' }); $('exp-title').focus(); });
   $('btn-demo').addEventListener('click', demo);
   $('btn-carry').addEventListener('click', carry);
