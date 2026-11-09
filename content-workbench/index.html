@@ -154,6 +154,21 @@
   </footer>
 </div>
 
+<!-- 草稿预览 -->
+<div class="drawer" id="drawer-draft" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:60">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:720px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;overflow:auto">
+    <h3 style="margin:0 0 6px;font-size:16px">📝 草稿预览 <span id="draft-platform" style="font-size:12px;color:#888"></span></h3>
+    <div class="note" style="margin:0 0 10px">这是按标题和平台生成的快速结构，发布前请补真实信息、数字和例子。</div>
+    <textarea id="draft-text" style="width:100%;min-height:330px;border:1.5px solid #eadfd0;border-radius:12px;padding:12px;font-size:13px;line-height:1.75;font-family:inherit;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px">
+      <button class="btn b" id="draft-close">关闭</button>
+      <button class="btn b" id="draft-copy">复制草稿</button>
+      <a class="btn b" id="draft-refine" href="../note-craft/" target="_blank" rel="noopener">去精修</a>
+      <button class="btn a" id="draft-save">保存并标记已起草</button>
+    </div>
+  </div>
+</div>
+
 <!-- AI 设置 -->
 <div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
   <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto">
@@ -340,6 +355,98 @@ function renderPicker() {
     : '<option value="">（选题池没有可用选题）</option>';
 }
 
+function draftTemplate(p) {
+  var title = p.title || '未命名选题';
+  var angle = p.angle || '未分类';
+  var platform = p.platform || '公众号';
+  if (platform === '小红书') {
+    return [
+      '标题：' + title + '（小红书）',
+      '',
+      '封面：一句话说清「这篇能帮谁解决什么」，把结果或数字放大。',
+      '',
+      'P1｜先说场景',
+      '· 谁：____',
+      '· 什么时候会遇到：____',
+      '· 不解决会怎样：____',
+      '',
+      'P2｜给 3 个要点',
+      '· 要点 1：____',
+      '· 要点 2：____',
+      '· 要点 3：____',
+      '',
+      'P3｜给一个真实例子',
+      '· 例子/对比：____',
+      '· 结果/数字：____',
+      '',
+      '正文：把 P1–P3 连成 150–250 字，补一个自己的经历或读者能对照的场景。',
+      '',
+      '标签：#____ #____ #____',
+      '',
+      '评论区置顶：补充一个可执行动作或提问，引导互动。',
+      '',
+      '发布前检查：图片、数字、例子是否真实；不编造。'
+    ].join('\n');
+  }
+  if (platform === '知乎') {
+    return [
+      '问题式标题：' + title,
+      '',
+      '开头：用一句话给出结论，再补一个你遇到的场景。',
+      '',
+      '一、问题是什么（____）',
+      '二、为什么会出现（____）',
+      '三、可以怎么做（3 条，按优先级）',
+      '  1）____',
+      '  2）____',
+      '  3）____',
+      '',
+      '例子：____',
+      '',
+      '结尾：一句话总结 + 一个开放问题，邀请评论。',
+      '',
+      '发布前检查：事实、数字、引用是否可核对；不编造经历。'
+    ].join('\n');
+  }
+  return [
+    '标题：' + title + '（公众号）',
+    '',
+    '开头：用一个具体场景/问题引入，告诉读者这篇能解决什么。',
+    '',
+    '01｜问题：____',
+    '02｜原因：____',
+    '03｜方法：____',
+    '  步骤 1：____',
+    '  步骤 2：____',
+    '  步骤 3：____',
+    '',
+    '案例：____',
+    '',
+    '结尾：总结 1 句话 + 行动建议 + 引导留言。',
+    '',
+    '排版提示：小标题统一、每段不超过 3 行、图片下面标图注。',
+    '',
+    '发布前检查：事实、数字、引用是否真实；不编造。'
+  ].join('\n');
+}
+
+var draftEditingUid = null;
+
+function openDraft(p) {
+  draftEditingUid = p.uid;
+  var platform = p.platform || '公众号';
+  document.getElementById('draft-platform').textContent = '· ' + platform + ' · ' + (p.angle || '未分类');
+  document.getElementById('draft-text').value = p.draft || draftTemplate(p);
+  var refine = document.getElementById('draft-refine');
+  refine.href = platform === '小红书' ? '../xhs-studio/' : (platform === '公众号' ? '../mp-formatter/' : '../note-craft/');
+  document.getElementById('drawer-draft').style.display = 'flex';
+}
+
+function closeDraft() {
+  document.getElementById('drawer-draft').style.display = 'none';
+  draftEditingUid = null;
+}
+
 function renderKanban() {
   var cols = [
     { key: 'planned', label: '📋 待起草' },
@@ -350,8 +457,9 @@ function renderKanban() {
     var items = plan.filter(function(p) { return p.state === col.key; });
     var cards = items.length ? items.map(function(p) {
       var ops = '';
-      if (p.state === 'planned') ops += '<button data-act="draft" data-uid="' + p.uid + '">→ 已起草</button>';
-      if (p.state === 'drafted') ops += '<button data-act="publish" data-uid="' + p.uid + '">→ 已发布</button>';
+      if (p.state === 'planned') ops += '<button data-act="draft" data-uid="' + p.uid + '">📝 生成草稿</button>';
+      if (p.state === 'drafted') ops += '<button data-act="viewdraft" data-uid="' + p.uid + '">查看/编辑草稿</button><button data-act="publish" data-uid="' + p.uid + '">→ 已发布</button>';
+      if (p.state === 'published') ops += '<button data-act="viewdraft" data-uid="' + p.uid + '">查看草稿</button>';
       ops += '<button data-act="del" data-uid="' + p.uid + '">🗑</button>';
       var metrics = p.state === 'published'
         ? '<div class="metrics">'
@@ -423,26 +531,30 @@ function init() {
     var title = document.getElementById('pick-source').value;
     if (!title) { status('选题池为空：可先去选题雷达生成，或直接在上方“手动添加选题”输入标题。', true); return; }
     var src = pool.filter(function(x) { return x.title === title; })[0] || {};
-    plan.push({
+    var rec = {
       uid: 'tr:' + title,
       title: title,
       angle: src.angle || '未分类',
       platform: document.getElementById('pick-platform').value,
       state: 'planned', metrics: null
-    });
+    };
+    plan.push(rec);
     savePlan(plan);
     renderAll();
-    status('✅ 已加入本周计划（同一篇不会重复导入）。');
+    status('✅ 已加入本周计划，先给你一版草稿结构。');
+    openDraft(rec);
   });
 
   document.getElementById('btn-manual').addEventListener('click', function() {
     var input = document.getElementById('manual-title');
     var title = (input.value || '').trim();
     if (!title) { status('先在上方“手动添加选题”里输入一个标题。', true); input.focus(); return; }
-    plan.push({ uid: 'manual:' + Date.now(), title: title, angle: '未分类', platform: document.getElementById('pick-platform').value, state: 'planned', metrics: null });
+    var rec = { uid: 'manual:' + Date.now(), title: title, angle: '未分类', platform: document.getElementById('pick-platform').value, state: 'planned', metrics: null };
+    plan.push(rec);
     input.value = '';
     savePlan(plan); renderAll();
-    status('✅ 已手动加入本周计划。');
+    status('✅ 已加入本周计划，先给你一版草稿结构。');
+    openDraft(rec);
   });
 
   // 演示按钮（动态加入顶栏）
@@ -466,8 +578,8 @@ function init() {
     if (!act || !uid) return;
     var rec = plan.filter(function(p) { return p.uid === uid; })[0];
     if (!rec) return;
-    if (act === 'draft') rec.state = 'drafted';
-    else if (act === 'publish') rec.state = 'published';
+    if (act === 'draft' || act === 'viewdraft') { openDraft(rec); return; }
+    if (act === 'publish') rec.state = 'published';
     else if (act === 'del') { if (!confirm('删除这条计划？')) return; plan = plan.filter(function(p) { return p.uid !== uid; }); }
     savePlan(plan); renderAll();
   });
@@ -481,6 +593,31 @@ function init() {
     if (!rec.metrics) rec.metrics = { views: 0, likes: 0, collects: 0, fans: 0 };
     rec.metrics[m] = Number(ev.target.value) || 0;
     savePlan(plan); renderPerf(); renderBrief();
+  });
+
+  document.getElementById('draft-close').addEventListener('click', closeDraft);
+  document.getElementById('drawer-draft').addEventListener('click', function(ev) {
+    if (ev.target === document.getElementById('drawer-draft')) closeDraft();
+  });
+  document.getElementById('draft-copy').addEventListener('click', function() {
+    var ta = document.getElementById('draft-text');
+    ta.select();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(function() { status('📋 草稿已复制。'); });
+    } else {
+      document.execCommand('copy');
+      status('📋 草稿已复制。');
+    }
+  });
+  document.getElementById('draft-save').addEventListener('click', function() {
+    var rec = plan.filter(function(p) { return p.uid === draftEditingUid; })[0];
+    if (!rec) { closeDraft(); return; }
+    rec.draft = document.getElementById('draft-text').value;
+    rec.state = 'drafted';
+    savePlan(plan);
+    closeDraft();
+    renderAll();
+    status('✅ 草稿已保存，已从「待起草」移到「已起草」。');
   });
 
   document.getElementById('btn-ai-comment').addEventListener('click', async function() {
