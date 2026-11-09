@@ -117,12 +117,13 @@
           <select id="pick-source"><option value="">加载中…</option></select></div>
         <div><label>平台</label>
           <select id="pick-platform"><option>公众号</option><option>小红书</option><option>知乎</option></select></div>
+        <div><label>手动添加选题</label>
+          <input id="manual-title" placeholder="输入标题，再点下方按钮"></div>
       </div>
       <button class="btn a" id="btn-import">➕ 加入本周计划</button>
-      <button class="btn b" id="btn-manual">✏️ 手动添加选题</button>
+      <button class="btn b" id="btn-manual">✏️ 添加手动选题</button>
       <div class="statusline" id="pick-status"></div>
-      <div class="note">「从选题池导入」直接读取<b>选题雷达</b>的本地数据（先去那边建选题，或点「装载演示数据」体验全流程）；
-      导入过的选题会标记，不会重复进计划。</div>
+      <div class="note">「从选题池导入」读取<b>选题雷达</b>的本地数据；如果没有选题，可以直接在“手动添加选题”里输入标题，或点「装载演示数据」。</div>
     </div>
   </section>
 
@@ -420,7 +421,7 @@ function init() {
 
   document.getElementById('btn-import').addEventListener('click', function() {
     var title = document.getElementById('pick-source').value;
-    if (!title) { status('选题池没有可用选题——去选题雷达生成，或点右上角看演示。', true); return; }
+    if (!title) { status('选题池为空：可先去选题雷达生成，或直接在上方“手动添加选题”输入标题。', true); return; }
     var src = pool.filter(function(x) { return x.title === title; })[0] || {};
     plan.push({
       uid: 'tr:' + title,
@@ -435,10 +436,13 @@ function init() {
   });
 
   document.getElementById('btn-manual').addEventListener('click', function() {
-    var title = prompt('选题标题：');
-    if (!title || !title.trim()) return;
-    plan.push({ uid: 'manual:' + Date.now(), title: title.trim(), angle: '未分类', platform: document.getElementById('pick-platform').value, state: 'planned', metrics: null });
+    var input = document.getElementById('manual-title');
+    var title = (input.value || '').trim();
+    if (!title) { status('先在上方“手动添加选题”里输入一个标题。', true); input.focus(); return; }
+    plan.push({ uid: 'manual:' + Date.now(), title: title, angle: '未分类', platform: document.getElementById('pick-platform').value, state: 'planned', metrics: null });
+    input.value = '';
     savePlan(plan); renderAll();
+    status('✅ 已手动加入本周计划。');
   });
 
   // 演示按钮（动态加入顶栏）
