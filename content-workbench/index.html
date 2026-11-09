@@ -159,6 +159,12 @@
   <div class="panel" style="background:#fff;border-radius:18px;max-width:720px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;overflow:auto">
     <h3 style="margin:0 0 6px;font-size:16px">📝 草稿预览 <span id="draft-platform" style="font-size:12px;color:#888"></span></h3>
     <div class="note" style="margin:0 0 10px">这是按标题和平台生成的快速结构，发布前请补真实信息、数字和例子。</div>
+    <label style="font-size:12px;color:#7a7268;font-weight:600">参考链接/笔记（选填，每行一条；不会自动抓取正文）</label>
+    <textarea id="draft-refs" style="width:100%;min-height:58px;border:1.5px solid #eadfd0;border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.6;font-family:inherit;margin:4px 0 8px"></textarea>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn b" id="draft-ai">✨ AI 生成长文</button>
+      <span id="draft-ai-status" style="font-size:12px;color:#7a7268"></span>
+    </div>
     <textarea id="draft-text" style="width:100%;min-height:330px;border:1.5px solid #eadfd0;border-radius:12px;padding:12px;font-size:13px;line-height:1.75;font-family:inherit;resize:vertical"></textarea>
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px">
       <button class="btn b" id="draft-close">关闭</button>
@@ -436,6 +442,8 @@ function openDraft(p) {
   draftEditingUid = p.uid;
   var platform = p.platform || '公众号';
   document.getElementById('draft-platform').textContent = '· ' + platform + ' · ' + (p.angle || '未分类');
+  document.getElementById('draft-refs').value = p.refs || '';
+  document.getElementById('draft-ai-status').textContent = '';
   document.getElementById('draft-text').value = p.draft || draftTemplate(p);
   var refine = document.getElementById('draft-refine');
   refine.href = platform === '小红书' ? '../xhs-studio/' : (platform === '公众号' ? '../mp-formatter/' : '../note-craft/');
@@ -609,10 +617,33 @@ function init() {
       status('📋 草稿已复制。');
     }
   });
+  document.getElementById('draft-ai').addEventListener('click', async function() {
+    var rec = plan.filter(function(p) { return p.uid === draftEditingUid; })[0];
+    if (!rec) return;
+    var btn = document.getElementById('draft-ai');
+    var msg = document.getElementById('draft-ai-status');
+    var refs = document.getElementById('draft-refs').value.trim();
+    btn.disabled = true;
+    msg.textContent = '生成中…';
+    try {
+      var text = await callChat([
+        { role: 'system', content: '你是中文内容编辑。只使用用户提供的选题、平台和参考笔记；不要编造事实、数字或引用。输出可直接编辑的长文：标题、开头、3–5 个小节、结尾。不要输出解释。' },
+        { role: 'user', content: '选题：' + rec.title + '\n平台：' + (rec.platform || '公众号') + '\n参考笔记/链接（可能不完整）：\n' + (refs || '（没有参考，不要编具体数字/案例；需要的地方标[待补]）') + '\n请写一篇完整长文。' }
+      ], 1600);
+      document.getElementById('draft-text').value = text.trim();
+      msg.textContent = '已生成，请核对事实后再保存。';
+    } catch (e) {
+      msg.textContent = '生成失败：' + e.message + '（先点右上角 ⚙️ AI 设置）';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   document.getElementById('draft-save').addEventListener('click', function() {
     var rec = plan.filter(function(p) { return p.uid === draftEditingUid; })[0];
     if (!rec) { closeDraft(); return; }
     rec.draft = document.getElementById('draft-text').value;
+    rec.refs = document.getElementById('draft-refs').value;
     rec.state = 'drafted';
     savePlan(plan);
     closeDraft();
