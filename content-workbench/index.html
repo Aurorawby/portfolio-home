@@ -7,109 +7,104 @@
 <meta name="description" content="把选题雷达、笔记工坊串成内容流水线：周计划、发布漏斗、数据回流分析、周简报。统计建议由代码算——样本不足不下结论。">
 <style>
   :root{
-    --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
-    --orange:#ff7a45; --orange-soft:#ffe8dc;
-    --purple:#7c3aed; --purple-soft:#f0e4ff;
-    --blue:#5b7cfa; --blue-soft:#e4e9ff;
-    --green:#12a184; --green-soft:#dcf5ee;
-    --red:#d64545; --red-soft:#fde5e5;
-    --radius:18px; --shadow:0 10px 26px rgba(60,42,20,.10);
+    --ink:#18181b; --muted:#71717a; --bg:#f7f7f8; --card:#ffffff; --line:#e4e4e7;
+    --accent:#2563eb; --accent-soft:#eff6ff;
+    --green:#15803d; --green-soft:#f0fdf4;
+    --amber:#b45309; --amber-soft:#fffbeb;
+    --red:#b91c1c; --red-soft:#fef2f2;
+    --radius:10px; --shadow:0 1px 2px rgba(0,0,0,.04);
   }
   *{box-sizing:border-box}
-  body{margin:0;background:radial-gradient(800px 420px at 0% -10%,var(--purple-soft),transparent 60%),
-    radial-gradient(800px 420px at 100% 0%,var(--orange-soft),transparent 55%),var(--bg);
-    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-    min-height:100vh;padding:36px 16px 40px}
-  .wrap{max-width:960px;margin:0 auto}
-  h1{font-size:30px;margin:0 0 6px;letter-spacing:.5px}
-  .sub{color:var(--muted);font-size:14.5px;line-height:1.8;margin:0 0 18px;max-width:50em}
-  .sub b{color:var(--ink)}
-  .topbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-  .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:600;color:#8a5a1f}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;padding:34px 16px 44px;font-size:14px}
+  .wrap{max-width:980px;margin:0 auto}
+  h1{font-size:26px;line-height:1.3;margin:0 0 7px;letter-spacing:-.02em;font-weight:700}
+  .sub{color:var(--muted);font-size:13.5px;line-height:1.8;margin:0 0 20px;max-width:52em}
+  .sub b{color:var(--ink);font-weight:600}
+  .topbar{display:flex;gap:0;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .pill{background:none;border:none;border-radius:0;padding:0;font-size:12px;font-weight:500;color:var(--muted)}
+  .pill + .pill::before{content:"·";color:#d4d4d8;margin:0 9px}
   .topbtn{margin-left:auto;display:flex;gap:8px}
   button{font-family:inherit;cursor:pointer}
-  .btn{border:none;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700}
-  .btn.a{background:var(--orange);color:#fff;box-shadow:0 6px 16px rgba(255,122,69,.28)}
-  .btn.b{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
-  .btn.small{padding:5px 12px;font-size:12px;border-radius:8px}
-  section{margin-bottom:26px}
-  h2{font-size:18.5px;margin:0 0 10px}
-  .card{background:var(--card);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
-  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px}
-  input,select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13.5px;font-family:inherit;background:#fff}
+  .btn{border:none;border-radius:7px;padding:8px 14px;font-size:13px;font-weight:600;line-height:1.4}
+  .btn.a{background:var(--ink);color:#fff;box-shadow:none}
+  .btn.b{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn:hover{opacity:.88}
+  .btn.small{padding:4px 10px;font-size:11.5px;border-radius:6px}
+  section{margin-bottom:28px}
+  h2{font-size:15px;margin:0 0 10px;font-weight:700;letter-spacing:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  label{font-size:12.5px;color:var(--muted);font-weight:600;display:block;margin-bottom:5px}
+  input,select{width:100%;border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#a1a1aa}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-  .statusline{font-size:13px;color:var(--muted);margin:8px 0;min-height:20px}
+  .statusline{font-size:12.5px;color:var(--muted);margin:8px 0;min-height:20px}
   .statusline.err{color:var(--red);font-weight:600}
-  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#faf6ef;border-radius:10px;padding:9px 12px;margin-top:10px}
-  /* 导入选题 */
-  .pick-list{max-height:260px;overflow:auto;margin-top:10px}
-  .pick{display:flex;align-items:center;gap:10px;background:#faf6ef;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.8px;margin-bottom:6px}
-  .pick button{margin-left:auto;border:1.2px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;font-size:11.8px;font-weight:700}
-  .pick button:hover{border-color:var(--orange)}
-  .tag{display:inline-block;border-radius:999px;padding:1px 9px;font-size:10.8px;font-weight:700;background:var(--orange-soft);color:#b45309}
-  /* 看板 */
+  .note{font-size:12px;color:var(--muted);line-height:1.8;background:#fafafa;border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin-top:10px}
+  .tag{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10.5px;font-weight:600;background:#f4f4f5;color:#52525b}
   .kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px}
-  .kcol{min-width:250px;flex:0 0 auto;background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:14px;padding:10px}
-  .kcol h3{font-size:13px;margin:0 0 9px;display:flex;justify-content:space-between}
-  .kcol h3 .cnt{background:#fff;border:1px solid var(--line);border-radius:99px;padding:0 8px;font-size:11px;color:var(--muted)}
-  .kcard{background:#fff;border-radius:12px;padding:10px 11px;box-shadow:0 4px 12px rgba(60,42,20,.08);margin-bottom:8px;font-size:12.3px;line-height:1.6}
-  .kcard .t{font-weight:700;font-size:13px}
-  .kcard .meta{color:var(--muted);font-size:11.3px;margin-top:2px}
-  .kcard .ops{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
-  .kcard .ops button{border:1.2px solid var(--line);background:#fff;border-radius:7px;padding:3px 8px;font-size:11px;font-weight:600}
+  .kcol{min-width:250px;flex:0 0 auto;background:#fbfbfc;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .kcol h3{font-size:12.5px;margin:0 0 9px;display:flex;justify-content:space-between;color:var(--ink);font-weight:600}
+  .kcol h3 .cnt{background:#fff;border:1px solid var(--line);border-radius:5px;padding:0 7px;font-size:11px;color:var(--muted);font-weight:500}
+  .kcard{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 11px;box-shadow:none;margin-bottom:8px;font-size:12.3px;line-height:1.6}
+  .kcard .t{font-weight:600;font-size:12.8px}
+  .kcard .meta{color:var(--muted);font-size:11.3px;margin-top:3px}
+  .kcard .ops{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+  .kcard .ops button{border:1px solid var(--line);background:#fff;border-radius:5px;padding:3px 8px;font-size:11px;font-weight:500;color:var(--ink)}
+  .kcard .ops button:hover{border-color:#a1a1aa}
   .kcard .metrics{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px}
-  .kcard .metrics input{border:1.2px solid var(--line);border-radius:7px;padding:4px 7px;font-size:11.5px;width:100%}
-  .empty-col{color:#bbb;font-size:11.5px;text-align:center;padding:12px 0}
-  /* 简报 */
+  .kcard .metrics input{border:1px solid var(--line);border-radius:5px;padding:4px 7px;font-size:11.5px;width:100%}
+  .empty-col{color:#a1a1aa;font-size:11.5px;text-align:center;padding:12px 0}
   .brief-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-  .brief{border-radius:12px;padding:12px 15px;font-size:12.9px;line-height:1.85;margin-bottom:9px}
-  .brief.warn{background:#fff3e0;color:#92600a}
-  .brief.good{background:var(--green-soft);color:#0b6b52}
-  .brief.act{background:var(--blue-soft);color:#3b5bdb}
-  .brief b{font-weight:800}
-  .funnel{display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:700;flex-wrap:wrap;margin-top:4px}
-  .funnel .step{border-radius:8px;padding:6px 10px;background:var(--purple-soft);color:#6d28d9}
-  .funnel .step.win{background:var(--green-soft);color:#0b6b52}
-  .funnel .arrow{color:var(--muted);font-weight:400}
+  .brief{border-radius:8px;padding:11px 14px;font-size:12.8px;line-height:1.8;margin-bottom:9px;border:1px solid var(--line)}
+  .brief.warn{background:var(--amber-soft);color:#78350f}
+  .brief.good{background:var(--green-soft);color:#14532d}
+  .brief.act{background:var(--accent-soft);color:#1e3a8a}
+  .brief b{font-weight:700}
+  .funnel{display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;flex-wrap:wrap;margin-top:4px}
+  .funnel .step{border-radius:6px;padding:5px 9px;background:#f4f4f5;color:#3f3f46}
+  .funnel .step.win{background:var(--green-soft);color:var(--green)}
+  .funnel .arrow{color:#a1a1aa;font-weight:400}
   .hbar{display:grid;grid-template-columns:86px 1fr 90px;gap:8px;align-items:center;font-size:12px;margin-bottom:6px}
-  .bar-track{height:8px;background:#f1e8dc;border-radius:99px;overflow:hidden}
-  .bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#d8c6f7,var(--purple))}
-  .ai-out{background:#faf6ef;border-radius:10px;padding:12px 14px;font-size:12.8px;line-height:1.9;margin-top:10px;white-space:pre-wrap}
-  footer{text-align:center;color:#a89b8a;font-size:12.5px;margin-top:36px;line-height:2}
-  footer a{color:#8a5a1f}
+  .bar-track{height:7px;background:#f0f0f1;border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:99px;background:var(--accent)}
+  .ai-out{background:#fafafa;border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:12.8px;line-height:1.9;margin-top:10px;white-space:pre-wrap}
+  footer{text-align:center;color:#a1a1aa;font-size:12px;margin-top:38px;line-height:2}
+  footer a{color:var(--muted)}
+  @media(max-width:640px){body{padding:22px 12px 32px}h1{font-size:22px}.card{padding:14px 15px}.topbtn{width:100%;margin-left:0}}
 </style>
 </head>
 <body>
 <div class="pbar"><div class="pbar-in"><a href="../">← 作品集</a><span class="pbar-sp"></span><b>内容工作台</b><span class="pbar-sp"></span><a href="PRD.md">PRD</a></div></div>
 <style>
-.pbar{background:#f7f5f0;border-bottom:1px solid #e7e2d9;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
-.pbar-in{max-width:1120px;margin:0 auto;padding:9px 20px;display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.4;color:#6c675f}
-.pbar a{color:#6c675f;text-decoration:none;font-weight:600}
-.pbar a:hover{color:#1f4fd8}
-.pbar b{color:#171614;font-weight:700}
+.pbar{background:#fff;border-bottom:1px solid #e4e4e7;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+.pbar-in{max-width:1120px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:10px;font-size:12.5px;line-height:1.4;color:#71717a}
+.pbar a{color:#71717a;text-decoration:none;font-weight:500}
+.pbar a:hover{color:#18181b}
+.pbar b{color:#18181b;font-weight:600}
 .pbar-sp{flex:1}
 @media(max-width:640px){.pbar-in{padding:8px 14px;font-size:12px}}
 </style>
 
 <div class="wrap">
 
-  <h1>🗞 内容工作台 <span style="font-size:15px;color:var(--muted);font-weight:600">ContentWorkbench</span></h1>
-  <p class="sub">内容线的全流程编排：从<b>选题雷达</b>的选题池挑出本周要发的 → 登记草稿 → 发布后<b>把阅读/点赞数据回流</b> →
-  按「选题类型」聚合看哪类内容真的表现好。周简报由代码生成，<b>样本不足时明确说"不下结论"</b>——数据回流的目的不是好看，是让下周的选题更聪明。</p>
+  <h1>内容工作台 <span style="font-size:15px;color:var(--muted);font-weight:600">ContentWorkbench</span></h1>
+  <p class="sub">从选题雷达挑本周要发的内容，登记草稿，发布后回填阅读和点赞数据，按选题类型看哪类内容真的有效。周简报由代码计算；样本不足时明确说“不下结论”。</p>
 
   <div class="topbar">
-    <span class="pill">🔗 自动读取选题雷达的选题池</span>
-    <span class="pill">🔒 数据只存本机</span>
-    <span class="pill">🧪 无数据可演示</span>
+    <span class="pill">读取选题雷达的选题池</span>
+    <span class="pill">数据只存本机</span>
+    <span class="pill">无数据可演示</span>
     <span class="topbtn">
-      <button class="btn b" id="btn-export">📋 复制周报</button>
-      <button class="btn b" id="btn-settings">⚙️ AI 设置</button>
+      <button class="btn b" id="btn-export">复制周报</button>
+      <button class="btn b" id="btn-settings">设置</button>
     </span>
   </div>
 
   <section>
     <div class="card">
-      <h2>① 本周发布计划</h2>
+      <h2>01 本周发布计划</h2>
       <div class="grid" style="margin-bottom:8px">
         <div><label>周起始日</label><input id="wk-start" type="date"></div>
         <div><label>周目标（篇）</label><input id="wk-goal" type="number" value="3" min="1" max="14"></div>
@@ -120,29 +115,29 @@
         <div><label>手动添加选题</label>
           <input id="manual-title" placeholder="输入标题，再点下方按钮"></div>
       </div>
-      <button class="btn a" id="btn-import">➕ 加入本周计划</button>
-      <button class="btn b" id="btn-manual">✏️ 添加手动选题</button>
+      <button class="btn a" id="btn-import">加入计划</button>
+      <button class="btn b" id="btn-manual">添加选题</button>
       <div class="statusline" id="pick-status"></div>
       <div class="note">「从选题池导入」读取<b>选题雷达</b>的本地数据；如果没有选题，可以直接在“手动添加选题”里输入标题，或点「装载演示数据」。</div>
     </div>
   </section>
 
   <section>
-    <h2>② 流水线：计划 → 草稿 → 已发布（数据回流）</h2>
+    <h2>02 计划 → 草稿 → 已发布</h2>
     <div class="statusline" id="board-status"></div>
     <div class="kanban" id="kanban"></div>
   </section>
 
   <section>
-    <h2>③ 数据回流：哪类选题真的表现好？</h2>
+    <h2>03 数据回流</h2>
     <div class="card" id="angle-perf"></div>
   </section>
 
   <section>
-    <h2>④ 周简报（规则引擎生成）</h2>
+    <h2>04 周简报</h2>
     <div class="card" id="brief"></div>
     <div class="topbar" style="margin-top:10px">
-      <button class="btn a" id="btn-ai-comment">🤖 AI 点评这份简报</button>
+      <button class="btn a" id="btn-ai-comment">生成点评</button>
     </div>
     <div id="ai-box"></div>
   </section>
@@ -150,22 +145,22 @@
   <footer>
     📄 <a href="PRD.md">PRD（需求文档）</a> · <a href="产品说明.md">产品说明</a> ·
     简报与统计由代码计算，<b>样本 &lt;3 不下结论</b> · 需要选题雷达同浏览器数据 ·
-    单文件 HTML 可离线使用 · AI 结对编程产出
+    单文件 HTML · 可离线使用 · 个人项目
   </footer>
 </div>
 
 <!-- 草稿预览 -->
-<div class="drawer" id="drawer-draft" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:60">
-  <div class="panel" style="background:#fff;border-radius:18px;max-width:720px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;overflow:auto">
-    <h3 style="margin:0 0 6px;font-size:16px">📝 草稿预览 <span id="draft-platform" style="font-size:12px;color:#888"></span></h3>
+<div class="drawer" id="drawer-draft" style="position:fixed;inset:0;background:rgba(24,24,27,.32);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:60">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:720px;width:100%;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.16);max-height:90vh;overflow:auto">
+    <h3 style="margin:0 0 6px;font-size:16px">草稿预览 <span id="draft-platform" style="font-size:12px;color:#888"></span></h3>
     <div class="note" style="margin:0 0 10px">这是按标题和平台生成的快速结构，发布前请补真实信息、数字和例子。</div>
-    <label style="font-size:12px;color:#7a7268;font-weight:600">参考标题/要点（选填，每行一条；工具不会自动打开链接）</label>
-    <textarea id="draft-refs" placeholder="例：小红书同类笔记标题 + 3 个要点；链接可附后" style="width:100%;min-height:58px;border:1.5px solid #eadfd0;border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.6;font-family:inherit;margin:4px 0 8px"></textarea>
+    <label style="font-size:12px;color:#71717a;font-weight:600">参考标题/要点（选填，每行一条；工具不会自动打开链接）</label>
+    <textarea id="draft-refs" placeholder="例：小红书同类笔记标题 + 3 个要点；链接可附后" style="width:100%;min-height:58px;border:1.5px solid #e4e4e7;border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.6;font-family:inherit;margin:4px 0 8px"></textarea>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-      <button class="btn b" id="draft-ai">✨ AI 生成长文</button>
-      <span id="draft-ai-status" style="font-size:12px;color:#7a7268"></span>
+      <button class="btn b" id="draft-ai">生成长文</button>
+      <span id="draft-ai-status" style="font-size:12px;color:#71717a"></span>
     </div>
-    <textarea id="draft-text" style="width:100%;min-height:330px;border:1.5px solid #eadfd0;border-radius:12px;padding:12px;font-size:13px;line-height:1.75;font-family:inherit;resize:vertical"></textarea>
+    <textarea id="draft-text" style="width:100%;min-height:330px;border:1.5px solid #e4e4e7;border-radius:12px;padding:12px;font-size:13px;line-height:1.75;font-family:inherit;resize:vertical"></textarea>
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px">
       <button class="btn b" id="draft-close">关闭</button>
       <button class="btn b" id="draft-copy">复制草稿</button>
@@ -176,9 +171,9 @@
 </div>
 
 <!-- AI 设置 -->
-<div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(30,20,10,.35);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
-  <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:84vh;overflow:auto">
-    <h3 style="margin:0 0 12px;font-size:16px">⚙️ AI 设置（Key 只存本机）</h3>
+<div class="drawer" id="drawer-api" style="position:fixed;inset:0;background:rgba(24,24,27,.32);display:none;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:50">
+  <div class="panel" style="background:#fff;border-radius:18px;max-width:520px;width:100%;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.16);max-height:84vh;overflow:auto">
+    <h3 style="margin:0 0 12px;font-size:16px">设置（Key 只存本机）</h3>
     <label>服务商</label>
     <select id="api-provider">
       <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
@@ -320,7 +315,7 @@ async function callChat(messages, maxTokens) {
   var provider = PROVIDERS[cfg.provider || 'zhipu'];
   var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
   var model = cfg.model || provider.model;
-  if (!base) throw new Error('请先在 ⚙️ AI 设置里填好接口地址');
+  if (!base) throw new Error('请先在 设置里填好接口地址');
   var headers = { 'Content-Type': 'application/json' };
   if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
   var res = await fetch(base, {
@@ -457,18 +452,18 @@ function closeDraft() {
 
 function renderKanban() {
   var cols = [
-    { key: 'planned', label: '📋 待起草' },
-    { key: 'drafted', label: '✍️ 已起草' },
-    { key: 'published', label: '🚀 已发布（填数据）' }
+    { key: 'planned', label: '待起草' },
+    { key: 'drafted', label: '已起草' },
+    { key: 'published', label: '已发布（填数据）' }
   ];
   document.getElementById('kanban').innerHTML = cols.map(function(col) {
     var items = plan.filter(function(p) { return p.state === col.key; });
     var cards = items.length ? items.map(function(p) {
       var ops = '';
-      if (p.state === 'planned') ops += '<button data-act="draft" data-uid="' + p.uid + '">📝 生成草稿</button>';
+      if (p.state === 'planned') ops += '<button data-act="draft" data-uid="' + p.uid + '">生成草稿</button>';
       if (p.state === 'drafted') ops += '<button data-act="viewdraft" data-uid="' + p.uid + '">查看/编辑草稿</button><button data-act="publish" data-uid="' + p.uid + '">→ 已发布</button>';
       if (p.state === 'published') ops += '<button data-act="viewdraft" data-uid="' + p.uid + '">查看草稿</button>';
-      ops += '<button data-act="del" data-uid="' + p.uid + '">🗑</button>';
+      ops += '<button data-act="del" data-uid="' + p.uid + '">删除</button>';
       var metrics = p.state === 'published'
         ? '<div class="metrics">'
           + '<input data-m="views" data-uid="' + p.uid + '" type="number" placeholder="阅读 ' + (p.metrics ? p.metrics.views || '' : '') + '">'
@@ -504,7 +499,7 @@ function renderPerf() {
 
 function renderBrief() {
   var b = generateBriefing(pool, plan, new Date().toISOString().slice(0, 10));
-  var icon = { warn: '⚠️', good: '✅', act: '👉' };
+  var icon = { warn: '', good: '', act: '' };
   document.getElementById('brief').innerHTML =
     '<div class="brief-grid">'
     + '<div>' + b.warnings.map(function(w) { return '<div class="brief ' + w.level + '">' + (icon[w.level] || '') + ' ' + esc(w.text) + '</div>'; }).join('') + '</div>'
@@ -549,7 +544,7 @@ function init() {
     plan.push(rec);
     savePlan(plan);
     renderAll();
-    status('✅ 已加入本周计划，先给你一版草稿结构。');
+    status('已加入本周计划，先给你一版草稿结构。');
     openDraft(rec);
   });
 
@@ -561,7 +556,7 @@ function init() {
     plan.push(rec);
     input.value = '';
     savePlan(plan); renderAll();
-    status('✅ 已加入本周计划，先给你一版草稿结构。');
+    status('已加入本周计划，先给你一版草稿结构。');
     openDraft(rec);
   });
 
@@ -569,14 +564,14 @@ function init() {
   var demoBtn = document.createElement('button');
   demoBtn.className = 'btn b';
   demoBtn.id = 'btn-demo-top';
-  demoBtn.textContent = '🧪 装载演示数据';
+  demoBtn.textContent = '装载演示数据';
   demoBtn.addEventListener('click', function() {
     pool = JSON.parse(JSON.stringify(DEMO_POOL));
     plan = JSON.parse(JSON.stringify(DEMO_PLAN));
     localStorage.setItem('tr_pool', JSON.stringify(pool));
     savePlan(plan);
     renderAll();
-    status('🧪 已装载演示（选题池 + 发布计划，含数据回流样本）——注意周简报的样本量结论。');
+    status('已装载演示数据。注意周简报的样本量结论。');
   });
   document.querySelector('.topbtn').insertBefore(demoBtn, document.getElementById('btn-export'));
 
@@ -611,10 +606,10 @@ function init() {
     var ta = document.getElementById('draft-text');
     ta.select();
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(ta.value).then(function() { status('📋 草稿已复制。'); });
+      navigator.clipboard.writeText(ta.value).then(function() { status('草稿已复制。'); });
     } else {
       document.execCommand('copy');
-      status('📋 草稿已复制。');
+      status('草稿已复制。');
     }
   });
   document.getElementById('draft-ai').addEventListener('click', async function() {
@@ -633,7 +628,7 @@ function init() {
       document.getElementById('draft-text').value = text.trim();
       msg.textContent = '已生成，请核对事实后再保存。';
     } catch (e) {
-      msg.textContent = '生成失败：' + e.message + '（先点右上角 ⚙️ AI 设置）';
+      msg.textContent = '生成失败：' + e.message + '（先点右上角 设置）';
     } finally {
       btn.disabled = false;
     }
@@ -648,12 +643,12 @@ function init() {
     savePlan(plan);
     closeDraft();
     renderAll();
-    status('✅ 草稿已保存，已从「待起草」移到「已起草」。');
+    status('草稿已保存，已从「待起草」移到「已起草」。');
   });
 
   document.getElementById('btn-ai-comment').addEventListener('click', async function() {
     var box = document.getElementById('ai-box');
-    box.innerHTML = '<div class="ai-out">🤖 正在点评…</div>';
+    box.innerHTML = '<div class="ai-out">正在生成点评…</div>';
     try {
       var b = generateBriefing(pool, plan, new Date().toISOString().slice(0, 10));
       var text = await callChat([
@@ -661,7 +656,7 @@ function init() {
         { role: 'user', content: '内容周报数据：' + JSON.stringify({ funnel: b.funnel, perf: anglePerf(plan), advice: b.perf.text, actions: b.actions }) + '。请用 120 字内给博主一段点评（先说做得好的，再说最该改的一件事，语气像教练不像 AI）。严格输出 JSON：{"comment":"..."}' }
       ]);
       var obj = JSON.parse((text.match(/\{[\s\S]*\}/) || [text])[0]);
-      box.innerHTML = '<div class="ai-out">🤖 ' + esc(obj.comment || text) + '</div>';
+      box.innerHTML = '<div class="ai-out">' + esc(obj.comment || text) + '</div>';
     } catch (e) {
       box.innerHTML = '<div class="ai-out">❌ ' + esc(e.message) + '</div>';
     }
@@ -669,7 +664,7 @@ function init() {
 
   document.getElementById('btn-export').addEventListener('click', function() {
     navigator.clipboard.writeText(exportBrief());
-    status('📋 周报已复制。');
+    status('周报已复制。');
   });
 
   var drawer = document.getElementById('drawer-api');
