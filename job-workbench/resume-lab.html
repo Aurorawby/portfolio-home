@@ -70,7 +70,7 @@
 </style>
 </head>
 <body>
-<div class="pbar"><div class="pbar-in"><a href="../">← 作品集</a><span class="pbar-sp"></span><a href="index.html">求职工作台</a><span class="pbar-sp"></span><b>简历诊断</b><span class="pbar-sp"></span><a href="PRD.md">PRD</a></div></div>
+<div class="pbar"><div class="pbar-in"><a href="../">← 作品集</a><span class="pbar-sp"></span><a href="index.html">求职工作台</a><span class="pbar-sp"></span><b>简历诊断</b><span class="pbar-sp"></span><a href="javascript:void(0)" id="btn-api">模型设置</a><span class="pbar-sp"></span><a href="PRD.md">PRD</a></div></div>
 <div class="wrap">
   <div class="kicker">求职工作台 · 离线版</div>
   <h1>简历诊断</h1>
@@ -94,8 +94,9 @@
     </div>
     <div class="actions">
       <button class="btn primary" id="btn-prompt">生成分析 Prompt</button>
+      <button class="btn ghost" id="btn-ai-analyze">AI 直接分析</button>
       <button class="btn ghost" id="btn-clear">清空本页</button>
-      <span class="hint">先复制 Prompt，再打开 AI；不自动调用模型</span>
+      <span class="hint">先用 Prompt 或配好 Key 直接分析</span>
     </div>
     <div class="prompt-box" id="prompt-box">
       <label for="analysis-prompt">复制这段 Prompt</label>
@@ -132,7 +133,7 @@
   <section class="panel" id="panel-3">
     <h2>03 看「原文 | 修改后 | 为什么」</h2>
     <p class="sub">复制改写 Prompt，让 AI 只基于已确认的信息改结构，不允许新增事实。把返回的表格粘贴回来；确认后再决定用不用。</p>
-    <div class="actions"><button class="btn primary" id="btn-rewrite-prompt">生成改写 Prompt</button><button class="btn ghost" id="btn-copy-rewrite">复制</button></div>
+    <div class="actions"><button class="btn primary" id="btn-rewrite-prompt">生成改写 Prompt</button><button class="btn ghost" id="btn-ai-rewrite">AI 直接改写</button><button class="btn ghost" id="btn-copy-rewrite">复制</button></div>
     <div class="prompt-box show">
       <label for="rewrite-prompt">复制这段 Prompt</label>
       <textarea id="rewrite-prompt" readonly></textarea>
@@ -153,9 +154,44 @@
   <div class="footer">离线版 · 不调用模型 · 不自动投递 · 不替你编经历<br><a href="../">回作品集</a> · <a href="index.html">求职工作台</a> · <a href="experience.html">去经历深挖</a></div>
 </div>
 
+<!-- API 设置 -->
+<div id="api-modal" style="position:fixed;inset:0;background:rgba(24,24,27,.32);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50">
+  <div style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;max-width:520px;width:100%;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.16);max-height:88vh;overflow:auto">
+    <h3 style="margin:0 0 4px;font-size:16px">模型设置</h3>
+    <p style="font-size:12px;color:#71717a;line-height:1.7;margin:0 0 14px">Key 只存你当前浏览器，不会上传。不配置也可以继续用复制 Prompt 的离线方式。</p>
+    <label>服务商</label>
+    <select id="api-provider">
+      <option value="zhipu">智谱 GLM（glm-4-flash 免费）</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="ollama">本地 Ollama（需已启动）</option>
+      <option value="custom">自定义 OpenAI 兼容接口</option>
+    </select>
+    <label>API Key（Ollama 可留空）</label>
+    <input id="api-key" type="password" placeholder="sk-...">
+    <label>模型名（可改）</label>
+    <input id="api-model" placeholder="留空用默认">
+    <label>Base URL（仅自定义时需要）</label>
+    <input id="api-base" placeholder="https://.../v1/chat/completions">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn ghost" id="api-cancel">取消</button>
+      <button class="btn primary" id="api-save">保存</button>
+    </div>
+    <div class="status" id="api-status"></div>
+  </div>
+</div>
+
 <script>
 'use strict';
 var KEY = 'rl_diagnosis_v1';
+var API_KEY = 'rl_api_v1';
+var PROVIDERS = {
+  zhipu:    { base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash' },
+  deepseek: { base:'https://api.deepseek.com/chat/completions', model:'deepseek-chat' },
+  moonshot: { base:'https://api.moonshot.cn/v1/chat/completions', model:'moonshot-v1-8k' },
+  ollama:   { base:'http://localhost:11434/v1/chat/completions', model:'qwen2.5:7b' },
+  custom:   { base:'', model:'' }
+};
 var CHECK_ITEMS = [
   '第一眼能看出目标岗位',
   '每条经历有动作 + 结果',
@@ -180,6 +216,34 @@ function load(){
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
 function setStatus(id, msg, cls){ var el=$(id); el.textContent=msg||''; el.className='status '+ (cls||''); }
+function loadApi(){ try { return JSON.parse(localStorage.getItem(API_KEY) || '{}'); } catch(e){ return {}; } }
+function saveApi(cfg){ localStorage.setItem(API_KEY, JSON.stringify(cfg)); }
+async function callChat(messages, maxTokens){
+  var cfg = loadApi();
+  var provider = PROVIDERS[cfg.provider || 'zhipu'];
+  var base = cfg.provider === 'custom' ? (cfg.base || '') : provider.base;
+  var model = cfg.model || provider.model;
+  if (!base) throw new Error('请先在「模型设置」里填接口地址');
+  var headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  var res = await fetch(base, {
+    method:'POST', headers:headers,
+    body:JSON.stringify({ model:model, messages:messages, temperature:0.3, max_tokens:maxTokens || 1600 })
+  });
+  if (!res.ok) {
+    var detail=''; try{ detail=(await res.text()).slice(0,200); }catch(e){}
+    throw new Error('接口返回 '+res.status+'：'+detail);
+  }
+  var data = await res.json();
+  if (!data.choices || !data.choices[0]) throw new Error('接口返回结构异常');
+  return data.choices[0].message.content;
+}
+function syncInputs(){
+  if ($('jd')) state.jd = $('jd').value;
+  if ($('resume')) state.resume = $('resume').value;
+  if ($('analysis-result')) state.analysis = $('analysis-result').value;
+  if ($('rewrite-result')) state.rewrite = $('rewrite-result').value;
+}
 
 function copyText(text){
   if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
@@ -189,6 +253,7 @@ function copyText(text){
 }
 
 function buildAnalysisPrompt(){
+  syncInputs();
   return [
     '这是我的原始简历和我想应聘的岗位 JD。先不要帮我修改简历，也不要帮我补充任何我没有提供的信息。请先帮我分析：',
     '1. 这个岗位最看重的 5–8 项能力是什么？',
@@ -266,6 +331,7 @@ function renderQuestion(){
 function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function buildRewritePrompt(){
+  syncInputs();
   var gap=currentGap();
   var lines=[];
   (state.gaps||[]).forEach(function(g,i){
@@ -348,6 +414,61 @@ function init(){
   $('resume').addEventListener('input',function(){ state.resume=this.value; save(); });
   $('analysis-result').addEventListener('input',function(){ state.analysis=this.value; save(); });
   $('rewrite-result').addEventListener('input',function(){ state.rewrite=this.value; save(); });
+  $('btn-ai-analyze').addEventListener('click', async function(){
+    var btn=this; btn.disabled=true; setStatus('parse-status','AI 分析中…','');
+    try {
+      var text = await callChat([
+        { role:'system', content:'你是严谨的求职顾问。只依据用户提供的 JD 和简历分析，不编造经历；没有证据写“待补充”。' },
+        { role:'user', content:buildAnalysisPrompt() }
+      ], 2000);
+      syncInputs();
+      $('analysis-result').value=text;
+      state.analysis=text;
+      var gaps=parseGaps(text);
+      if(!gaps.length) throw new Error('AI 没返回可解析的四列表格，请用复制 Prompt 方式重试');
+      state.gaps=gaps; state.gapIndex=0; state.qIndex=0; save(); renderGaps();
+      setStatus('parse-status','AI 分析完成，解析到 '+gaps.length+' 条缺口。','ok');
+    } catch(e) {
+      setStatus('parse-status','AI 分析失败：'+e.message+'（可以继续用复制 Prompt）','err');
+    } finally { btn.disabled=false; }
+  });
+
+  $('btn-ai-rewrite').addEventListener('click', async function(){
+    var btn=this; btn.disabled=true; setStatus('export-status','AI 改写中…','');
+    try {
+      var text = await callChat([
+        { role:'system', content:'你是严谨的简历编辑。只使用已确认的信息；不新增事实和数据；输出「原文 | 修改后 | 为什么这样改」表格。' },
+        { role:'user', content:buildRewritePrompt() }
+      ], 2200);
+      syncInputs();
+      $('rewrite-result').value=text; state.rewrite=text; save();
+      setStatus('export-status','改写建议已生成，请逐条核对事实。','ok');
+    } catch(e) {
+      setStatus('export-status','AI 改写失败：'+e.message+'（可以继续用复制 Prompt）','err');
+    } finally { btn.disabled=false; }
+  });
+
+  $('btn-api').addEventListener('click', function(){
+    var cfg=loadApi();
+    $('api-provider').value=cfg.provider||'zhipu';
+    $('api-key').value=cfg.key||'';
+    $('api-model').value=cfg.model||'';
+    $('api-base').value=cfg.base||'';
+    $('api-status').textContent='';
+    $('api-modal').style.display='flex';
+  });
+  $('api-cancel').addEventListener('click', function(){ $('api-modal').style.display='none'; });
+  $('api-modal').addEventListener('click', function(e){ if(e.target===$('api-modal')) $('api-modal').style.display='none'; });
+  $('api-save').addEventListener('click', function(){
+    saveApi({
+      provider:$('api-provider').value,
+      key:$('api-key').value.trim(),
+      model:$('api-model').value.trim(),
+      base:$('api-base').value.trim()
+    });
+    $('api-modal').style.display='none';
+  });
+
   $('btn-prompt').addEventListener('click',function(){
     $('analysis-prompt').value=buildAnalysisPrompt();
     $('prompt-box').classList.add('show');
