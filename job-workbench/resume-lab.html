@@ -219,6 +219,22 @@ function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
 function setStatus(id, msg, cls){ var el=$(id); el.textContent=msg||''; el.className='status '+ (cls||''); }
 function loadApi(){ try { return JSON.parse(localStorage.getItem(API_KEY) || '{}'); } catch(e){ return {}; } }
 function saveApi(cfg){ localStorage.setItem(API_KEY, JSON.stringify(cfg)); }
+function hasUsableApi(){
+  var cfg=loadApi();
+  var provider=cfg.provider||'zhipu';
+  if (provider==='ollama') return true;
+  if (provider==='custom') return !!(cfg.base && cfg.key);
+  return !!cfg.key;
+}
+function openApiModal(){
+  var cfg=loadApi();
+  $('api-provider').value=cfg.provider||'zhipu';
+  $('api-key').value=cfg.key||'';
+  $('api-model').value=cfg.model||'';
+  $('api-base').value=cfg.base||'';
+  $('api-status').textContent='';
+  $('api-modal').style.display='flex';
+}
 async function callChat(messages, maxTokens){
   var cfg = loadApi();
   var provider = PROVIDERS[cfg.provider || 'zhipu'];
@@ -416,6 +432,11 @@ function init(){
   $('analysis-result').addEventListener('input',function(){ state.analysis=this.value; save(); });
   $('rewrite-result').addEventListener('input',function(){ state.rewrite=this.value; save(); });
   $('btn-ai-analyze').addEventListener('click', async function(){
+    if(!hasUsableApi()){
+      openApiModal();
+      setStatus('parse-status','先填自己的 Key/模型；也可以继续用「生成分析 Prompt」复制到 DeepSeek。','err');
+      return;
+    }
     var btn=this; btn.disabled=true; setStatus('parse-status','AI 分析中…','');
     try {
       var text = await callChat([
@@ -435,6 +456,11 @@ function init(){
   });
 
   $('btn-ai-rewrite').addEventListener('click', async function(){
+    if(!hasUsableApi()){
+      openApiModal();
+      setStatus('export-status','先填自己的 Key/模型；也可以继续用「生成改写 Prompt」复制到 DeepSeek。','err');
+      return;
+    }
     var btn=this; btn.disabled=true; setStatus('export-status','AI 改写中…','');
     try {
       var text = await callChat([
@@ -450,13 +476,7 @@ function init(){
   });
 
   $('btn-api').addEventListener('click', function(){
-    var cfg=loadApi();
-    $('api-provider').value=cfg.provider||'zhipu';
-    $('api-key').value=cfg.key||'';
-    $('api-model').value=cfg.model||'';
-    $('api-base').value=cfg.base||'';
-    $('api-status').textContent='';
-    $('api-modal').style.display='flex';
+    openApiModal();
   });
   $('api-cancel').addEventListener('click', function(){ $('api-modal').style.display='none'; });
   $('api-modal').addEventListener('click', function(e){ if(e.target===$('api-modal')) $('api-modal').style.display='none'; });
