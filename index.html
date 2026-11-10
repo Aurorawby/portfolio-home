@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aurorawby · AI 产品作品集</title>
-<meta name="description" content="17 个可交互产品 + 2 条工作流：内容工作台（选题→发布→数据回流）、图文工作室（爆款形态 schema 化）、求职工作台、JD 雷达、模拟面试官、面试复盘器、投递看板、Quiz Factory、选题雷达、笔记工坊、公众号排版器、汇报一页纸、图表解读器、行程一页纸、吃什么决策器、长文档阅读卡、本地文献 Agent。每个都能点开，关键指标都有可复现评测。">
+<title>Aurorawby · AI 产品与内容工具作品集</title>
+<meta name="description" content="17 个可交互产品 + 2 条工作流 + 2 个 Agent：求职访谈 Agent、本地文献 Agent；内容工作台、简历诊断、JD 雷达等。每个都能点开，关键指标有评测，边界和不足也写清楚。">
 <meta name="theme-color" content="#faf9f7">
 <meta name="robots" content="noindex, nofollow">
-<meta property="og:title" content="Aurorawby · AI 产品作品集">
-<meta property="og:description" content="17 个可交互产品 + 2 条工作流，每个都能点开，关键指标都有可复现评测。">
+<meta property="og:title" content="Aurorawby · AI 产品与内容工具作品集">
+<meta property="og:description" content="17 个可交互产品 + 2 条工作流 + 2 个 Agent，每个都能点开，关键指标有评测。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://aurorawby.github.io/portfolio-home/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f4fd8'/%3E%3Ctext x='32' y='43' font-size='34' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
@@ -87,7 +87,7 @@
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
   .card{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;text-decoration:none;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
   .card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(35,30,20,.1);border-color:var(--line-strong)}
-  .card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+  .card-top{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:14px}
   .icon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:19px;background:var(--accent-soft);flex:0 0 auto}
   .badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;background:#f2efe9;color:#6c675f;white-space:nowrap}
   .badge.online{background:#e7f6ee;color:#126b49}
@@ -198,13 +198,13 @@
   <section class="wrap hero">
     <div>
       <p class="eyebrow">AI 产品经理 / 产品经理 · 实习</p>
-      <h1>把 AI 想法做成<br>能点开、能验证的产品</h1>
+      <h1>把工作里反复做的事<br>做成能用的工具</h1>
       <p class="lede">
-        17 个可交互产品 + 2 条工作流（求职全流程 / 内容全流程）。不是效果图：<b>每个都能点开</b>，
-        关键指标都有<b>可复现评测</b>；边界和不足也写在项目里。
+        做过内容运营和用户增长，也独立做 AI 工具：<b>17 个可交互产品 + 2 条工作流 + 2 个 Agent</b>。
+        不是效果图，每个都能点开；关键指标有评测，边界和不足也写在项目里。
       </p>
       <div class="cta">
-        <a class="btn primary" href="#job">从求职工作流开始 →</a>
+        <a class="btn primary" href="#job">从求职访谈 Agent 开始 →</a>
         <a class="btn ghost" id="hero-github" href="https://github.com/Aurorawby" target="_blank" rel="noopener">GitHub 源码</a>
         <a class="btn ghost" href="AUDIT.md">项目审计</a>
       </div>
@@ -212,16 +212,16 @@
     <aside class="guide" aria-label="面试官导览">
       <h2>面试官 30 秒</h2>
       <p class="guide-sub">按这个顺序看，约 4 分钟。</p>
-      <a href="job-workbench/index.html">
-        <span><span class="g-title">求职工作台</span><br><span class="g-note">JD → 面试 → 复盘一条线</span></span>
+      <a href="job-workbench/experience.html">
+        <span><span class="g-title">求职访谈 Agent</span><br><span class="g-note">会追问一层 · 够写简历就停</span></span>
         <span class="g-note">01</span>
+      </a>
+      <a id="guide-lit" href="https://aurorawby.github.io/local-literature-agent/">
+        <span><span class="g-title">本地文献 Agent</span><br><span class="g-note">检索 / 精读 / 综述 / 引用审计</span></span>
+        <span class="g-note">02</span>
       </a>
       <a href="content-workbench/index.html">
         <span><span class="g-title">内容工作台</span><br><span class="g-note">选题 → 计划 → 发布 → 数据回流</span></span>
-        <span class="g-note">02</span>
-      </a>
-      <a id="guide-lit" href="https://github.com/Aurorawby/local-literature-agent" target="_blank" rel="noopener">
-        <span><span class="g-title">本地文献 Agent</span><br><span class="g-note">检索 / 精读 / 综述 / 引用审计</span></span>
         <span class="g-note">03</span>
       </a>
       <a href="AUDIT.md">
@@ -237,8 +237,8 @@
     <div class="stats">
       <div class="stat"><b>17</b><span>个可交互产品</span></div>
       <div class="stat"><b>2</b><span>条全流程工作流</span></div>
+      <div class="stat"><b>2</b><span>个 Agent</span></div>
       <div class="stat"><b>16</b><span>份可复现评测</span></div>
-      <div class="stat"><b>15</b><span>份 PRD / 产品说明</span></div>
     </div>
   </section>
 
@@ -247,7 +247,7 @@
     <div class="block-head">
       <div>
         <p class="kicker">01 / 求职</p>
-        <h2>一条从 JD 到复盘的求职工作流</h2>
+        <h2>一条从 JD 到面试回顾的求职工作流</h2>
       </div>
       <p class="block-desc">投递看板记录进度 → 输入一次 JD + 简历 → 能力雷达 → 模拟面试 → 面后复盘。</p>
     </div>
@@ -323,7 +323,7 @@
         <tbody>
           <tr><td>JD 雷达</td><td>核心能力召回 92.7% · Top-5 召回 94.0%（10 份 JD）</td><td><a href="eval/jd-radar/REPORT.md">查看 →</a></td></tr>
           <tr><td>模拟面试官</td><td>能力覆盖 74.1% · 简历引用 100%（8 组 JD + 简历）</td><td><a href="eval/mock-interview/REPORT.md">查看 →</a></td></tr>
-          <tr><td>面试复盘器</td><td>留出集 P 88.9% / R 94.1%（17 题，未参与调规则）</td><td><a href="eval/interview-extract/REPORT.md">查看 →</a></td></tr>
+          <tr><td>面试回顾器</td><td>留出集 P 88.9% / R 94.1%（17 题，未参与调规则）</td><td><a href="eval/interview-extract/REPORT.md">查看 →</a></td></tr>
           <tr><td>求职工作台</td><td>集成 6 + 经历深挖 4 + 经历库 3 条断言通过</td><td><a href="eval/job-workbench/REPORT.md">查看 →</a></td></tr>
           <tr><td>投递看板</td><td>统计与手工计算逐字段一致（回归 9/9）</td><td><a href="eval/application-board/REPORT.md">查看 →</a></td></tr>
           <tr><td>笔记工坊</td><td>违禁词召回 100% · 干净样本误报 0%</td><td><a href="eval/note-craft/REPORT.md">查看 →</a></td></tr>
@@ -392,45 +392,51 @@ var PAGES = 'https://' + YOUR_USER + '.github.io';
 /* 卡片数据：group 决定放在哪一栏，status 决定右上角标签 */
 var CARDS = [
   /* ---------- 求职 ---------- */
-  {group:'job', icon:'🧭', type:'工作流', title:'求职工作台',
-   desc:'把 JD 雷达 → 经历深挖/经历库 → 模拟面试官 → 面试复盘器串成一条线：输入一次 JD + 简历，关键进度自动点亮，最后导出一份求职档案。',
-   metric:'五工具共享数据 · 档案可导出', href:'job-workbench/index.html', status:'online', featured:true, flow:['投递看板','JD 雷达','经历深挖','经历库','模拟面试官','面试复盘器']},
-  {group:'job', icon:'📡', type:'求职工具', title:'JD 雷达',
-   desc:'粘贴多份 AI 产品 JD，得到能力雷达、高频能力榜和 gap 清单；纯规则，不调模型，可导出复盘笔记。',
+  {group:'job', type:'Agent', title:'求职访谈 Agent',
+   desc:'不是固定念 5 个问题：回答太泛、没数字、全是“我们”时会追问一层；背景、动作、结果够了就允许提前停，最后给 STAR 故事和一段简历草稿。不编数字。',
+   metric:'自适应追问 · 提前停止 · 简历草稿', href:'job-workbench/experience.html', status:'online', featured:true, flow:['输入经历','追问一层','提前停止','故事 + 简历草稿']},
+  {group:'job', type:'工作流', title:'求职工作台',
+   desc:'把 JD 雷达、经历深挖、经历库、模拟面试、面试回顾、投递看板串成一条线；输入一次 JD + 简历，进度自动点亮，最后导出一份求职档案。',
+   metric:'多工具共享数据 · 档案可导出', href:'job-workbench/index.html', status:'online'},
+  {group:'job', type:'工具', title:'简历诊断',
+   desc:'先把 JD 和原始简历放在一起，找出没有证据的格子；按 S/T/A/R 一次问一个；最后只给「原文 | 修改后 | 为什么」。没有证据就写“待补”。',
+   metric:'离线可用 · 可选 BYOK · 不自动投递', href:'job-workbench/resume-lab.html', status:'online'},
+  {group:'job', type:'求职工具', title:'JD 雷达',
+   desc:'粘贴多份 AI 产品 JD，得到能力雷达、高频能力榜和 gap 清单；纯规则，不调模型，可导出笔记。',
    metric:'核心能力召回 92.7% · 10 份 JD', href:'jd-radar/index.html', status:'online'},
-  {group:'job', icon:'🎤', type:'求职工具', title:'模拟面试官',
+  {group:'job', type:'求职工具', title:'模拟面试官',
    desc:'粘贴 JD + 简历，生成一套针对性面试题：岗位能力题 + 简历深挖题 + 追问，每题带考察点和答题框架。',
    metric:'能力覆盖 74.1% · 8 组 JD + 简历', href:'mock-interview/index.html', status:'online'},
-  {group:'job', icon:'🎙', type:'求职工具', title:'面试复盘器',
-   desc:'粘贴面经，自动提取题目并分类，逐题自评打分，导出结构化复盘笔记；可选 AI 补考察点和答题框架。',
+  {group:'job', type:'求职工具', title:'面试回顾器',
+   desc:'粘贴面经，自动提取题目并分类，逐题自评打分，导出结构化笔记；可选 AI 补考察点和答题框架。',
    metric:'留出集 P 88.9% / R 94.1%', href:'interview-review/index.html', status:'online'},
-  {group:'job', icon:'🗂', type:'求职工具', title:'投递看板',
+  {group:'job', type:'求职工具', title:'投递看板',
    desc:'实习 / 秋招投递状态、漏斗转化率、渠道进面率、14 天无回音提醒、挂掉原因分布，全部代码现算。',
    metric:'统计回归 9/9 · 数据不出本机', href:'application-board/index.html', status:'online'},
 
   /* ---------- 内容 ---------- */
-  {group:'content', icon:'🖼', type:'AI 产品', title:'图文工作室',
+  {group:'content', icon:'🖼', type:'产品', title:'图文工作室',
    desc:'小红书全流程生产线：5 种爆款形态 schema 化（人设 Bot / 必看合集 / 必入榜 / 图文总结 / 对比测评），AI 生成封面+内页+正文+评论区脚本+发布策略，规则层校验结构与违禁词，导出发布包。不做自动发布（平台红线）。',
    metric:'校验引擎 7/7 一致 · 评论区脚本是一等内容', href:'xhs-studio/index.html', status:'key'},
   {group:'content', icon:'🗞', type:'工作流', title:'内容工作台',
    desc:'内容线全流程编排：从选题池排周计划 → 草稿 → 发布后把阅读数据回流 → 按选题类型看哪类真的表现好。周简报由代码生成，样本 <3 明确不下结论。',
    metric:'简报引擎 9/9 一致 · 自动读选题雷达数据', href:'content-workbench/index.html', status:'online', flow:['选题雷达','内容工作台','笔记工坊','数据回流']},
-  {group:'content', icon:'📰', type:'AI 产品', title:'公众号排版器',
+  {group:'content', icon:'📰', type:'产品', title:'公众号排版器',
    desc:'Markdown 一键变成公众号后台可直接粘贴的内联样式 HTML（手写 60 行确定性解析器），自带违禁词体检与字数提醒。',
    metric:'解析 / 渲染 10/10 一致 · 富文本一键复制', href:'mp-formatter/index.html', status:'online'},
-  {group:'content', icon:'✍️', type:'AI 产品', title:'笔记工坊',
+  {group:'content', icon:'✍️', type:'产品', title:'笔记工坊',
    desc:'按爆款结构起草小红书笔记，写完自动过违禁词体检：极限词 / 功效宣称 / 引流话术逐个高亮并给合规改法。',
    metric:'违禁召回 100% · 干净样本误报 0%', href:'note-craft/index.html', status:'key'},
-  {group:'content', icon:'📄', type:'AI 产品', title:'汇报一页纸',
+  {group:'content', icon:'📄', type:'产品', title:'汇报一页纸',
    desc:'粘贴大纲 → 解析结构、诊断缺口（没数字？没下一步？Ask 不具体？）→ 渲染成排版好的一页，打印即 PDF。',
    metric:'解析 / 诊断 8/8 一致 · 3 种版式', href:'one-pager/index.html', status:'key'},
-  {group:'content', icon:'📡', type:'AI 产品', title:'选题雷达',
+  {group:'content', icon:'📡', type:'产品', title:'选题雷达',
    desc:'输入账号定位，生成候选选题（带「为什么能爆」和风险提醒）；标题丢进 6 维规则打分器，看它缺什么。',
    metric:'双命中 100% · 区分度 40.5 分', href:'topic-radar/index.html', status:'key'},
   {group:'content', icon:'🎲', type:'测试', title:'Quiz Factory · 测试库',
    desc:'8 道题出一个人格结果，带稀有度和分享深链；已有 5 个现成测试，微信里点开就能测。',
    metric:'5 个现成测试 · 结果由代码计算', href:PAGES + '/quiz-factory/', status:'online'},
-  {group:'content', icon:'✨', type:'AI 产品', title:'做我的测试（AI 生成器）',
+  {group:'content', icon:'✨', type:'产品', title:'做我的测试（AI 生成器）',
    desc:'输入一句话主题，浏览器里跑完「骨架 → 题目 → 文案」三段生成：自动过质量门禁、校准分布，下载即得新测试。',
    metric:'三段生成 + 质量门禁 · Key 只存本机', href:PAGES + '/quiz-factory/create.html', status:'key'},
   {group:'content', icon:'📊', type:'前后端', title:'测试工厂 · 数据版',
@@ -452,9 +458,9 @@ var CARDS = [
   {group:'research', icon:'🗂', type:'阅读工具', title:'长文档阅读卡',
    desc:'长文压成几张卡：观点 + 逐字原文摘录 + 「所以呢」；AI 摘录自动回原文核验，没命中会标灰提醒。',
    metric:'摘录核验 4/4 · 关键词覆盖 9/10', href:'doc-cards/index.html', status:'online'},
-  {group:'research', icon:'📚', type:'能做深', title:'本地文献 Agent',
-   desc:'跑在自己笔记本上的文献综述流水线：检索、精读、综述、引用核验；新增逐条引用审计报告（来源/数字/页码，Markdown/HTML）；201 篇人工盲标：人工口径 P@10 84%（CI 66–97），规则口径 6%→57.5%，但不宣称 B3 更准。',
-   metric:'本地运行 · 201 篇人工盲标 · 逐条引用审计', href:GH + '/local-literature-agent', status:'local'}
+  {group:'research', type:'Agent', title:'本地文献 Agent',
+   desc:'跑在自己笔记本上的文献综述流程：检索、精读、综述、引用审计。检索源是 Crossref / DOAJ / arXiv，不是通用网页搜索；201 篇人工盲标，B1/B3 打平就不宣称更准。',
+   metric:'5 位研究生试用 · 201 篇人工盲标 · 逐条引用审计', href:PAGES + '/local-literature-agent/', status:'local'}
 ];
 
 var BADGE = {
@@ -466,7 +472,7 @@ var BADGE = {
 function cardHTML(card){
   var b = BADGE[card.status] || BADGE.online;
   return '<a class="card' + (card.featured ? ' featured' : '') + '" href="' + card.href + '">'
-    + '<div class="card-top"><span class="icon">' + card.icon + '</span><span class="badge ' + b.cls + '">' + b.text + '</span></div>'
+    + '<div class="card-top"><span class="badge ' + b.cls + '">' + b.text + '</span></div>'
     + '<h3>' + card.title + ' <span style="font-weight:600;color:var(--faint);font-size:12px">· ' + card.type + '</span></h3>'
     + '<p>' + card.desc + '</p>'
     + (card.flow ? '<div class="flow">' + card.flow.map(function(f, i){ return (i ? '<i>→</i>' : '') + '<span>' + f + '</span>'; }).join('') + '</div>' : '')
@@ -488,8 +494,10 @@ render('life', 'cards-life');
 /* 链接统一写一处，方便换账号 */
 document.getElementById('nav-github').href = GH;
 document.getElementById('hero-github').href = GH;
-document.getElementById('guide-lit').href = GH + '/local-literature-agent';
+document.getElementById('guide-lit').href = PAGES + '/local-literature-agent/';
 document.getElementById('lit-eval').href = GH + '/local-literature-agent/blob/main/eval/HUMAN_EVAL.md';
 </script>
 </body>
 </html>
+
+
