@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>经历深挖官 · 把实习聊成面试故事</title>
-<meta name="description" content="用 5 个问题把简历里的一行实习深挖成 STAR 故事：背景、动作、冲突、结果、反思；给出 30/90 秒版本、可能追问和要补的证据。不编数字，数据只存本机。">
+<title>求职访谈 Agent · 把经历聊成故事和简历草稿</title>
+<meta name="description" content="用 5 个问题把简历里的一行实习深挖成 STAR 故事；回答太泛时会追问一层，证据够写简历就停，最后给故事卡和简历草稿。不编数字，数据只存本机。">
 <style>
   :root{
     --ink:#1f1b16; --muted:#7a7268; --bg:#f7f2ea; --card:#fff; --line:#eadfd0;
@@ -96,8 +96,8 @@
 <div class="wrap">
   <div class="hero">
     <p class="eyebrow">求职副驾驶 · 把经历聊出来</p>
-    <h1>把一段实习，<br>聊成面试能讲的故事</h1>
-    <p class="lede">简历里只有一行“负责公众号运营”，面试官一追问就卡住。这里用 5 个问题，把背景、你做的事、难点、结果和反思挖出来，生成 <b>STAR 结构 + 30/90 秒版本 + 可能追问 + 要补的证据</b>。</p>
+    <h1>把一段实习，<br>聊成面试故事和简历草稿</h1>
+    <p class="lede">不是固定念 5 个问题：回答太泛、没有数字、全是“我们”时，会追问一层；证据够写简历就可以提前停。最后给 <b>STAR 结构 + 30/90 秒版本 + 可能追问 + 要补的证据 + 简历草稿</b>。不编数字，数据只存本机。</p>
     <div class="banner"><b>先说清楚：</b>这个工具不替你编数字、不替你写没发生过的事。没有的数字会标成“待补”，最终事实必须你本人核对。数据只存在本机浏览器；AI 润色是可选项。</div>
   </div>
 
@@ -281,10 +281,15 @@
       var cls = i < current ? 'done' : (i === current ? 'now' : '');
       return '<span class="pstep ' + cls + '">' + (i < current ? '✓ ' : (i + 1) + '. ') + escapeHtml(step.label) + '</span>';
     }).join('');
-    $('btn-generate').disabled = !session || (!session.done && current < CORE.STEPS.length && current < 1);
-    $('chat-hint').textContent = session && session.done
-      ? '5 个问题够了，点「生成故事」；也可以继续补。'
-      : '没有数字也没关系，先写范围/频率；不要编。';
+    var canGen = session && (session.done || CORE.canStop(session));
+    $('btn-generate').disabled = !canGen;
+    $('chat-hint').textContent = session && session.followupFor
+      ? '正在追问一层：补完这一句就继续。'
+      : (session && session.done
+        ? '5 个问题够了。如果证据已经够写简历，可以直接生成；不够就继续补。'
+        : (session && CORE.canStop(session)
+          ? '现有证据已经够写一版简历草稿，可以提前生成；也可以继续补。'
+          : '没有数字也没关系，先写范围/频率；不要编。'));
   }
 
   function send() {
@@ -341,6 +346,7 @@
     html += '<h3 style="font-size:15px;margin:16px 0 6px">需要补的证据（不要编）</h3>';
     html += gaps.length ? '<ul class="gaps">' + gaps.map(function (g) { return '<li>' + escapeHtml(g) + '</li>'; }).join('') + '</ul>' : '<p class="hint">暂时没发现明显缺口；仍建议补一个可核验数字。</p>';
     html += '<h3 style="font-size:15px;margin:16px 0 6px">改写建议</h3><ul>' + story.rewrites.map(function (r) { return '<li>' + escapeHtml(r) + '</li>'; }).join('') + '</ul>';
+    html += '<h3 style="font-size:15px;margin:16px 0 6px">简历草稿（需核对）</h3><div class="block">' + escapeHtml(CORE.buildResumeDraft(session, story)) + '</div>';
     if (aiText) html += '<h3 style="font-size:15px;margin:16px 0 6px">AI 润色版（仍需核对）</h3><div class="block">' + escapeHtml(aiText) + '</div>';
     $('story-body').innerHTML = html;
     $('btn-generate').disabled = false;
@@ -348,7 +354,7 @@
 
   function markdown() {
     if (!story) return '';
-    return story.markdown + (aiText ? '\n\n## 八、AI 润色版（需人工核对）\n\n' + aiText + '\n' : '');
+    return story.markdown + (session ? '\n\n' + CORE.buildResumeDraft(session, story) : '') + (aiText ? '\n\n## 八、AI 润色版（需人工核对）\n\n' + aiText + '\n' : '');
   }
 
   function download() {

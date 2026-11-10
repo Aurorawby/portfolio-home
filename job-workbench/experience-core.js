@@ -87,6 +87,7 @@
       answers: {},
       step: 0,
       done: false,
+      followupFor: '',
       updatedAt: new Date().toISOString()
     };
   }
@@ -125,6 +126,47 @@
     return STEPS[Math.min(session.step || 0, STEPS.length - 1)];
   }
 
+  function needsFollowup(step, analysis, text) {
+    text = clean(text);
+    if (step.id === 'background') {
+      if (analysis.length < 35) return '能具体一点吗？团队多大、你负责哪块、当时要解决什么问题？';
+      if (!analysis.hasNumber) return '有没有一个范围？比如团队人数、用户量、时间跨度。';
+    }
+    if (step.id === 'action') {
+      if (analysis.weak.length) return '这里用了“' + analysis.weak.join('、') + '”。哪 2–3 件是你亲手做的？';
+      if (!analysis.ownership.length) return '你手里有没有预算、资源或决策权？哪怕一小块也算。';
+      if (analysis.length < 50) return '先做什么、后做什么？你改了哪一版？';
+    }
+    if (step.id === 'challenge') {
+      if (!/(冲突|不同意|卡|难|缺|来不及|拿不到|失败|返工|资源)/.test(text)) {
+        return '当时最卡的一个点是什么？资源不够、时间紧，还是和谁意见不一致？';
+      }
+    }
+    if (step.id === 'result') {
+      if (!analysis.hasNumber && !analysis.results.length) {
+        return '结果有没有数字？没有的话，覆盖范围、频率、前后对比也行。不记得就写“不记得”。';
+      }
+    }
+    if (step.id === 'reflection') {
+      if (!/(下次|如果|重来|学到|判断|迁移)/.test(text)) {
+        return '别说“学到了很多”；如果重来，你会先改哪一个具体动作？';
+      }
+    }
+    if (analysis.weCount > analysis.iCount && analysis.ownership.length === 0) {
+      return '“我们”有点多。哪部分是你独立做的？';
+    }
+    return '';
+  }
+
+  function canStop(session) {
+    var a = (session || {}).answers || {};
+    var action = analyze(a.action || '');
+    var result = analyze(a.result || '');
+    return !!(a.background && a.action && a.result &&
+      (result.hasNumber || result.results.length) &&
+      (action.ownership.length || action.iCount > 0));
+  }
+
   function answer(session, content) {
     var s = JSON.parse(JSON.stringify(session || emptySession({})));
     var step = currentStep(s);
@@ -132,26 +174,51 @@
     if (!text) {
       return { session: s, reply: '先写一句也行；如果这块确实没有，可以点“跳过这题”。', done: false, skipped: false };
     }
+
+    // 正在追问：把补充内容接回原步骤，然后进入下一题
+    if (s.followupFor) {
+      var key = s.followupFor;
+      s.answers[key] = clean((s.answers[key] || '') + ' ' + text);
+      s.followupFor = '';
+      s.step = Math.min((s.step || 0) + 1, STEPS.length);
+      s.done = s.step >= STEPS.length;
+      var doneReply = '好，这条补上了。';
+      if (!s.done) doneReply += '\n\n' + STEPS[s.step].q;
+      else doneReply += '\n\n五个问题够了。如果证据已经够写简历，可以提前生成；不够就继续补。';
+      s.updatedAt = new Date().toISOString();
+      return { session: s, reply: doneReply, done: s.done, skipped: false, followup: false };
+    }
+
     s.answers[step.id] = text;
     var analysis = analyze(text);
     var reply = coachFeedback(step, analysis, text);
+    var followup = needsFollowup(step, analysis, text);
+
+    if (followup) {
+      s.followupFor = step.id;
+      reply += '\n\n追问：' + followup;
+      s.updatedAt = new Date().toISOString();
+      return { session: s, reply: reply, done: false, skipped: false, followup: true };
+    }
+
     s.step = Math.min((s.step || 0) + 1, STEPS.length);
     s.done = s.step >= STEPS.length;
     if (!s.done) reply += '\n\n' + STEPS[s.step].q;
     else reply += '\n\n五个问题够了，点「生成故事」看 STAR 版本。';
     s.updatedAt = new Date().toISOString();
-    return { session: s, reply: reply, done: s.done, skipped: false };
+    return { session: s, reply: reply, done: s.done, skipped: false, followup: false };
   }
 
   function skip(session) {
     var s = JSON.parse(JSON.stringify(session || emptySession({})));
     var step = currentStep(s);
+    if (s.followupFor) s.followupFor = '';
     s.step = Math.min((s.step || 0) + 1, STEPS.length);
     s.done = s.step >= STEPS.length;
     var reply = '好，这题先空着；生成故事时我会把它标成“待补”。';
     if (!s.done) reply += '\n\n' + STEPS[s.step].q;
     s.updatedAt = new Date().toISOString();
-    return { session: s, reply: reply, done: s.done, skipped: true };
+    return { session: s, reply: reply, done: s.done, skipped: true, followup: false };
   }
 
   function ensureFirst(text) {
@@ -387,6 +454,45 @@
     return lines.join('\n').trim() + '\n';
   }
 
+  function buildResumeDraft(session, story) {
+    var s = session || emptySession({});
+    var a = s.answers || {};
+    var st = story || buildStory(s);
+    var lines = [];
+    lines.push('# 简历草稿（需本人核对）');
+    lines.push('');
+    lines.push('## ' + (s.title || '这段经历'));
+    lines.push('');
+    if (s.role || s.period) lines.push([s.role, s.period].filter(Boolean).join(' ｜ '));
+    if (s.jd) lines.push('> 目标岗位：' + trimSentence(s.jd, 160));
+    lines.push('');
+    var bullets = [];
+    if (a.action) bullets.push((s.role ? '负责' : '') + ensureFirst(a.action).replace(/^我/, ''));
+    if (a.result) bullets.push('结果：' + a.result);
+    if (a.challenge) bullets.push('难点：' + trimSentence(a.challenge, 100));
+    if (bullets.length) {
+      bullets.forEach(function (b) { lines.push('- ' + b); });
+    } else {
+      lines.push('- （待补：具体动作与结果）');
+    }
+    lines.push('');
+    lines.push('## 面试用 STAR');
+    lines.push('');
+    lines.push('- S：' + st.star.S);
+    lines.push('- T：' + st.star.T);
+    lines.push('- A：' + st.star.A);
+    lines.push('- R：' + st.star.R);
+    var gaps = st.gaps || [];
+    if (gaps.length) {
+      lines.push('');
+      lines.push('## 还要核对/补充');
+      gaps.forEach(function (g) { lines.push('- [ ] ' + g); });
+    }
+    lines.push('');
+    lines.push('> 这是根据你的回答整理的草稿，不是最终简历；所有数字请本人核对。');
+    return lines.join('\n').trim() + '\n';
+  }
+
   return {
     STEPS: STEPS,
     analyze: analyze,
@@ -394,7 +500,9 @@
     firstQuestion: firstQuestion,
     answer: answer,
     skip: skip,
+    canStop: canStop,
     buildStory: buildStory,
+    buildResumeDraft: buildResumeDraft,
     renderMarkdown: renderMarkdown,
     classifyStory: classifyStory,
     jdCoverage: jdCoverage,
