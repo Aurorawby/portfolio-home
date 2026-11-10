@@ -95,6 +95,7 @@
     <div class="actions">
       <button class="btn primary" id="btn-prompt">生成分析 Prompt</button>
       <button class="btn ghost" id="btn-ai-analyze">AI 直接分析</button>
+      <button class="btn ghost" id="btn-sample">填入示例</button>
       <button class="btn ghost" id="btn-clear">清空本页</button>
       <span class="hint">先用 Prompt 或配好 Key 直接分析</span>
     </div>
@@ -484,6 +485,19 @@ function init(){
     state.gaps=gaps; state.gapIndex=0; state.qIndex=0; save(); renderGaps();
     setStatus('parse-status','解析到 '+gaps.length+' 条缺口。去 Step 2 补证据。','ok');
   });
+  $('btn-sample').addEventListener('click', function(){
+    $('jd').value = [
+      '内容运营实习生',
+      '职责：负责账号内容规划与选题、活动执行、数据回收；要求做过用户调研/竞品分析，能用 Excel/SQL 做数据复盘，沟通推进能力强。'
+    ].join('\n');
+    $('resume').value = [
+      '教育公司内容运营实习：负责小红书账号内容规划与发布，做过期末热点选题；投放带来 86 条前端进线，平均成本 80.62 元。',
+      '校园经历：担任社团部长，组织 3 场校园活动，协调 10 人团队。'
+    ].join('\n');
+    state.jd=$('jd').value; state.resume=$('resume').value; save();
+    setStatus('parse-status','已填入示例；可直接生成分析 Prompt。','ok');
+  });
+
   $('btn-clear').addEventListener('click',function(){
     if(!confirm('清空本页所有内容？')) return;
     state={answers:{},checks:{},step:1}; localStorage.removeItem(KEY); location.reload();
